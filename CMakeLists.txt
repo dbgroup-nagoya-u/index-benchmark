@@ -86,6 +86,7 @@ target_compile_options(
 )
 target_link_libraries(
   index_bench PRIVATE
+  pthread
   gflags
   cpp_utility
 )

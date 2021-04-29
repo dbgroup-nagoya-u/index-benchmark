@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include <gflags/gflags.h>
-#include <pmwcas.h>
-
 #include <future>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -17,10 +15,9 @@
 #include <utility>
 #include <vector>
 
+#include "gflags/gflags.h"
 #include "worker.hpp"
-#include "worker_cas.hpp"
-#include "worker_mwcas.hpp"
-#include "worker_pmwcas.hpp"
+#include "worker_bwtree.hpp"
 
 /*##################################################################################################
  * Global variables
@@ -68,22 +65,16 @@ class MwCASBench
    *##############################################################################################*/
 
   /// a ratio of read operations
-  const size_t read_ratio_;
+  const Workload workload_;
 
-  /// the number of MwCAS operations executed in each thread
+  /// the number of operations executed in each thread
   const size_t exec_num_;
-
-  /// the number of loops to measure performance
-  const size_t repeat_num_;
 
   /// the number of execution threads
   const size_t thread_num_;
 
-  /// the number of total target fields
-  const size_t target_field_num_;
-
-  /// the number of target fields for each MwCAS
-  const size_t mwcas_target_num_;
+  /// the number of total keys
+  const size_t total_key_num_;
 
   /// a skew parameter
   const double skew_parameter_;
@@ -91,17 +82,8 @@ class MwCASBench
   /// a base random seed
   const size_t random_seed_;
 
-  /// a flag to measure throughput
+  /// true: throughput, false: latency
   const bool measure_throughput_;
-
-  /// a flag to measure latency
-  const bool measure_latency_;
-
-  /// target fields of MwCAS
-  std::unique_ptr<size_t[]> target_fields_;
-
-  /// PMwCAS descriptor pool
-  std::unique_ptr<pmwcas::DescriptorPool> desc_pool_;
 
   /*################################################################################################
    * Private utility functions
@@ -121,7 +103,7 @@ class MwCASBench
     }
     avg_nano_time /= thread_num_;
 
-    const size_t total_exec_num = exec_num_ * repeat_num_ * thread_num_;
+    const size_t total_exec_num = exec_num_ * thread_num_;
     const auto throughput = total_exec_num / (avg_nano_time / 1E9);
 
     if (output_format_is_text) {
@@ -145,7 +127,7 @@ class MwCASBench
     std::vector<size_t> indexes;
     indexes.reserve(thread_num_);
     for (size_t thread = 0; thread < thread_num_; ++thread) {
-      indexes.emplace_back(exec_num_ * repeat_num_ - 1);
+      indexes.emplace_back(exec_num_ - 1);
       const auto exec_time = workers[thread]->GetLatency(0);
       if (exec_time < lat_0) {
         lat_0 = exec_time;
@@ -153,7 +135,7 @@ class MwCASBench
     }
 
     // check latency with descending order
-    const size_t total_exec_num = exec_num_ * repeat_num_ * thread_num_;
+    const size_t total_exec_num = exec_num_ * thread_num_;
     for (size_t count = total_exec_num; count >= total_exec_num * 0.90; --count) {
       size_t target_thread = 0;
       auto max_exec_time = std::numeric_limits<size_t>::min();
@@ -192,20 +174,6 @@ class MwCASBench
   }
 
   /**
-   * @brief Fill MwCAS target fields with zeros.
-   *
-   */
-  void
-  InitializeTargetFields()
-  {
-    assert(target_fields_);
-
-    for (size_t index = 0; index < target_field_num_; ++index) {
-      target_fields_[index] = 0;
-    }
-  }
-
-  /**
    * @brief Create a worker to run benchmark for a given target implementation.
    *
    * @param target a target implementation
@@ -218,25 +186,16 @@ class MwCASBench
       const size_t random_seed)
   {
     switch (target) {
-      case kOurs:
-        return new WorkerMwCAS{target_fields_.get(), target_field_num_, mwcas_target_num_,
-                               read_ratio_,          exec_num_,         repeat_num_,
-                               skew_parameter_,      random_seed};
-      case kPMwCAS:
-        return new WorkerPMwCAS{*desc_pool_.get(), target_fields_.get(), target_field_num_,
-                                mwcas_target_num_, read_ratio_,          exec_num_,
-                                repeat_num_,       skew_parameter_,      random_seed};
-      case kSingleCAS:
-        return new WorkerSingleCAS{target_fields_.get(), target_field_num_, mwcas_target_num_,
-                                   read_ratio_,          exec_num_,         repeat_num_,
-                                   skew_parameter_,      random_seed};
+      case kOpenBwTree:
+        return new WorkerOpenBwTree{workload_, total_key_num_, skew_parameter_, exec_num_,
+                                    random_seed};
       default:
         return nullptr;
     }
   }
 
   /**
-   * @brief Run a worker thread to measure throuput and latency.
+   * @brief Run a worker thread to measure throuput/latency.
    *
    * @param p a promise of a worker pointer that holds benchmark results
    * @param target a target implementation
@@ -258,17 +217,18 @@ class MwCASBench
 
     {  // wait for benchmark to be ready
       const auto guard = std::shared_lock<std::shared_mutex>(mutex_1st);
-      if (measure_throughput_) worker->MeasureThroughput();
-    }  // unlock to notice that this worker has measured thuroughput
+      if (measure_throughput_) {
+        worker->MeasureThroughput();
+      } else {
+        worker->MeasureLatency();
+      }
+    }  // unlock to notice that this worker has finished
 
-    {  // wait for benchmark to be ready
-      const auto guard = std::shared_lock<std::shared_mutex>(mutex_2nd);
-      if (measure_latency_) worker->MeasureLatency();
-    }  // unlock to notice that this worker has measured latency
-
-    {  // wait for all workers to finish
-      const auto guard = std::shared_lock<std::shared_mutex>(mutex_1st);
-      worker->SortExecutionTimes();
+    if (!measure_throughput_) {
+      {  // wait for benchmark to finish
+        const auto guard = std::shared_lock<std::shared_mutex>(mutex_2nd);
+        worker->SortExecutionTimes();
+      }  // unlock to notice that this worker has finished
     }
 
     p.set_value(worker);
@@ -280,30 +240,21 @@ class MwCASBench
    *##############################################################################################*/
 
   MwCASBench(  //
-      const size_t read_ratio,
+      const Workload workload,
       const size_t num_exec,
-      const size_t num_loop,
       const size_t num_thread,
-      const size_t num_field,
-      const size_t num_target,
+      const size_t num_key,
       const double skew_parameter,
       const size_t random_seed,
-      const bool measure_throughput,
-      const bool measure_latency)
-      : read_ratio_{read_ratio},
+      const bool measure_throughput)
+      : workload_{workload},
         exec_num_{num_exec},
-        repeat_num_{num_loop},
         thread_num_{num_thread},
-        target_field_num_{num_field},
-        mwcas_target_num_{num_target},
+        total_key_num_{num_key},
         skew_parameter_{skew_parameter},
         random_seed_{random_seed},
-        measure_throughput_{measure_throughput},
-        measure_latency_{measure_latency}
+        measure_throughput_{measure_throughput}
   {
-    // prepare shared target fields
-    target_fields_ = std::make_unique<size_t[]>(target_field_num_);
-    InitializeTargetFields();
   }
 
   ~MwCASBench() = default;
@@ -313,21 +264,13 @@ class MwCASBench
    *##############################################################################################*/
 
   /**
-   * @brief Run MwCAS benchmark and output results to stdout.
+   * @brief Run benchmark and output results to stdout.
    *
    * @param target a target implementation
    */
   void
-  RunMwCASBench(const BenchTarget target)
+  Run(const BenchTarget target)
   {
-    if (target == BenchTarget::kPMwCAS) {
-      // prepare PMwCAS descriptor pool
-      pmwcas::InitLibrary(pmwcas::DefaultAllocator::Create, pmwcas::DefaultAllocator::Destroy,
-                          pmwcas::LinuxEnvironment::Create, pmwcas::LinuxEnvironment::Destroy);
-      desc_pool_ = std::make_unique<pmwcas::DescriptorPool>(
-          static_cast<uint32_t>(8192 * thread_num_), static_cast<uint32_t>(thread_num_));
-    }
-
     /*----------------------------------------------------------------------------------------------
      * Preparation of benchmark workers
      *--------------------------------------------------------------------------------------------*/
@@ -346,35 +289,29 @@ class MwCASBench
 
       // wait for all workers to be created
       const auto guard = std::unique_lock<std::shared_mutex>(mutex_2nd);
-
-      InitializeTargetFields();
     }  // unlock to run workers
 
     /*----------------------------------------------------------------------------------------------
-     * Measuring throughput
+     * Measuring throughput/latency
      *--------------------------------------------------------------------------------------------*/
-    if (measure_throughput_) Log("Run workers to measure throughput...");
+    if (measure_throughput_) {
+      Log("Run workers to measure throughput...");
+    } else {
+      Log("Run workers to measure latency...");
+    }
 
     {  // create a lock to stop workers from running
       const auto lock = std::unique_lock<std::shared_mutex>(mutex_2nd);
 
       // wait for all workers to finish measuring throughput
       const auto guard = std::unique_lock<std::shared_mutex>(mutex_1st);
-
-      InitializeTargetFields();
     }  // unlock to run workers
 
-    /*----------------------------------------------------------------------------------------------
-     * Measuring latency
-     *--------------------------------------------------------------------------------------------*/
-    if (measure_latency_) Log("Run workers to measure latency...");
-
-    {  // create a lock to stop workers from running
-      const auto lock = std::unique_lock<std::shared_mutex>(mutex_1st);
-
-      // wait for all workers to finish measuring latency
-      const auto guard = std::unique_lock<std::shared_mutex>(mutex_2nd);
-    }  // unlock to run workers
+    if (!measure_throughput_) {
+      {  // wait for all workers to finish sorting own latency
+        const auto guard = std::unique_lock<std::shared_mutex>(mutex_2nd);
+      }
+    }
 
     /*----------------------------------------------------------------------------------------------
      * Output benchmark results
@@ -387,8 +324,11 @@ class MwCASBench
       results.emplace_back(future.get());
     }
 
-    if (measure_throughput_) LogThroughput(results);
-    if (measure_latency_) LogLatency(results);
+    if (measure_throughput_) {
+      LogThroughput(results);
+    } else {
+      LogLatency(results);
+    }
 
     for (auto &&worker : results) {
       delete worker;
