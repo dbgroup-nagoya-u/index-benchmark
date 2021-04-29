@@ -7,6 +7,9 @@
 #include <cstddef>
 #include <cstdint>
 
+using Key = uint64_t;
+using Value = uint64_t;
+
 /**
  * @brief A list of index read/write operations.
  *

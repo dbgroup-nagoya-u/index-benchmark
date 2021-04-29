@@ -29,9 +29,9 @@ class OperationGenerator
 
   ZipfGenerator zipf_engine_;
 
-  std::uniform_int_distribution<uint64_t> percent_generator_{0, 99};
+  std::uniform_int_distribution<size_t> percent_generator_{0, 99};
 
-  std::uniform_int_distribution<uint64_t> range_generator_{50, 150};
+  std::uniform_int_distribution<size_t> range_generator_{50, 150};
 
  public:
   /*################################################################################################

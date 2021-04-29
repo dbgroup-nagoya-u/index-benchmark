@@ -19,11 +19,11 @@ struct Operation {
   const IndexOperation type;
 
   /// a target key of this operation
-  const uint64_t key;
+  const Key key;
 
   /// a target data of this operation
-  const uint64_t value = 0;
+  const Value value = 0;
 
   ///  a key to represent the end of a scan operation
-  const uint64_t end_key = 0;
+  const Key end_key = 0;
 };
