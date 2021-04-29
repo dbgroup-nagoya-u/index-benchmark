@@ -17,7 +17,7 @@
 
 #include "gflags/gflags.h"
 #include "worker.hpp"
-#include "worker_bwtree.hpp"
+#include "worker_open_bwtree.hpp"
 
 /*##################################################################################################
  * Global variables

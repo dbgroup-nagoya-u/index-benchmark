@@ -58,4 +58,4 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
 endfunction()
 
 # add unit tests to build targets
-# ADD_INDEX_BENCH_TEST("worker_bwtree_test")
+ADD_INDEX_BENCH_TEST("worker_open_bwtree_test")
