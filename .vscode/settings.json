@@ -38,6 +38,7 @@
     "PMWCAS",
     "Wextra",
     "alignas",
+    "bwtree",
     "ctest",
     "gflags",
     "gtest",

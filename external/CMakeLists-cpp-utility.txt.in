@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.8)
+
+project(cpp-utility-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(cpp-utility
+  GIT_REPOSITORY    https://github.com/dbgroup-nagoya-u/cpp-utility.git
+  GIT_TAG           main
+  SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/cpp-utility-src"
+  BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/cpp-utility-build"
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
