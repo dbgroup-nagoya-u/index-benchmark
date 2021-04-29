@@ -14,8 +14,8 @@ usage() {
 Usage:
   ${BASH_SOURCE:-${0}} <path_to_bench_bin> 1> results.csv 2> error.log
 Description:
-  Run MwCAS benchmark to measure latency. All the benchmark results are output in CSV
-  format. Note that all the benchmark settings are set via "config/bench.env".
+  Run benchmark to measure latency. All the benchmark results are output in CSV
+  format. Note that all the benchmark settings are set by "config/bench.env".
 Arguments:
   <path_to_bench_bin>: A path to the binary file for benchmarking.
 Options:
@@ -61,26 +61,20 @@ fi
 
 source ${WORKSPACE_DIR}/config/bench.env
 
-for SHARED_NUM in ${SHARED_CANDIDATES}; do
-  for TARGET_NUM in ${TARGET_CANDIDATES}; do
-    for THREAD_NUM in ${THREAD_CANDIDATES}; do
-      for IMPL in ${IMPL_CANDIDATES}; do
-        if [ ${IMPL} == 0 ]; then
-          IMPL_ARGS="--ours=t --microsoft=f --single=f"
-        elif [ ${IMPL} == 1 ]; then
-          IMPL_ARGS="--ours=f --microsoft=t --single=f"
-        else
-          IMPL_ARGS="--ours=f --microsoft=f --single=t"
-        fi
-        for LOOP in {1..${BENCH_REPEAT_COUNT}}; do
-          echo -n "${SHARED_NUM},${TARGET_NUM},${IMPL},${THREAD_NUM},"
-          ${BENCH_BIN} \
-            --csv --throughput=f --latency=t ${IMPL_ARGS} \
-            --num_exec ${OPERATION_COUNT} --num_loop ${OPERATION_REPEAT_COUNT} \
-            --num_target ${TARGET_NUM} --num_shared ${SHARED_NUM} \
-            --num_thread ${THREAD_NUM}
-          echo ""
-        done
+for SKEW_PARAMETER in ${SKEW_CANDIDATES}; do
+  for THREAD_NUM in ${THREAD_CANDIDATES}; do
+    for IMPL in ${IMPL_CANDIDATES}; do
+      if [ ${IMPL} == 0 ]; then
+        IMPL_ARGS="--open_bw=t"
+      else
+        continue
+      fi
+      for LOOP in {1..${BENCH_REPEAT_COUNT}}; do
+        echo -n "${SKEW_PARAMETER},${IMPL},${THREAD_NUM},"
+        ${BENCH_BIN} \
+          --csv --throughput=t ${IMPL_ARGS} --num_exec ${OPERATION_COUNT} \
+          --skew_parameter ${SKEW_PARAMETER} --num_thread ${THREAD_NUM}
+        echo ""
       done
     done
   done
