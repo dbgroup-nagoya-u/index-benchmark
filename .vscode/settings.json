@@ -38,6 +38,7 @@
     "PMWCAS",
     "Wextra",
     "alignas",
+    "bwtree",
     "ctest",
     "gflags",
     "gtest",
@@ -45,7 +46,9 @@
     "libnuma",
     "mwcas",
     "numactl",
-    "pthread"
+    "pthread",
+    "stoul",
+    "zipf"
   ],
   "files.associations": {
     "fstream": "cpp",

@@ -3,23 +3,33 @@
 
 #pragma once
 
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
 
-enum Operation
+using Key = uint64_t;
+using Value = uint64_t;
+
+/**
+ * @brief A list of index read/write operations.
+ *
+ */
+enum IndexOperation
 {
   kRead,
-  kWrite
+  kScan,
+  kWrite,
+  kInsert,
+  kUpdate,
+  kDelete
 };
 
+/**
+ * @brief A list of thread-safe index implementations.
+ *
+ */
 enum BenchTarget
 {
-  kOurs,
-  kMicrosoft,
-  kSingleCAS
+  kOpenBwTree,
+  kBzTree
 };
-
-#ifdef MWCAS_BENCH_MAX_FIELD_NUM
-constexpr size_t kMaxTargetNum = MWCAS_BENCH_MAX_FIELD_NUM;
-#else
-constexpr size_t kMaxTargetNum = 8;
-#endif
