@@ -65,6 +65,20 @@ class OperationGenerator
       const auto value = rand_engine_();
       const auto end_key = range_generator_(rand_engine_);
       return Operation{IndexOperation::kScan, key, value, end_key};
-    }  // write系の命令も同様に書く
+    } else if (rand_val < workload_.write_ratio){
+      const auto value = rand_engine_();
+      return Operation{IndexOperation::kWrite, key, value};
+    } else if (rand_val < workload_.insert_ratio){
+      const auto value = rand_engine_();
+      return Operation{IndexOperation::kInsert, key, value};
+    } else if (rand_val < workload_.update_ratio){
+      const auto value = rand_engine_();
+      return Operation{IndexOperation::kUpdate, key, value};
+    } else if (rand_val < workload_.delete_ratio){
+      const auto value = rand_engine_();
+      return Operation{IndexOperation::kDelete, key};
+    }
+    // write系の命令も同様に書く   
+    // read <= scan <= write <= insert <= update <= delete
   }
 };
