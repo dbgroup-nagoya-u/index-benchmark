@@ -19,57 +19,21 @@ set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
 #--------------------------------------------------------------------------------------#
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/bztree)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 #--------------------------------------------------------------------------------------#
 # Configure gflags
 #--------------------------------------------------------------------------------------#
-configure_file(external/CMakeLists-gflags.txt.in gflags-download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/gflags-download )
-if(result)
-  message(FATAL_ERROR "CMake step for gflags failed: ${result}")
-endif()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/gflags-download )
-if(result)
-  message(FATAL_ERROR "Build step for gflags failed: ${result}")
-endif()
 
 # prevent building unit tests
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 
-# add gflags directly to our build
-add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/gflags-src
-                 ${CMAKE_CURRENT_BINARY_DIR}/gflags-build
-                 EXCLUDE_FROM_ALL)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/gflags")
 
 #--------------------------------------------------------------------------------------#
 # Configure cpp-utility
 #--------------------------------------------------------------------------------------#
-configure_file(external/CMakeLists-cpp-utility.txt.in cpp-utility-download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cpp-utility-download )
-if(result)
-  message(FATAL_ERROR "CMake step for cpp-utility failed: ${result}")
-endif()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cpp-utility-download )
-if(result)
-  message(FATAL_ERROR "Build step for cpp-utility failed: ${result}")
-endif()
-
-# prevent building unit tests
-set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-
-# add cpp-utility directly to our build
-add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/cpp-utility-src
-                 ${CMAKE_CURRENT_BINARY_DIR}/cpp-utility-build
-                 EXCLUDE_FROM_ALL)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
 
 #--------------------------------------------------------------------------------------#
 # Build Benchmark
@@ -95,6 +59,11 @@ target_link_libraries(
   gflags
   cpp_utility
   bztree
+)
+add_dependencies(
+  cpp_utility
+  bztree
+  gflags
 )
 
 # build unit tests if required
