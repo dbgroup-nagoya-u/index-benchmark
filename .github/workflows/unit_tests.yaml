@@ -14,14 +14,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
 
-    - name: Clone Main Repository
-      uses: actions/checkout@v2
-
-    - name: Clone Submodule - BzTree
+    - name: Clone Repository
       uses: actions/checkout@v2
       with:
-        repository: dbgroup-nagoya-u/bztree
-        path: external/bztree
         submodules: true
         ssh-key: ${{secrets.SSH_KEY_FOR_ACTIONS}}
         persist-credentials: false
