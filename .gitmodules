@@ -10,3 +10,7 @@
 	path = external/gflags
 	url = https://github.com/gflags/gflags.git
 	branch = master
+[submodule "test/external/googletest"]
+	path = test/external/googletest
+	url = https://github.com/google/googletest.git
+	branch = master
