@@ -14,14 +14,14 @@
 
 class WorkerBzTree : public Worker
 {
-  using NUBzTree = ::dbgroup::index::bztree::BzTree<Key, Value>;
+  using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;
 
  private:
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
 
-  NUBzTree *bztree_;
+  BzTree_t *bztree_;
 
  protected:
   /*################################################################################################
@@ -70,14 +70,14 @@ class WorkerBzTree : public Worker
    *##############################################################################################*/
 
   WorkerBzTree(  //
-      NUBzTree *bztree,
+      void *bztree,
       const Workload workload,
       const size_t total_key_num,
       const double skew_parameter,
       const size_t operation_counts,
       const size_t random_seed = 0)
       : Worker{workload, total_key_num, skew_parameter, operation_counts, random_seed},
-        bztree_{bztree}
+        bztree_{reinterpret_cast<BzTree_t *>(bztree)}
   {
   }
 };

@@ -39,6 +39,7 @@
     "Wextra",
     "alignas",
     "bwtree",
+    "bztree",
     "ctest",
     "gflags",
     "gtest",

@@ -60,6 +60,7 @@ DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_bool(open_bw, true, "Use Open-BwTree as a benchmark target");
+DEFINE_bool(bz, true, "Use BzTree as a benchmark target");
 DEFINE_bool(csv, false, "Output benchmark results as CSV format");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency");
 
@@ -80,12 +81,17 @@ main(int argc, char *argv[])
   Workload workload{100, 0, 0, 0, 0, 0};
 
   Log("=== Start MwCAS Benchmark ===");
-  auto bench = MwCASBench{workload,        FLAGS_num_exec,       FLAGS_num_thread,
+  auto bench = IndexBench{workload,        FLAGS_num_exec,       FLAGS_num_thread,
                           FLAGS_num_key,   FLAGS_skew_parameter, random_seed,
                           FLAGS_throughput};
   if (FLAGS_open_bw) {
-    Log("** Run our MwCAS...");
+    Log("** Run Open-BwTree...");
     bench.Run(BenchTarget::kOpenBwTree);
+    Log("** Finish.");
+  }
+  if (FLAGS_bz) {
+    Log("** Run BzTree...");
+    bench.Run(BenchTarget::kBzTree);
     Log("** Finish.");
   }
   Log("==== End MwCAS Benchmark ====");

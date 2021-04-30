@@ -17,6 +17,11 @@ project(
 set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 #--------------------------------------------------------------------------------------#
+# Configure BzTree
+#--------------------------------------------------------------------------------------#
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/bztree)
+
+#--------------------------------------------------------------------------------------#
 # Configure gflags
 #--------------------------------------------------------------------------------------#
 configure_file(external/CMakeLists-gflags.txt.in gflags-download/CMakeLists.txt)
@@ -89,6 +94,7 @@ target_link_libraries(
   pthread
   gflags
   cpp_utility
+  bztree
 )
 
 # build unit tests if required
