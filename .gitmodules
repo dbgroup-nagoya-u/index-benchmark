@@ -2,3 +2,7 @@
 	path = external/bztree
 	url = git@github.com:dbgroup-nagoya-u/bztree.git
 	branch = main
+[submodule "external/cpp-utility"]
+	path = external/cpp-utility
+	url = https://github.com/dbgroup-nagoya-u/cpp-utility.git
+	branch = main
