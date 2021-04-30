@@ -19,6 +19,7 @@
 #include "worker.hpp"
 #include "worker_bztree.hpp"
 #include "worker_open_bwtree.hpp"
+#include "worker_ptree.hpp"
 
 using NUBzTree = ::dbgroup::index::bztree::BzTree<Key, Value>;
 
@@ -203,6 +204,8 @@ class IndexBench
         }
         return index;
       }
+      case kPTree: // TODO: 後で書く
+        return nullptr;
       default:
         return nullptr;
     }
@@ -224,6 +227,8 @@ class IndexBench
         break;
       case kBzTree:
         delete reinterpret_cast<NUBzTree *>(target_index);
+        break;
+      case kPTree: //TODO: 後で書く
         break;
       default:
         break;
@@ -250,6 +255,9 @@ class IndexBench
       case kBzTree:
         return new WorkerBzTree{target_index,    workload_, total_key_num_,
                                 skew_parameter_, exec_num_, random_seed};
+      case kPTree: //TODO: 要修正
+        return new WorkerPTree{workload_, total_key_num_, skew_parameter_, 
+                               exec_num_, random_seed};
       default:
         return nullptr;
     }

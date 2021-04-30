@@ -22,6 +22,12 @@ set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 #--------------------------------------------------------------------------------------#
+# Configure PTree
+#--------------------------------------------------------------------------------------#
+set(DOWNLOAD_PARLAY True)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/PAM")
+
+#--------------------------------------------------------------------------------------#
 # Configure gflags
 #--------------------------------------------------------------------------------------#
 
@@ -59,11 +65,13 @@ target_link_libraries(
   gflags
   cpp_utility
   bztree
+  PAM
 )
 add_dependencies(
   cpp_utility
   bztree
   gflags
+  PAM
 )
 
 # build unit tests if required
