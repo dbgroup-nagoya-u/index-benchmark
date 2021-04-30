@@ -60,7 +60,7 @@ Log(const char *message)
  *################################################################################################*/
 
 /**
- * @brief A class to run MwCAS benchmark.
+ * @brief A class to run benchmark.
  *
  */
 class IndexBench
@@ -92,7 +92,7 @@ class IndexBench
   const bool measure_throughput_;
 
   /*################################################################################################
-   * Private utility functions
+   * Internal utility functions
    *##############################################################################################*/
 
   /**
@@ -179,6 +179,13 @@ class IndexBench
     }
   }
 
+  /**
+   * @brief Create and initialize an index for benchmarking.
+   *
+   * @param target a constant to represent a target implementation
+   * @param random_seed a random seed
+   * @return void* a pointer to a created index
+   */
   void *
   CreateTargetIndex(  //
       const BenchTarget target,
@@ -201,6 +208,12 @@ class IndexBench
     }
   }
 
+  /**
+   * @brief Delete a target index according to its implementation.
+   *
+   * @param target a constant to represent a target implementation
+   * @param target_index a target index to delete
+   */
   void
   DeleteTargetIndex(  //
       const BenchTarget target,
@@ -369,9 +382,9 @@ class IndexBench
     }
 
     /*----------------------------------------------------------------------------------------------
-     * Output benchmark results
+     * Finalization of benchmark
      *--------------------------------------------------------------------------------------------*/
-    Log("Finish running...");
+    Log("Gather benchmark results...");
 
     std::vector<Worker *> results;
     results.reserve(thread_num_);

@@ -80,7 +80,7 @@ main(int argc, char *argv[])
   // temporary workload
   Workload workload{100, 0, 0, 0, 0, 0};
 
-  Log("=== Start MwCAS Benchmark ===");
+  Log("=== Start Benchmark ===");
   auto bench = IndexBench{workload,        FLAGS_num_exec,       FLAGS_num_thread,
                           FLAGS_num_key,   FLAGS_skew_parameter, random_seed,
                           FLAGS_throughput};
@@ -94,7 +94,7 @@ main(int argc, char *argv[])
     bench.Run(BenchTarget::kBzTree);
     Log("** Finish.");
   }
-  Log("==== End MwCAS Benchmark ====");
+  Log("==== End Benchmark ====");
 
   return 0;
 }
