@@ -1,0 +1,4 @@
+[submodule "external/bztree"]
+	path = external/bztree
+	url = git@github.com:dbgroup-nagoya-u/bztree.git
+	branch = main

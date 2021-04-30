@@ -53,6 +53,7 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     gflags
     gtest_main
     cpp_utility
+    bztree
   )
   add_test(NAME ${INDEX_BENCH_TEST_TARGET} COMMAND $<TARGET_FILE:${INDEX_BENCH_TEST_TARGET}>)
 endfunction()

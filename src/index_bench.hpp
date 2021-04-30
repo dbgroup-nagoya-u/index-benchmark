@@ -8,7 +8,6 @@
 #include <limits>
 #include <memory>
 #include <mutex>
-#include <random>
 #include <shared_mutex>
 #include <string>
 #include <thread>
@@ -16,8 +15,15 @@
 #include <vector>
 
 #include "gflags/gflags.h"
+#include "random/zipf.hpp"
 #include "worker.hpp"
+#include "worker_bztree.hpp"
 #include "worker_open_bwtree.hpp"
+
+using NUBzTree = ::dbgroup::index::bztree::BzTree<Key, Value>;
+
+/// temporal
+constexpr size_t kInitialTreeSize = 1000000;
 
 /*##################################################################################################
  * Global variables
@@ -54,10 +60,10 @@ Log(const char *message)
  *################################################################################################*/
 
 /**
- * @brief A class to run MwCAS benchmark.
+ * @brief A class to run benchmark.
  *
  */
-class MwCASBench
+class IndexBench
 {
  private:
   /*################################################################################################
@@ -86,7 +92,7 @@ class MwCASBench
   const bool measure_throughput_;
 
   /*################################################################################################
-   * Private utility functions
+   * Internal utility functions
    *##############################################################################################*/
 
   /**
@@ -174,6 +180,57 @@ class MwCASBench
   }
 
   /**
+   * @brief Create and initialize an index for benchmarking.
+   *
+   * @param target a constant to represent a target implementation
+   * @param random_seed a random seed
+   * @return void* a pointer to a created index
+   */
+  void *
+  CreateTargetIndex(  //
+      const BenchTarget target,
+      const size_t random_seed)
+  {
+    ZipfGenerator zipf_engine{total_key_num_, skew_parameter_, random_seed};
+
+    switch (target) {
+      case kOpenBwTree:
+        return nullptr;
+      case kBzTree: {
+        auto index = new NUBzTree{};
+        for (size_t i = 0; i < kInitialTreeSize; ++i) {
+          index->Insert(zipf_engine(), i);
+        }
+        return index;
+      }
+      default:
+        return nullptr;
+    }
+  }
+
+  /**
+   * @brief Delete a target index according to its implementation.
+   *
+   * @param target a constant to represent a target implementation
+   * @param target_index a target index to delete
+   */
+  void
+  DeleteTargetIndex(  //
+      const BenchTarget target,
+      void *target_index)
+  {
+    switch (target) {
+      case kOpenBwTree:
+        break;
+      case kBzTree:
+        delete reinterpret_cast<NUBzTree *>(target_index);
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
    * @brief Create a worker to run benchmark for a given target implementation.
    *
    * @param target a target implementation
@@ -183,12 +240,16 @@ class MwCASBench
   Worker *
   CreateWorker(  //
       const BenchTarget target,
+      void *target_index,
       const size_t random_seed)
   {
     switch (target) {
       case kOpenBwTree:
         return new WorkerOpenBwTree{workload_, total_key_num_, skew_parameter_, exec_num_,
                                     random_seed};
+      case kBzTree:
+        return new WorkerBzTree{target_index,    workload_, total_key_num_,
+                                skew_parameter_, exec_num_, random_seed};
       default:
         return nullptr;
     }
@@ -205,6 +266,7 @@ class MwCASBench
   RunWorker(  //
       std::promise<Worker *> p,
       const BenchTarget target,
+      void *target_index,
       const size_t random_seed)
   {
     // prepare a worker
@@ -212,7 +274,7 @@ class MwCASBench
 
     {  // create a lock to stop a main thread
       const auto lock = std::shared_lock<std::shared_mutex>(mutex_2nd);
-      worker = CreateWorker(target, random_seed);
+      worker = CreateWorker(target, target_index, random_seed);
     }  // unlock to notice that this worker has been created
 
     {  // wait for benchmark to be ready
@@ -239,7 +301,7 @@ class MwCASBench
    * Public constructors/destructors
    *##############################################################################################*/
 
-  MwCASBench(  //
+  IndexBench(  //
       const Workload workload,
       const size_t num_exec,
       const size_t num_thread,
@@ -257,7 +319,7 @@ class MwCASBench
   {
   }
 
-  ~MwCASBench() = default;
+  ~IndexBench() = default;
 
   /*################################################################################################
    * Public utility functions
@@ -272,6 +334,12 @@ class MwCASBench
   Run(const BenchTarget target)
   {
     /*----------------------------------------------------------------------------------------------
+     * Preparation of a target index
+     *--------------------------------------------------------------------------------------------*/
+    std::mt19937_64 rand_engine{random_seed_};
+    auto target_index = CreateTargetIndex(target, rand_engine());
+
+    /*----------------------------------------------------------------------------------------------
      * Preparation of benchmark workers
      *--------------------------------------------------------------------------------------------*/
     std::vector<std::future<Worker *>> futures;
@@ -280,11 +348,11 @@ class MwCASBench
       const auto lock = std::unique_lock<std::shared_mutex>(mutex_1st);
 
       // create workers in each thread
-      std::mt19937_64 rand_engine{random_seed_};
       for (size_t index = 0; index < thread_num_; ++index) {
         std::promise<Worker *> p;
         futures.emplace_back(p.get_future());
-        std::thread{&MwCASBench::RunWorker, this, std::move(p), target, rand_engine()}.detach();
+        std::thread{&IndexBench::RunWorker, this, std::move(p), target, target_index, rand_engine()}
+            .detach();
       }
 
       // wait for all workers to be created
@@ -314,9 +382,9 @@ class MwCASBench
     }
 
     /*----------------------------------------------------------------------------------------------
-     * Output benchmark results
+     * Finalization of benchmark
      *--------------------------------------------------------------------------------------------*/
-    Log("Finish running...");
+    Log("Gather benchmark results...");
 
     std::vector<Worker *> results;
     results.reserve(thread_num_);
@@ -333,5 +401,6 @@ class MwCASBench
     for (auto &&worker : results) {
       delete worker;
     }
+    DeleteTargetIndex(target, target_index);
   }
 };
