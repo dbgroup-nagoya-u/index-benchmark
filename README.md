@@ -36,7 +36,13 @@ The following command displays available CLI options:
 For example, if you want to measure throughput with 8 threads, execute the following command:
 
 ```bash
-./index_bench --throughput --num-thread 8
+./index_bench --throughput=t --num-thread 8
+```
+
+If you want to measure latency with skewed keys (keys are generated according to Zipf's law), execute the following command:
+
+```bash
+./index_bench --throughput=f --skew-parameter 1.0
 ```
 
 We prepare scripts in `bin` directory to measure performance with a variety of parameters. You can set parameters for benchmarking by `config/bench.env`.
