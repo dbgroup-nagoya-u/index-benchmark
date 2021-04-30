@@ -8,13 +8,13 @@
 class WorkerOpenBwTreeFixture : public ::testing::Test
 {
  public:
-  const int OPERATION_NUM = 100000;
-  static constexpr double kAllowableError = 0.02;
-  const size_t read_ratio = 50;
-  const size_t scan_ratio=  70;
-  const size_t write_ratio= 70;
-  const size_t insert_ratio= 90;
-  const size_t update_ratio=100;
+  const int OPERATION_NUM = 10000;
+  static constexpr double kAllowableError = 0.01;
+  const size_t read_ratio = 16;
+  const size_t scan_ratio=  32;
+  const size_t write_ratio= 48;
+  const size_t insert_ratio= 64;
+  const size_t update_ratio= 80;
   const size_t delete_ratio=100;
   size_t op_ratio[6] = {read_ratio,scan_ratio,write_ratio,insert_ratio,update_ratio,delete_ratio};
   const size_t total_key_num = 10000;
@@ -58,8 +58,7 @@ TEST_F(WorkerOpenBwTreeFixture, MeasureThroughput_Condition_MeasureReasonableExe
   }
   
   for(int i=0;i<6;i++){
-    if(expected_freq[i] == 0)
-      continue;
-    EXPECT_LE(abs(expected_freq[i] - op_freq[i])/expected_freq[i] , kAllowableError);
+    double error_percentage = abs(expected_freq[i] - op_freq[i])/OPERATION_NUM;
+    EXPECT_LE(error_percentage , kAllowableError);
   }
 }
