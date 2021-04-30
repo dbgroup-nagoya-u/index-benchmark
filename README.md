@@ -9,7 +9,7 @@
 ```bash
 sudo apt update && sudo apt install -y build-essential cmake
 cd <path_to_your_workspace>
-git clone --recursively git@github.com:dbgroup-nagoya-u/index-benchmark.git
+git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 ```
 
 ### Build Options
