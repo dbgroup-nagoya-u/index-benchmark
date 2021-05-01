@@ -22,6 +22,7 @@
 #include "worker_ptree.hpp"
 
 using NUBzTree = ::dbgroup::index::bztree::BzTree<Key, Value>;
+using PTree = keyed_map<Key>;
 
 /// temporal
 constexpr size_t kInitialTreeSize = 1000000;
@@ -204,8 +205,15 @@ class IndexBench
         }
         return index;
       }
-      case kPTree: // TODO: 後で書く
-        return nullptr;
+      case kPTree: {
+        auto index = new PTree;
+        for (size_t i = 0; i < kInitialTreeSize; ++i) {
+          // iがkey, zipf_engine()がvalue
+          // zipf_engine()をkeyにすると，10000個しかできない？
+          index->insert(std::make_pair(i, zipf_engine()));
+        }
+        return index;
+      }
       default:
         return nullptr;
     }
@@ -228,7 +236,8 @@ class IndexBench
       case kBzTree:
         delete reinterpret_cast<NUBzTree *>(target_index);
         break;
-      case kPTree: //TODO: 後で書く
+      case kPTree:
+        delete reinterpret_cast<PTree *>(target_index);
         break;
       default:
         break;
@@ -255,9 +264,9 @@ class IndexBench
       case kBzTree:
         return new WorkerBzTree{target_index,    workload_, total_key_num_,
                                 skew_parameter_, exec_num_, random_seed};
-      case kPTree: //TODO: 要修正
-        return new WorkerPTree{workload_, total_key_num_, skew_parameter_, 
-                               exec_num_, random_seed};
+      case kPTree:
+        return new WorkerPTree{target_index,    workload_, total_key_num_, 
+                               skew_parameter_, exec_num_, random_seed};
       default:
         return nullptr;
     }
