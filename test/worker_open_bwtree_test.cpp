@@ -38,6 +38,6 @@ TEST_F(WorkerOpenBwTreeFixture, MeasureThroughput_Condition_MeasureReasonableExe
   const auto total_time =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
 
-  EXPECT_GE(worker->GetTotalExecTime(), 0) ;
+  EXPECT_GE(worker->GetTotalExecTime(), 0);
   EXPECT_LE(worker->GetTotalExecTime(), total_time);
 }
