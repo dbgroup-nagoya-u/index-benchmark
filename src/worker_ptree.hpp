@@ -35,17 +35,13 @@ class WorkerPTree : public Worker
   void
   Scan(const Key begin_key, const Key end_key) override
   {
-    // 範囲内のノードを持つ木を作成
-    PTree_t extracted_tree = PTree_t::range(*ptree_, begin_key, end_key);
-
-    // 範囲内のノードを抽出（pbbs::sequence型）
-    auto extracted_nodes = extracted_tree.entries(extracted_tree);
-    extracted_nodes.clear();
+    PTree_t::entries(PTree_t::range(*ptree_, begin_key, end_key));
   }
 
   void
   Write(const Key key, const Value value) override
   {
+    ptree_->insert(std::make_pair(key, value));
   }
 
   void
@@ -57,11 +53,13 @@ class WorkerPTree : public Worker
   void
   Update(const Key key, const Value value) override
   {
+    ptree_->insert(std::make_pair(key, value));
   }
 
   void
   Delete(const Key key) override
   {
+    PTree_t::remove(ptree_, key);
   }
 
  public:
