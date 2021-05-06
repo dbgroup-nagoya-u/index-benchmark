@@ -38,9 +38,6 @@ class OperationGeneratorFixture : public ::testing::Test
 
 TEST_F(OperationGeneratorFixture, BracketsOperator_StaticWorkload_ErrRateLessThanAllowableErr)
 {
-  // Check  read <= scan <= write <= insert <= update <= delete
-  for (int i = 0; i < 5; i++) EXPECT_LE(op_ratio[i], op_ratio[i + 1]);
-
   // Generate operation and count operation type
 
   int op_freq[6] = {0, 0, 0, 0, 0, 0};
