@@ -24,7 +24,7 @@ class OperationGeneratorFixture : public ::testing::Test
       0, read_ratio, scan_ratio, write_ratio, insert_ratio, update_ratio, delete_ratio};
 
   static constexpr size_t total_key_num = 10000;
-  double skew_parameter = 1.0;
+  static constexpr double skew_parameter = 1.0;
   Workload workload{read_ratio, scan_ratio, write_ratio, insert_ratio, update_ratio, delete_ratio};
   OperationGenerator op_generator = OperationGenerator{workload, total_key_num, skew_parameter};
 
