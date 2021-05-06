@@ -40,7 +40,7 @@ TEST_F(OperationGeneratorFixture, BracketsOperator_StaticWorkload_ErrRateLessTha
 {
   // Generate operation and count operation type
 
-  int op_freq[6] = {0, 0, 0, 0, 0, 0};
+  std::array<size_t, kOperationTypeNum> op_freq = {0, 0, 0, 0, 0, 0};
   for (int i = 0; i < OPERATION_NUM; i++) {
     op_freq[op_generator().type]++;
   }
