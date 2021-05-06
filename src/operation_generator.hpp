@@ -75,7 +75,6 @@ class OperationGenerator
       const auto value = rand_engine_();
       return Operation{IndexOperation::kUpdate, key, value};
     } else {  // rand_val < workload_.delete_ratio
-      const auto value = rand_engine_();
       return Operation{IndexOperation::kDelete, key};
     }
   }
