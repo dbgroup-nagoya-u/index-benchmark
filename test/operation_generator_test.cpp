@@ -45,13 +45,14 @@ TEST_F(OperationGeneratorFixture, BracketsOperator_StaticWorkload_ErrRateLessTha
     ++op_freq[op_generator().type];
   }
 
-  // Test
-  double expected_freq[6];
-  for (int i = 0; i < 6; i++) {
-    if (i == 0)
-      expected_freq[i] = (op_ratio[i] - 0) * (OPERATION_NUM / 100);
-    else
-      expected_freq[i] = (op_ratio[i] - op_ratio[i - 1]) * (OPERATION_NUM / 100);
+  // a workload has percentages like a CDF, so convert it to discrete probability distribution
+  std::array<double, kOperationTypeNum> expected_freq;
+  for (size_t i = 0; i < kOperationTypeNum; ++i) {
+    if (i == 0) {
+      expected_freq[i] = (op_ratio[i] - 0) * (kOperationTypeNum / 100.0);
+    } else {
+      expected_freq[i] = (op_ratio[i] - op_ratio[i - 1]) * (kOperationTypeNum / 100.0);
+    }
   }
 
   for (int i = 0; i < 6; i++) {
