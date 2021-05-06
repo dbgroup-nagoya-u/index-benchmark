@@ -9,7 +9,7 @@
 class OperationGeneratorFixture : public ::testing::Test
 {
  public:
-  const int OPERATION_NUM = 10000;
+  static constexpr size_t kOperationNum = 10000;
   static constexpr double kAllowableError = 0.01;
   const size_t read_ratio = 16;
   const size_t scan_ratio = 32;
