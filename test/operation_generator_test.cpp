@@ -6,7 +6,7 @@
 #include "gtest/gtest.h"
 #include "worker_open_bwtree.hpp"
 
-class WorkerOpenBwTreeFixture : public ::testing::Test
+class OperationGeneratorFixture : public ::testing::Test
 {
  public:
   const int OPERATION_NUM = 10000;
