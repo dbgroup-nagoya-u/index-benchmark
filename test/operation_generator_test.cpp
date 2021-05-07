@@ -11,8 +11,8 @@
 class OperationGeneratorFixture : public ::testing::Test
 {
  public:
-  static constexpr int kRepeatNum = 10000;
-  static constexpr int kOperationTypeNum = 6;
+  static constexpr size_t kRepeatNum = 10000;
+  static constexpr size_t kOperationTypeNum = 6;
   static constexpr double kAllowableError = 0.01;
   static constexpr size_t read_ratio = 16;
   static constexpr size_t scan_ratio = 32;
@@ -45,17 +45,17 @@ TEST_F(OperationGeneratorFixture, BracketsOperator_StaticWorkload_ErrRateLessTha
   // Generate operation and count operation type
 
   std::array<size_t, kOperationTypeNum> op_freq = {0, 0, 0, 0, 0, 0};
-  for (int i = 0; i < kRepeatNum; ++i) {
+  for (size_t i = 0; i < kRepeatNum; ++i) {
     ++op_freq[op_generator().type];
   }
 
   // a workload has percentages like a CDF, so convert it to discrete probability distribution
   std::array<double, kOperationTypeNum> expected_freq;
-  for (int i = 0; i < kOperationTypeNum; ++i) {
+  for (size_t i = 0; i < kOperationTypeNum; ++i) {
     expected_freq[i] = (op_ratio[i + 1] - op_ratio[i]) * (kRepeatNum / 100.0);
   }
 
-  for (int i = 0; i < kOperationTypeNum; ++i) {
+  for (size_t i = 0; i < kOperationTypeNum; ++i) {
     double error_percentage = abs(expected_freq[i] - op_freq[i]) / kRepeatNum;
     EXPECT_LE(error_percentage, kAllowableError);
   }
