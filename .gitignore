@@ -33,3 +33,6 @@
 
 # ignore build directories
 build
+
+# ignore a directory for unit tests
+Testing
