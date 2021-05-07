@@ -55,7 +55,7 @@ class WorkerPTree : public Worker
   void
   Update(const Key key, const Value value) override
   {
-    auto f = [&] (std::pair<int32_t, int64_t>) {return value;}; // 値を更新する関数定義
+    auto f = [&] (std::pair<uint64_t, uint32_t>) {return value;}; // 値を更新する関数定義
     ptree_->update(key, f); // 指定したkeyが存在しない場合は何もしない
   }
 

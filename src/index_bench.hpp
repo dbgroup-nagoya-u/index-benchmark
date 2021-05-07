@@ -208,9 +208,7 @@ class IndexBench
       case kPTree: {
         auto index = new PTree;
         for (size_t i = 0; i < kInitialTreeSize; ++i) {
-          // iがkey, zipf_engine()がvalue
-          // zipf_engine()をkeyにすると，10000個しかできない？
-          index->insert(std::make_pair(i, zipf_engine()));
+          index->insert(std::make_pair(zipf_engine(), i));
         }
         return index;
       }
