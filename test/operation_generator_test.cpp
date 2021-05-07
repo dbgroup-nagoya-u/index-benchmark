@@ -11,20 +11,23 @@
 class OperationGeneratorFixture : public ::testing::Test
 {
  public:
+  // Constants for testing
   static constexpr size_t kRepeatNum = 10000;
   static constexpr size_t kOperationTypeNum = 6;
   static constexpr double kAllowableError = 0.01;
+  static constexpr size_t total_key_num = 10000;
+  static constexpr double skew_parameter = 1.0;
+
+  // Initial workload settings
   static constexpr size_t read_ratio = 16;
   static constexpr size_t scan_ratio = 32;
   static constexpr size_t write_ratio = 48;
   static constexpr size_t insert_ratio = 64;
   static constexpr size_t update_ratio = 80;
   static constexpr size_t delete_ratio = 100;
+
   std::array<size_t, kOperationTypeNum + 1> op_ratio = {
       0, read_ratio, scan_ratio, write_ratio, insert_ratio, update_ratio, delete_ratio};
-
-  static constexpr size_t total_key_num = 10000;
-  static constexpr double skew_parameter = 1.0;
   Workload workload{read_ratio, scan_ratio, write_ratio, insert_ratio, update_ratio, delete_ratio};
   OperationGenerator op_generator = OperationGenerator{workload, total_key_num, skew_parameter};
 
@@ -42,8 +45,7 @@ class OperationGeneratorFixture : public ::testing::Test
 
 TEST_F(OperationGeneratorFixture, BracketsOperator_StaticWorkload_ErrRateLessThanAllowableErr)
 {
-  // Generate operation and count operation type
-
+  // generate operations and count occurrences of each operation type
   std::array<size_t, kOperationTypeNum> op_freq = {0, 0, 0, 0, 0, 0};
   for (size_t i = 0; i < kRepeatNum; ++i) {
     ++op_freq[op_generator().type];
@@ -56,7 +58,7 @@ TEST_F(OperationGeneratorFixture, BracketsOperator_StaticWorkload_ErrRateLessTha
   }
 
   for (size_t i = 0; i < kOperationTypeNum; ++i) {
-    double error_percentage = abs(expected_freq[i] - op_freq[i]) / kRepeatNum;
-    EXPECT_LE(error_percentage, kAllowableError);
+    double error_ratio = abs(expected_freq[i] - op_freq[i]) / kRepeatNum;
+    EXPECT_LE(error_ratio, kAllowableError);
   }
 }
