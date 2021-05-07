@@ -41,19 +41,22 @@ class WorkerPTree : public Worker
   void
   Write(const Key key, const Value value) override
   {
+    // ptree_->insert means "upsert"
     ptree_->insert(std::make_pair(key, value));
   }
 
   void
   Insert(const Key key, const Value value) override
   {
+    // ptree_->insert means "upsert"
     ptree_->insert(std::make_pair(key, value));
   }
 
   void
   Update(const Key key, const Value value) override
   {
-    ptree_->insert(std::make_pair(key, value));
+    auto f = [&] (std::pair<int32_t, int64_t>) {return value;}; // 値を更新する関数定義
+    ptree_->update(key, f); // 指定したkeyが存在しない場合は何もしない
   }
 
   void
