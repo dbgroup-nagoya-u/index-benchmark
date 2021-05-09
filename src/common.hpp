@@ -31,5 +31,6 @@ enum IndexOperation
 enum BenchTarget
 {
   kOpenBwTree,
-  kBzTree
+  kBzTree,
+  kPTree
 };

@@ -61,6 +61,7 @@ DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_bool(open_bw, true, "Use Open-BwTree as a benchmark target");
 DEFINE_bool(bz, true, "Use BzTree as a benchmark target");
+DEFINE_bool(p, true, "Use PTree as a benchmark target");
 DEFINE_bool(csv, false, "Output benchmark results as CSV format");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency");
 
@@ -92,6 +93,11 @@ main(int argc, char *argv[])
   if (FLAGS_bz) {
     Log("** Run BzTree...");
     bench.Run(BenchTarget::kBzTree);
+    Log("** Finish.");
+  }
+  if (FLAGS_p) {
+    Log("** Run PTree...");
+    bench.Run(BenchTarget::kPTree);
     Log("** Finish.");
   }
   Log("==== End Benchmark ====");

@@ -22,6 +22,12 @@ set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 #--------------------------------------------------------------------------------------#
+# Configure PTree
+#--------------------------------------------------------------------------------------#
+#set(DOWNLOAD_PARLAY True)
+#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/PAM")
+
+#--------------------------------------------------------------------------------------#
 # Configure gflags
 #--------------------------------------------------------------------------------------#
 
@@ -49,9 +55,14 @@ target_compile_options(
   index_bench PRIVATE
   -Wall
   -Wextra
+  -mcx16
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
+)
+target_include_directories(
+  index_bench PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/
 )
 target_link_libraries(
   index_bench PRIVATE
@@ -64,6 +75,7 @@ add_dependencies(
   cpp_utility
   bztree
   gflags
+  PAM
 )
 
 # build unit tests if required
