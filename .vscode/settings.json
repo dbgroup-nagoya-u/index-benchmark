@@ -1,4 +1,13 @@
 {
+  "editor.rulers": [
+    88,
+    100
+  ],
+  "editor.renderWhitespace": "all",
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
   "files.exclude": {
     "**/.git": true,
     "**/.svn": true,
@@ -19,13 +28,15 @@
     "editor.formatOnPaste": false,
     "editor.formatOnSave": false,
   },
+  "cmake.configureOnOpen": true,
+  "cmake.buildDirectory": "${workspaceRoot}/build/${buildType}",
   "cpplint.lineLength": 100,
   "cpplint.filters": [
-    "-readability/fn_size",
-    "-whitespace/braces",
     "-build/c++11",
+    "-readability/fn_size",
+    "-runtime/references",
+    "-whitespace/braces",
     "-whitespace/newline",
-    "-runtime/references"
   ],
   "cSpell.words": [
     "CPUs",
@@ -125,6 +136,8 @@
     "cstring": "cpp",
     "future": "cpp",
     "variant": "cpp",
-    "shared_mutex": "cpp"
+    "shared_mutex": "cpp",
+    "bitset": "cpp",
+    "regex": "cpp"
   },
 }
