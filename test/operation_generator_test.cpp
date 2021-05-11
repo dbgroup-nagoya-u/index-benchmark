@@ -15,22 +15,21 @@ class OperationGeneratorFixture : public ::testing::Test
   static constexpr size_t kRepeatNum = 100000;
   static constexpr size_t kOperationTypeNum = 6;
   static constexpr double kAllowableError = 0.01;
-  static constexpr size_t kTotal_key_num = 10000;
-  static constexpr double kSkew_parameter = 1.0;
+  static constexpr size_t kTotalKeyNum = 10000;
+  static constexpr double kSkewParameter = 1.0;
 
   // Initial workload settings
-  static constexpr size_t kRead_ratio = 16;
-  static constexpr size_t kScan_ratio = 32;
-  static constexpr size_t kWrite_ratio = 48;
-  static constexpr size_t kInsert_ratio = 64;
-  static constexpr size_t kUpdate_ratio = 80;
-  static constexpr size_t kDelete_ratio = 100;
+  static constexpr size_t kReadRatio = 16;
+  static constexpr size_t kScanRatio = 32;
+  static constexpr size_t kWriteRatio = 48;
+  static constexpr size_t kInsertRatio = 64;
+  static constexpr size_t kUpdateRatio = 80;
+  static constexpr size_t kDeleteRatio = 100;
 
   std::array<size_t, kOperationTypeNum + 1> op_ratio = {
-      0, kRead_ratio, kScan_ratio, kWrite_ratio, kInsert_ratio, kUpdate_ratio, kDelete_ratio};
-  Workload workload{kRead_ratio,   kScan_ratio,   kWrite_ratio,
-                    kInsert_ratio, kUpdate_ratio, kDelete_ratio};
-  OperationGenerator op_generator = OperationGenerator{workload, kTotal_key_num, kSkew_parameter};
+      0, kReadRatio, kScanRatio, kWriteRatio, kInsertRatio, kUpdateRatio, kDeleteRatio};
+  Workload workload{kReadRatio, kScanRatio, kWriteRatio, kInsertRatio, kUpdateRatio, kDeleteRatio};
+  OperationGenerator op_generator = OperationGenerator{workload, kTotalKeyNum, kSkewParameter};
 
  protected:
   void
