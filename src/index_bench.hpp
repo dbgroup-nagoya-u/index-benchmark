@@ -22,7 +22,7 @@
 #include "worker_ptree.hpp"
 
 using NUBzTree = ::dbgroup::index::bztree::BzTree<Key, Value>;
-using PTree = keyed_map<Key>;
+using PTree = pam_map<ptree_entry<Value>>;
 
 /// temporal
 constexpr size_t kInitialTreeSize = 1000000;

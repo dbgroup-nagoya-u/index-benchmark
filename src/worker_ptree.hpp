@@ -14,7 +14,7 @@
 
 class WorkerPTree : public Worker
 {
-  using PTree_t = keyed_map<Key>;
+  using PTree_t = pam_map<ptree_entry<Value>>;
  private:
   /*################################################################################################
    * Internal member variables
@@ -55,7 +55,7 @@ class WorkerPTree : public Worker
   void
   Update(const Key key, const Value value) override
   {
-    auto f = [&] (std::pair<uint64_t, uint32_t>) {return value;}; // 値を更新する関数定義
+    auto f = [&] (std::pair<uint64_t, uint64_t>) {return value;}; // 値を更新する関数定義
     ptree_->update(key, f); // 指定したkeyが存在しない場合は何もしない
   }
 
