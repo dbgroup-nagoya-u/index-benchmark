@@ -8,5 +8,5 @@ template <class Val>
 struct ptree_entry {
   using key_t = uint64_t;
   using val_t = Val;
-  static bool comp(const key_t& a, const key_t& b) {return a < b;}
+  static bool comp(const key_t& a, const key_t& b) { return a < b;}
 };

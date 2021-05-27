@@ -8,13 +8,14 @@
 #include <utility>
 #include <vector>
 
-#include "ptree_utils.hpp"
 #include "common.hpp"
+#include "ptree_utils.hpp"
 #include "worker.hpp"
 
 class WorkerPTree : public Worker
 {
   using PTree_t = pam_map<ptree_entry<Value>>;
+
  private:
   /*################################################################################################
    * Internal member variables
@@ -55,8 +56,10 @@ class WorkerPTree : public Worker
   void
   Update(const Key key, const Value value) override
   {
-    auto f = [&] (std::pair<uint64_t, uint64_t>) {return value;}; // 値を更新する関数定義
-    ptree_->update(key, f); // 指定したkeyが存在しない場合は何もしない
+    // define function for updating value
+    auto f = [&](std::pair<uint64_t, uint64_t>) { return value; };
+    // do nothing if key does not exist
+    ptree_->update(key, f);
   }
 
   void
