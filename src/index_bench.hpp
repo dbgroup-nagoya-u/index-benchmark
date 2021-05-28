@@ -22,7 +22,7 @@
 #include "worker_ptree.hpp"
 
 using NUBzTree = ::dbgroup::index::bztree::BzTree<Key, Value>;
-using PTree = pam_map<ptree_entry<Value>>;
+using PTree = pam_map<ptree_entry<Key, Value>>;
 
 /// temporal
 constexpr size_t kInitialTreeSize = 1000000;
@@ -263,7 +263,7 @@ class IndexBench
         return new WorkerBzTree{target_index,    workload_, total_key_num_,
                                 skew_parameter_, exec_num_, random_seed};
       case kPTree:
-        return new WorkerPTree{target_index,    workload_, total_key_num_, 
+        return new WorkerPTree{target_index,    workload_, total_key_num_,
                                skew_parameter_, exec_num_, random_seed};
       default:
         return nullptr;

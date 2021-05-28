@@ -14,7 +14,7 @@
 
 class WorkerPTree : public Worker
 {
-  using PTree_t = pam_map<ptree_entry<Value>>;
+  using PTree_t = pam_map<ptree_entry<Key, Value>>;
 
  private:
   /*################################################################################################
@@ -30,7 +30,7 @@ class WorkerPTree : public Worker
   void
   Read(const Key key) override
   {
-    ptree_->find(key);
+    *ptree_->find(key);
   }
 
   void
@@ -57,7 +57,7 @@ class WorkerPTree : public Worker
   Update(const Key key, const Value value) override
   {
     // define function for updating value
-    auto f = [&](std::pair<uint64_t, uint64_t>) { return value; };
+    auto f = [&](std::pair<Key, Value>) { return value; };
     // do nothing if key does not exist
     ptree_->update(key, f);
   }
