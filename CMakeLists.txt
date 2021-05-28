@@ -56,6 +56,7 @@ target_compile_options(
   -Wall
   -Wextra
   -mcx16
+  -DHOMEGROWN
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
