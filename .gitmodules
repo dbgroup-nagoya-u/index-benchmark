@@ -17,3 +17,6 @@
 [submodule "external/PAM"]
 	path = external/PAM
 	url = git@github.com:cmuparlay/PAM.git
+[submodule "external/open_bwtree"]
+	path = external/open_bwtree
+	url = https://github.com/dbgroup-nagoya-u/bwtree
