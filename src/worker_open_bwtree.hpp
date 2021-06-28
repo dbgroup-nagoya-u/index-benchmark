@@ -59,12 +59,11 @@ class WorkerOpenBwTree : public Worker
    *##############################################################################################*/
 
   WorkerOpenBwTree(  //
+      ZipfGenerator &zipf_engine,
       const Workload workload,
-      const size_t total_key_num,
-      const double skew_parameter,
       const size_t operation_counts,
       const size_t random_seed = 0)
-      : Worker{workload, total_key_num, skew_parameter, operation_counts, random_seed}
+      : Worker{zipf_engine, workload, operation_counts, random_seed}
   {
   }
 };
