@@ -49,11 +49,11 @@ ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &see
  * CLI arguments
  *################################################################################################*/
 
-DEFINE_uint64(num_exec, 10000, "The number of operations executed in each thread");
+DEFINE_uint64(num_exec, 10000, "The total number of operations for benchmarking");
 DEFINE_validator(num_exec, &ValidateNonZero);
-DEFINE_uint64(num_thread, 1, "The number of execution threads");
+DEFINE_uint64(num_thread, 1, "The number of worker threads");
 DEFINE_validator(num_thread, &ValidateNonZero);
-DEFINE_uint64(num_key, 10000, "The number of total keys");
+DEFINE_uint64(num_key, 10000, "The total number of keys");
 DEFINE_validator(num_key, &ValidateNonZero);
 DEFINE_uint64(num_init_insert, 1000, "The number of insert operations for initialization");
 DEFINE_validator(num_init_insert, &ValidateNonZero);

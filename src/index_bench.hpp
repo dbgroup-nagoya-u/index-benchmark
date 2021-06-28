@@ -69,16 +69,16 @@ class IndexBench
    * Internal member variables
    *##############################################################################################*/
 
-  /// a ratio of read operations
+  /// a benchmarking workload
   const Workload workload_;
 
   /// the total number of executions
   const size_t total_exec_num_;
 
-  /// the number of execution threads
+  /// the number of worker threads
   const size_t thread_num_;
 
-  /// the number of total keys
+  /// the total number of keys
   const size_t total_key_num_;
 
   /// The number of insert operations for initialization
@@ -247,6 +247,8 @@ class IndexBench
    * @brief Create a worker to run benchmark for a given target implementation.
    *
    * @param target a target implementation
+   * @param target_index a pointer to the benchmarking target index
+   * @param exec_num the number of operations executed by this worker
    * @param random_seed a random seed
    * @return Worker* a created worker
    */
@@ -274,6 +276,8 @@ class IndexBench
    *
    * @param p a promise of a worker pointer that holds benchmark results
    * @param target a target implementation
+   * @param target_index a pointer to the benchmarking target index
+   * @param exec_num the number of operations executed by this worker
    * @param random_seed a random seed
    */
   void
