@@ -72,8 +72,8 @@ class IndexBench
   /// a ratio of read operations
   const Workload workload_;
 
-  /// the number of operations executed in each thread
-  const size_t exec_num_;
+  /// the total number of executions
+  const size_t total_exec_num_;
 
   /// the number of execution threads
   const size_t thread_num_;
@@ -111,7 +111,7 @@ class IndexBench
     }
     avg_nano_time /= thread_num_;
 
-    const size_t total_exec_num = exec_num_ * thread_num_;
+    const size_t total_exec_num = total_exec_num_ * thread_num_;
     const auto throughput = total_exec_num / (avg_nano_time / 1E9);
 
     if (output_format_is_text) {
@@ -135,7 +135,7 @@ class IndexBench
     std::vector<size_t> indexes;
     indexes.reserve(thread_num_);
     for (size_t thread = 0; thread < thread_num_; ++thread) {
-      indexes.emplace_back(exec_num_ - 1);
+      indexes.emplace_back(total_exec_num_ - 1);
       const auto exec_time = workers[thread]->GetLatency(0);
       if (exec_time < lat_0) {
         lat_0 = exec_time;
@@ -143,7 +143,7 @@ class IndexBench
     }
 
     // check latency with descending order
-    const size_t total_exec_num = exec_num_ * thread_num_;
+    const size_t total_exec_num = total_exec_num_ * thread_num_;
     for (size_t count = total_exec_num; count >= total_exec_num * 0.90; --count) {
       size_t target_thread = 0;
       auto max_exec_time = std::numeric_limits<size_t>::min();
@@ -254,15 +254,16 @@ class IndexBench
   CreateWorker(  //
       const BenchTarget target,
       void *target_index,
+      const size_t exec_num,
       const size_t random_seed)
   {
     switch (target) {
       case kOpenBwTree:
-        return new WorkerOpenBwTree{zipf_engine_, workload_, exec_num_, random_seed};
+        return new WorkerOpenBwTree{zipf_engine_, workload_, exec_num, random_seed};
       case kBzTree:
-        return new WorkerBzTree{target_index, zipf_engine_, workload_, exec_num_, random_seed};
+        return new WorkerBzTree{target_index, zipf_engine_, workload_, exec_num, random_seed};
       case kPTree:
-        return new WorkerPTree{target_index, zipf_engine_, workload_, exec_num_, random_seed};
+        return new WorkerPTree{target_index, zipf_engine_, workload_, exec_num, random_seed};
       default:
         return nullptr;
     }
@@ -280,6 +281,7 @@ class IndexBench
       std::promise<Worker *> p,
       const BenchTarget target,
       void *target_index,
+      const size_t exec_num,
       const size_t random_seed)
   {
     // prepare a worker
@@ -287,7 +289,7 @@ class IndexBench
 
     {  // create a lock to stop a main thread
       const auto lock = std::shared_lock<std::shared_mutex>(mutex_2nd);
-      worker = CreateWorker(target, target_index, random_seed);
+      worker = CreateWorker(target, target_index, exec_num, random_seed);
     }  // unlock to notice that this worker has been created
 
     {  // wait for benchmark to be ready
@@ -324,7 +326,7 @@ class IndexBench
       const size_t random_seed,
       const bool measure_throughput)
       : workload_{workload},
-        exec_num_{num_exec},
+        total_exec_num_{num_exec},
         thread_num_{num_thread},
         total_key_num_{num_key},
         init_insert_num_{num_init_insert},
@@ -364,9 +366,17 @@ class IndexBench
 
       // create workers in each thread
       for (size_t index = 0; index < thread_num_; ++index) {
+        // distribute operations to each thread so that the number of executions are almost equal
+        size_t exec_num = total_exec_num_ / thread_num_;
+        if (index == thread_num_ - 1) {
+          exec_num = total_exec_num_ - exec_num * (thread_num_ - 1);
+        }
+
+        // create a worker instance in a certain thread
         std::promise<Worker *> p;
         futures.emplace_back(p.get_future());
-        std::thread{&IndexBench::RunWorker, this, std::move(p), target, target_index, rand_engine()}
+        std::thread{&IndexBench::RunWorker, this,     std::move(p), target,
+                    target_index,           exec_num, rand_engine()}
             .detach();
       }
 
