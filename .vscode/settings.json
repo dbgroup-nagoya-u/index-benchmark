@@ -60,6 +60,7 @@
     "mwcas",
     "numactl",
     "pthread",
+    "ptree",
     "stoul",
     "zipf"
   ],

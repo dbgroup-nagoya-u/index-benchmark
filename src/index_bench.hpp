@@ -193,7 +193,8 @@ class IndexBench
       const BenchTarget target,
       const size_t random_seed)
   {
-    ZipfGenerator zipf_engine{total_key_num_, skew_parameter_, random_seed};
+    std::uniform_int_distribution<> uniform_dist{0, total_key_num_};
+    std::mt19937_64 rand_engine{random_seed_};
 
     switch (target) {
       case kOpenBwTree:
@@ -201,14 +202,14 @@ class IndexBench
       case kBzTree: {
         auto index = new NUBzTree{};
         for (size_t i = 0; i < kInitialTreeSize; ++i) {
-          index->Insert(zipf_engine(), i);
+          index->Insert(uniform_dist(rand_engine), i);
         }
         return index;
       }
       case kPTree: {
         auto index = new PTree;
         for (size_t i = 0; i < kInitialTreeSize; ++i) {
-          index->insert(std::make_pair(zipf_engine(), i));
+          index->insert(std::make_pair(uniform_dist(rand_engine), i));
         }
         return index;
       }
