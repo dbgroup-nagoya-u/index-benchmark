@@ -84,8 +84,8 @@ class IndexBench
   /// The number of insert operations for initialization
   const size_t init_insert_num_;
 
-  /// a skew parameter
-  const double skew_parameter_;
+  /// a random generator according to Zipf's law
+  ZipfGenerator zipf_engine_;
 
   /// a base random seed
   const size_t random_seed_;
@@ -258,14 +258,11 @@ class IndexBench
   {
     switch (target) {
       case kOpenBwTree:
-        return new WorkerOpenBwTree{workload_, total_key_num_, skew_parameter_, exec_num_,
-                                    random_seed};
+        return new WorkerOpenBwTree{zipf_engine_, workload_, exec_num_, random_seed};
       case kBzTree:
-        return new WorkerBzTree{target_index,    workload_, total_key_num_,
-                                skew_parameter_, exec_num_, random_seed};
+        return new WorkerBzTree{target_index, zipf_engine_, workload_, exec_num_, random_seed};
       case kPTree:
-        return new WorkerPTree{target_index,    workload_, total_key_num_,
-                               skew_parameter_, exec_num_, random_seed};
+        return new WorkerPTree{target_index, zipf_engine_, workload_, exec_num_, random_seed};
       default:
         return nullptr;
     }
@@ -331,7 +328,7 @@ class IndexBench
         thread_num_{num_thread},
         total_key_num_{num_key},
         init_insert_num_{num_init_insert},
-        skew_parameter_{skew_parameter},
+        zipf_engine_{total_key_num_, skew_parameter},
         random_seed_{random_seed},
         measure_throughput_{measure_throughput}
   {

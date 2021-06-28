@@ -27,7 +27,7 @@ class OperationGenerator
 
   std::mt19937_64 rand_engine_;
 
-  ZipfGenerator zipf_engine_;
+  ZipfGenerator &zipf_engine_;
 
   std::uniform_int_distribution<size_t> percent_generator_{0, 99};
 
@@ -39,11 +39,10 @@ class OperationGenerator
    *##############################################################################################*/
 
   OperationGenerator(  //
+      ZipfGenerator &zipf_engine,
       const Workload workload,
-      const size_t total_key_num,
-      const double skew_parameter,
       const size_t random_seed = std::random_device{}())
-      : workload_{workload}, rand_engine_{random_seed}, zipf_engine_{total_key_num, skew_parameter}
+      : workload_{workload}, rand_engine_{random_seed}, zipf_engine_{zipf_engine}
   {
   }
 
