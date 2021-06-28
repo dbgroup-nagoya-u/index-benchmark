@@ -55,6 +55,8 @@ DEFINE_uint64(num_thread, 1, "The number of execution threads");
 DEFINE_validator(num_thread, &ValidateNonZero);
 DEFINE_uint64(num_key, 10000, "The number of total keys");
 DEFINE_validator(num_key, &ValidateNonZero);
+DEFINE_uint64(num_init_insert, 1000, "The number of insert operations for initialization");
+DEFINE_validator(num_init_insert, &ValidateNonZero);
 DEFINE_double(skew_parameter, 0, "A skew parameter (based on Zipf's law)");
 DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
@@ -82,9 +84,9 @@ main(int argc, char *argv[])
   Workload workload{100, 0, 0, 0, 0, 0};
 
   Log("=== Start Benchmark ===");
-  auto bench = IndexBench{workload,        FLAGS_num_exec,       FLAGS_num_thread,
-                          FLAGS_num_key,   FLAGS_skew_parameter, random_seed,
-                          FLAGS_throughput};
+  auto bench = IndexBench{workload,      FLAGS_num_exec,        FLAGS_num_thread,
+                          FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
+                          random_seed,   FLAGS_throughput};
   if (FLAGS_open_bw) {
     Log("** Run Open-BwTree...");
     bench.Run(BenchTarget::kOpenBwTree);

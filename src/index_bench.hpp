@@ -24,9 +24,6 @@
 using NUBzTree = ::dbgroup::index::bztree::BzTree<Key, Value>;
 using PTree = pam_map<ptree_entry<Key, Value>>;
 
-/// temporal
-constexpr size_t kInitialTreeSize = 1000000;
-
 /*##################################################################################################
  * Global variables
  *################################################################################################*/
@@ -83,6 +80,9 @@ class IndexBench
 
   /// the number of total keys
   const size_t total_key_num_;
+
+  /// The number of insert operations for initialization
+  const size_t init_insert_num_;
 
   /// a skew parameter
   const double skew_parameter_;
@@ -193,22 +193,22 @@ class IndexBench
       const BenchTarget target,
       const size_t random_seed)
   {
-    std::uniform_int_distribution<> uniform_dist{0, total_key_num_};
-    std::mt19937_64 rand_engine{random_seed_};
+    std::uniform_int_distribution<> uniform_dist{0, static_cast<int>(total_key_num_)};
+    std::mt19937_64 rand_engine{random_seed};
 
     switch (target) {
       case kOpenBwTree:
         return nullptr;
       case kBzTree: {
         auto index = new NUBzTree{};
-        for (size_t i = 0; i < kInitialTreeSize; ++i) {
+        for (size_t i = 0; i < init_insert_num_; ++i) {
           index->Insert(uniform_dist(rand_engine), i);
         }
         return index;
       }
       case kPTree: {
         auto index = new PTree;
-        for (size_t i = 0; i < kInitialTreeSize; ++i) {
+        for (size_t i = 0; i < init_insert_num_; ++i) {
           index->insert(std::make_pair(uniform_dist(rand_engine), i));
         }
         return index;
@@ -322,6 +322,7 @@ class IndexBench
       const size_t num_exec,
       const size_t num_thread,
       const size_t num_key,
+      const size_t num_init_insert,
       const double skew_parameter,
       const size_t random_seed,
       const bool measure_throughput)
@@ -329,6 +330,7 @@ class IndexBench
         exec_num_{num_exec},
         thread_num_{num_thread},
         total_key_num_{num_key},
+        init_insert_num_{num_init_insert},
         skew_parameter_{skew_parameter},
         random_seed_{random_seed},
         measure_throughput_{measure_throughput}
