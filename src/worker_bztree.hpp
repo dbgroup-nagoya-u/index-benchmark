@@ -11,7 +11,6 @@
 #include "bztree/bztree.hpp"
 #include "common.hpp"
 #include "worker.hpp"
-
 class WorkerBzTree : public Worker
 {
   using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;

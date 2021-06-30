@@ -8,8 +8,8 @@
 class WorkerOpenBwTreeFixture : public ::testing::Test
 {
  public:
-  static constexpr size_t kTotalKeyNum = 2;
-  static constexpr size_t kOperationNum = 1000;
+  static constexpr size_t kTotalKeyNum = 1000;
+  static constexpr size_t kOperationNum = 100000;
   static constexpr double kSkewParameter = 0;
   static constexpr size_t kRandomSeed = 0;
 
@@ -19,7 +19,7 @@ class WorkerOpenBwTreeFixture : public ::testing::Test
   void
   SetUp() override
   {
-    Workload workload{100, 0, 0, 0, 0, 0};
+    Workload workload{30, 40, 50, 60, 90, 100};
     worker = std::make_unique<WorkerOpenBwTree>(workload, kTotalKeyNum, kSkewParameter,
                                                 kOperationNum, kRandomSeed);
   }

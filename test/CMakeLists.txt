@@ -38,6 +38,7 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     gtest_main
     cpp_utility
     bztree
+    atomic
   )
   add_dependencies(
     cpp_utility
