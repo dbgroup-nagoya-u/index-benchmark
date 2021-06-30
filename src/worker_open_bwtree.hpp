@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <gtest/gtest.h>
+
 #include <atomic>
 #include <random>
 #include <utility>
@@ -61,6 +63,7 @@ class WorkerOpenBwTree : public Worker
    *##############################################################################################*/
 
  protected:
+  FRIEND_TEST(WorkerOpenBwTreeFixture, OperationTest);
   /*################################################################################################
    * Inherited utility functions
    *##############################################################################################*/
@@ -110,7 +113,7 @@ class WorkerOpenBwTree : public Worker
    *##############################################################################################*/
 
   WorkerOpenBwTree(  //
-      ZipfGenerator &zipf_engine,
+      ZipfGenerator& zipf_engine,
       const Workload workload,
       const size_t operation_counts,
       const size_t random_seed = 0)

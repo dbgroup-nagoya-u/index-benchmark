@@ -12,7 +12,7 @@ class WorkerOpenBwTreeFixture : public ::testing::Test
   static constexpr size_t kOperationNum = 100000;
   static constexpr double kSkewParameter = 0;
   static constexpr size_t kRandomSeed = 0;
-
+  static constexpr size_t kOperationTestKeyNum = 100;
   ZipfGenerator zipf_engine{kTotalKeyNum, kSkewParameter};
 
   std::unique_ptr<WorkerOpenBwTree> worker;
@@ -41,4 +41,37 @@ TEST_F(WorkerOpenBwTreeFixture, MeasureThroughput_Condition_MeasureReasonableExe
 
   EXPECT_GE(worker->GetTotalExecTime(), 0);
   EXPECT_LE(worker->GetTotalExecTime(), total_time);
+}
+
+TEST_F(WorkerOpenBwTreeFixture, OperationTest)
+{
+  // Insert and Read Test
+  for (Key i = 0; i < kOperationTestKeyNum; ++i) {
+    auto value_set = worker->bwtree_->GetValue(i);
+    EXPECT_EQ(0, value_set.size());
+  }
+
+  for (Key i = 0; i < kOperationTestKeyNum; ++i) worker->Insert(i, i);
+
+  for (Key i = 0; i < kOperationTestKeyNum; ++i) {
+    auto value_set = worker->bwtree_->GetValue(i);
+    EXPECT_EQ(1, value_set.size());
+  }
+
+  // Scan Test
+  BwTree_::ForwardIterator* tree_iterator = new BwTree_::ForwardIterator(worker->bwtree_, 0);
+  size_t exist_key_num = 0;
+  while (tree_iterator->IsEnd() == false) {
+    exist_key_num++;
+    (*tree_iterator)++;
+  }
+  EXPECT_EQ(kOperationTestKeyNum, exist_key_num);
+
+  // Delete Test
+  for (Key i = 0; i < 100; i++) worker->Delete(i);
+
+  for (Key i = 0; i < kOperationTestKeyNum; ++i) {
+    auto value_set = worker->bwtree_->GetValue(i);
+    EXPECT_EQ(0, value_set.size());
+  }
 }
