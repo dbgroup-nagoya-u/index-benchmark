@@ -47,15 +47,9 @@ TEST_F(WorkerOpenBwTreeFixture, OperationTest)
 {
   // Insert and Read Test
   for (Key i = 0; i < kOperationTestKeyNum; ++i) {
-    auto value_set = worker->bwtree_->GetValue(i);
-    EXPECT_EQ(0, value_set.size());
-  }
-
-  for (Key i = 0; i < kOperationTestKeyNum; ++i) worker->Insert(i, i);
-
-  for (Key i = 0; i < kOperationTestKeyNum; ++i) {
-    auto value_set = worker->bwtree_->GetValue(i);
-    EXPECT_EQ(1, value_set.size());
+    EXPECT_EQ(0, worker->bwtree_->GetValue(i).size());
+    worker->Insert(i, i);
+    EXPECT_EQ(1, worker->bwtree_->GetValue(i).size());
   }
 
   // Scan Test
@@ -68,10 +62,8 @@ TEST_F(WorkerOpenBwTreeFixture, OperationTest)
   EXPECT_EQ(kOperationTestKeyNum, exist_key_num);
 
   // Delete Test
-  for (Key i = 0; i < 100; i++) worker->Delete(i);
-
   for (Key i = 0; i < kOperationTestKeyNum; ++i) {
-    auto value_set = worker->bwtree_->GetValue(i);
-    EXPECT_EQ(0, value_set.size());
+    worker->Delete(i);
+    EXPECT_EQ(0, worker->bwtree_->GetValue(i).size());
   }
 }
