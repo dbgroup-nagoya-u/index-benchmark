@@ -64,7 +64,6 @@ target_compile_options(
 target_include_directories(
   index_bench PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/
-  ${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src/
 )
 target_link_libraries(
   index_bench PRIVATE
@@ -79,7 +78,6 @@ add_dependencies(
   bztree
   gflags
   PAM
-  open_bwtree
 )
 
 # build unit tests if required
