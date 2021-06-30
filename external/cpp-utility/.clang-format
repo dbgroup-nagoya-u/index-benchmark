@@ -1,7 +1,0 @@
-BasedOnStyle: Google
-ColumnLimit: 100
-AllowShortEnumsOnASingleLine: false
-AlwaysBreakAfterReturnType: AllDefinitions
-BinPackParameters: false
-BreakBeforeBinaryOperators: NonAssignment
-BreakBeforeBraces: Linux
