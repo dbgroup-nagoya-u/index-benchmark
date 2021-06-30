@@ -13,15 +13,22 @@ class WorkerOpenBwTreeFixture : public ::testing::Test
   static constexpr double kSkewParameter = 0;
   static constexpr size_t kRandomSeed = 0;
 
+  ZipfGenerator zipf_engine{kTotalKeyNum, kSkewParameter};
+
   std::unique_ptr<WorkerOpenBwTree> worker;
 
  protected:
   void
   SetUp() override
   {
+<<<<<<< HEAD
     Workload workload{30, 40, 50, 60, 90, 100};
     worker = std::make_unique<WorkerOpenBwTree>(workload, kTotalKeyNum, kSkewParameter,
                                                 kOperationNum, kRandomSeed);
+=======
+    Workload workload{100, 0, 0, 0, 0, 0};
+    worker = std::make_unique<WorkerOpenBwTree>(zipf_engine, workload, kOperationNum, kRandomSeed);
+>>>>>>> main
   }
 
   void

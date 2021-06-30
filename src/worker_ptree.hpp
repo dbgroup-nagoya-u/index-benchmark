@@ -8,13 +8,14 @@
 #include <utility>
 #include <vector>
 
-#include "ptree_utils.hpp"
 #include "common.hpp"
+#include "ptree_utils.hpp"
 #include "worker.hpp"
 
 class WorkerPTree : public Worker
 {
-  using PTree_t = keyed_map<Key>;
+  using PTree_t = pam_map<ptree_entry<Key, Value>>;
+
  private:
   /*################################################################################################
    * Internal member variables
@@ -29,7 +30,7 @@ class WorkerPTree : public Worker
   void
   Read(const Key key) override
   {
-    ptree_->find(key);
+    *ptree_->find(key);
   }
 
   void
@@ -55,8 +56,10 @@ class WorkerPTree : public Worker
   void
   Update(const Key key, const Value value) override
   {
-    auto f = [&] (std::pair<uint64_t, uint32_t>) {return value;}; // 値を更新する関数定義
-    ptree_->update(key, f); // 指定したkeyが存在しない場合は何もしない
+    // define function for updating value
+    auto f = [&](std::pair<Key, Value>) { return value; };
+    // do nothing if key does not exist
+    ptree_->update(key, f);
   }
 
   void
@@ -72,12 +75,11 @@ class WorkerPTree : public Worker
 
   WorkerPTree(  //
       void *ptree,
+      ZipfGenerator &zipf_engine,
       const Workload workload,
-      const size_t total_key_num,
-      const double skew_parameter,
       const size_t operation_counts,
       const size_t random_seed = 0)
-      : Worker{workload, total_key_num, skew_parameter, operation_counts, random_seed},
+      : Worker{zipf_engine, workload, operation_counts, random_seed},
         ptree_{reinterpret_cast<PTree_t *>(ptree)}
   {
   }
