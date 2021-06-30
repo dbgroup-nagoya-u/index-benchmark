@@ -1,5 +1,18 @@
-// Copyright (c) Database Group, Nagoya University. All rights reserved.
-// Licensed under the MIT license.
+/*
+ * Copyright 2021 Database Group, Nagoya University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #pragma once
 
@@ -29,9 +42,6 @@ class ZipfGenerator
   /// the number of bins
   size_t bin_num_;
 
-  /// a random generator
-  std::mt19937_64 random_engine_;
-
   /// a probability generator with range [0, 1.0]
   std::uniform_real_distribution<double> prob_generator_{0, 1};
 
@@ -54,11 +64,9 @@ class ZipfGenerator
    */
   ZipfGenerator(  //
       const size_t bin_num,
-      const double alpha,
-      const size_t seed = std::random_device{}())
+      const double alpha)
   {
     SetZipfParameters(bin_num, alpha);
-    SetRandomSeed(seed);
   }
 
   ~ZipfGenerator() = default;
@@ -75,10 +83,11 @@ class ZipfGenerator
   /**
    * @return size_t a random value according to Zipf's law.
    */
+  template <class RandEngine>
   size_t
-  operator()()
+  operator()(RandEngine &g)
   {
-    const auto target_prob = prob_generator_(random_engine_);
+    const auto target_prob = prob_generator_(g);
 
     // find a target bin by using a binary search
     int64_t begin_index = 0, end_index = bin_num_ - 1, index = end_index / 2;
@@ -136,17 +145,6 @@ class ZipfGenerator
       zipf_cdf_.emplace_back(ith_prob);
     }
     zipf_cdf_[bin_num_ - 1] = 1.0;
-  }
-
-  /**
-   * @brief Set a new random seed.
-   *
-   * @param seed a random seed
-   */
-  void
-  SetRandomSeed(const size_t seed)
-  {
-    random_engine_ = std::mt19937_64{seed};
   }
 };
 
