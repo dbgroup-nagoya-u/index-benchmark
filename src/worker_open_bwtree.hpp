@@ -119,9 +119,9 @@ class WorkerOpenBwTree : public Worker
       const size_t random_seed = 0)
       : Worker{zipf_engine, workload, operation_counts, random_seed}
   {
+    wangziqi2013::bwtree::print_flag = false;
     bwtree_ = new BwTree_{true, WorkerKeyComparator{1}, WorkerKeyEqualityChecker{1}};
     bwtree_->UpdateThreadLocal(1);
     bwtree_->AssignGCID(0);
-    wangziqi2013::bwtree::print_flag = false;
   }
 };
