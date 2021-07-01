@@ -77,6 +77,7 @@ class WorkerOpenBwTree : public Worker
   void
   Write([[maybe_unused]] const Key key, [[maybe_unused]] const Value value) override
   {
+    // a write (upsert) operation is not implemented in Open-Bw-tree
   }
 
   void
@@ -88,11 +89,13 @@ class WorkerOpenBwTree : public Worker
   void
   Update([[maybe_unused]] const Key key, [[maybe_unused]] const Value value) override
   {
+    // an update operation is not implemented in Open-Bw-tree
   }
 
   void
   Delete(const Key key) override
   {
+    // a delete operation in Open-Bw-tree requrires a key-value pair
     bwtree_->Delete(key, key);
   }
 
