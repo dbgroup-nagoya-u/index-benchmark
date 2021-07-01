@@ -8,43 +8,34 @@
 #include <utility>
 #include <vector>
 
-#include "../external/open_bwtree/src/bwtree.cpp"
+#include "../external/open_bwtree/src/bwtree.cpp"  // NOLINT
 #include "common.hpp"
 #include "worker.hpp"
 
 class WorkerKeyComparator
 {
  public:
-  inline bool
+  constexpr bool
   operator()(const Key k1, const Key k2) const
   {
     return k1 < k2;
   }
 
-  WorkerKeyComparator(int dummy)
-  {
-    (void)dummy;
+  explicit constexpr WorkerKeyComparator([[maybe_unused]] int32_t dummy) {}
 
-    return;
-  }
   WorkerKeyComparator() = delete;
 };
 
 class WorkerKeyEqualityChecker
 {
  public:
-  inline bool
+  constexpr bool
   operator()(const Key k1, const Key k2) const
   {
     return k1 == k2;
   }
 
-  WorkerKeyEqualityChecker(int dummy)
-  {
-    (void)dummy;
-
-    return;
-  }
+  explicit constexpr WorkerKeyEqualityChecker([[maybe_unused]] int32_t dummy) {}
 
   WorkerKeyEqualityChecker() = delete;
 };
@@ -54,12 +45,12 @@ class WorkerOpenBwTree : public Worker
   using BwTree_t =
       wangziqi2013::bwtree::BwTree<Key, Value, WorkerKeyComparator, WorkerKeyEqualityChecker>;
 
-  BwTree_t* bwtree_;
-
  private:
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
+
+  BwTree_t* bwtree_;
 
  protected:
   /*################################################################################################
@@ -84,7 +75,7 @@ class WorkerOpenBwTree : public Worker
   }
 
   void
-  Write(const Key key, const Value value) override
+  Write([[maybe_unused]] const Key key, [[maybe_unused]] const Value value) override
   {
   }
 
@@ -95,7 +86,7 @@ class WorkerOpenBwTree : public Worker
   }
 
   void
-  Update(const Key key, const Value value) override
+  Update([[maybe_unused]] const Key key, [[maybe_unused]] const Value value) override
   {
   }
 
