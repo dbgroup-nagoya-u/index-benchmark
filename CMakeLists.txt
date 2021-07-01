@@ -14,7 +14,7 @@ project(
 )
 
 # define source directories
-set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
@@ -48,9 +48,12 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
 # build executable
 add_executable(
   index_bench
-  "${INDEX_BENCH_SOURCE_DIR}/index_bench.cpp"
+  "${INDEX_BENCH_SOURCE_DIR}/src/index_bench.cpp"
 )
-target_compile_features(index_bench PRIVATE "cxx_std_17")
+target_compile_features(
+  index_bench PRIVATE
+  "cxx_std_17"
+)
 target_compile_options(
   index_bench PRIVATE
   -Wall
@@ -63,6 +66,7 @@ target_compile_options(
 )
 target_include_directories(
   index_bench PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/
 )
 target_link_libraries(

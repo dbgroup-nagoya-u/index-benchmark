@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include "../external/open_bwtree/src/bwtree.cpp"  // NOLINT
 #include "common.hpp"
+#include "external/open_bwtree/src/bwtree.cpp"  // NOLINT
 #include "worker.hpp"
 
 class WorkerKeyComparator

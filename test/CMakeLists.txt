@@ -13,11 +13,16 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/googletest")
 
 # define function to add unit tests in the same format
 function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
-  add_executable(${INDEX_BENCH_TEST_TARGET}
+  add_executable(
+    ${INDEX_BENCH_TEST_TARGET}
     "${CMAKE_CURRENT_SOURCE_DIR}/${INDEX_BENCH_TEST_TARGET}.cpp"
   )
-  target_compile_features(${INDEX_BENCH_TEST_TARGET} PRIVATE "cxx_std_17")
-  target_compile_options(${INDEX_BENCH_TEST_TARGET} PRIVATE
+  target_compile_features(
+    ${INDEX_BENCH_TEST_TARGET} PRIVATE
+    "cxx_std_17"
+  )
+  target_compile_options(
+    ${INDEX_BENCH_TEST_TARGET} PRIVATE
     -Wall
     -Wextra
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
@@ -31,6 +36,7 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   target_include_directories(
     ${INDEX_BENCH_TEST_TARGET} PRIVATE
     "${INDEX_BENCH_SOURCE_DIR}"
+    "${INDEX_BENCH_SOURCE_DIR}/src"
   )
   target_link_libraries(
     ${INDEX_BENCH_TEST_TARGET} PRIVATE
@@ -40,7 +46,10 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     bztree
     atomic
   )
-  add_test(NAME ${INDEX_BENCH_TEST_TARGET} COMMAND $<TARGET_FILE:${INDEX_BENCH_TEST_TARGET}>)
+  add_test(
+    NAME ${INDEX_BENCH_TEST_TARGET}
+    COMMAND $<TARGET_FILE:${INDEX_BENCH_TEST_TARGET}>
+  )
 endfunction()
 
 # add unit tests to build targets
