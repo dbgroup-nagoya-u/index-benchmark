@@ -3,15 +3,13 @@
 
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include <atomic>
 #include <random>
 #include <utility>
 #include <vector>
 
+#include "../external/open_bwtree/src/bwtree.cpp"
 #include "common.hpp"
-#include "open_bwtree_utils.hpp"
 #include "worker.hpp"
 
 class WorkerKeyComparator
@@ -51,11 +49,12 @@ class WorkerKeyEqualityChecker
   WorkerKeyEqualityChecker() = delete;
 };
 
-using BwTree_ =
-    wangziqi2013::bwtree::BwTree<Key, Value, WorkerKeyComparator, WorkerKeyEqualityChecker>;
 class WorkerOpenBwTree : public Worker
 {
-  BwTree_* bwtree_;
+  using BwTree_t =
+      wangziqi2013::bwtree::BwTree<Key, Value, WorkerKeyComparator, WorkerKeyEqualityChecker>;
+
+  BwTree_t* bwtree_;
 
  private:
   /*################################################################################################
@@ -63,7 +62,6 @@ class WorkerOpenBwTree : public Worker
    *##############################################################################################*/
 
  protected:
-  FRIEND_TEST(WorkerOpenBwTreeFixture, OperationTest);
   /*################################################################################################
    * Inherited utility functions
    *##############################################################################################*/
@@ -77,7 +75,7 @@ class WorkerOpenBwTree : public Worker
   void
   Scan(const Key begin_key, const Key end_key) override
   {
-    BwTree_::ForwardIterator* tree_iterator = new BwTree_::ForwardIterator(bwtree_, begin_key);
+    BwTree_t::ForwardIterator* tree_iterator = new BwTree_t::ForwardIterator(bwtree_, begin_key);
 
     while (tree_iterator->IsEnd() == false) {
       if ((*tree_iterator)->first > end_key) break;
@@ -120,7 +118,7 @@ class WorkerOpenBwTree : public Worker
       : Worker{zipf_engine, workload, operation_counts, random_seed}
   {
     wangziqi2013::bwtree::print_flag = false;
-    bwtree_ = new BwTree_{true, WorkerKeyComparator{1}, WorkerKeyEqualityChecker{1}};
+    bwtree_ = new BwTree_t{true, WorkerKeyComparator{1}, WorkerKeyEqualityChecker{1}};
     bwtree_->UpdateThreadLocal(1);
     bwtree_->AssignGCID(0);
   }

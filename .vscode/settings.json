@@ -6,6 +6,7 @@
   "editor.renderWhitespace": "all",
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
+  "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true,
   "files.exclude": {
@@ -42,8 +43,10 @@
     "CPUs",
     "DBUILD",
     "DCMAKE",
+    "DHOMEGROWN",
     "DINDEX",
     "DMWCAS",
+    "GCID",
     "GLOG",
     "NUMS",
     "PMEM",
@@ -62,6 +65,7 @@
     "pthread",
     "ptree",
     "stoul",
+    "wangziqi",
     "zipf"
   ],
   "files.associations": {

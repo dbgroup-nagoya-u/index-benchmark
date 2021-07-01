@@ -7,6 +7,9 @@
 
 class WorkerOpenBwTreeFixture : public ::testing::Test
 {
+  using BwTree_t =
+      wangziqi2013::bwtree::BwTree<Key, Value, WorkerKeyComparator, WorkerKeyEqualityChecker>;
+
  public:
   static constexpr size_t kTotalKeyNum = 1000;
   static constexpr size_t kOperationNum = 100000;
@@ -53,7 +56,7 @@ TEST_F(WorkerOpenBwTreeFixture, OperationTest)
   }
 
   // Scan Test
-  BwTree_::ForwardIterator* tree_iterator = new BwTree_::ForwardIterator(worker->bwtree_, 0);
+  BwTree_t::ForwardIterator* tree_iterator = new BwTree_t::ForwardIterator(worker->bwtree_, 0);
   size_t exist_key_num = 0;
   while (tree_iterator->IsEnd() == false) {
     exist_key_num++;

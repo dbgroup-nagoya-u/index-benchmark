@@ -72,14 +72,6 @@ target_link_libraries(
   cpp_utility
   bztree
   atomic
-  gtest_main
-)
-add_dependencies(
-  cpp_utility
-  bztree
-  gflags
-  PAM
-  gtest_main
 )
 
 
