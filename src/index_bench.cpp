@@ -61,7 +61,11 @@ DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_bool(open_bw, true, "Use Open-BwTree as a benchmark target");
 DEFINE_bool(bz, true, "Use BzTree as a benchmark target");
+#ifdef INDEX_BENCH_BUILD_PTREE
 DEFINE_bool(p, true, "Use PTree as a benchmark target");
+#else
+DEFINE_bool(p, false, "Don't use PTree as a benchmark target");
+#endif
 DEFINE_bool(csv, false, "Output benchmark results as CSV format");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency");
 
