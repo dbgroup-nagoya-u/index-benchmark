@@ -61,14 +61,12 @@ target_compile_options(
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
 )
-option(INDEX_BENCH_BUILD_PTREE, "Build ptree" OFF)
-if(${INDEX_BENCH_BUILD_PTREE})
+if(DEFINED INDEX_BENCH_BUILD_PTREE)
   target_compile_definitions(
     index_bench PRIVATE
-    INDEX_BENCH_BUILD_PTREE=${INDEX_BENCH_BUILD_PTREE}
+    INDEX_BENCH_BUILD_PTREE
   )
 endif()
-
 target_include_directories(
   index_bench PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/
