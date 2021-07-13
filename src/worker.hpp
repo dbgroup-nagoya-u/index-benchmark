@@ -71,12 +71,11 @@ class Worker
    * @param random_seed a random seed for reproducibility
    */
   Worker(  //
+      ZipfGenerator &zipf_engine,
       const Workload workload,
-      const size_t total_key_num,
-      const double skew_parameter,
       const size_t operation_counts,
       const size_t random_seed = 0)
-      : operation_engine_{workload, total_key_num, skew_parameter, random_seed},
+      : operation_engine_{zipf_engine, workload, random_seed},
         operation_counts_{operation_counts},
         exec_time_nano_{0}
   {

@@ -28,8 +28,12 @@ class OperationGeneratorFixture : public ::testing::Test
 
   std::array<size_t, kOperationTypeNum + 1> op_ratio = {
       0, kReadRatio, kScanRatio, kWriteRatio, kInsertRatio, kUpdateRatio, kDeleteRatio};
+
   Workload workload{kReadRatio, kScanRatio, kWriteRatio, kInsertRatio, kUpdateRatio, kDeleteRatio};
-  OperationGenerator op_generator = OperationGenerator{workload, kTotalKeyNum, kSkewParameter};
+
+  ZipfGenerator zipf_engine{kTotalKeyNum, kSkewParameter};
+
+  OperationGenerator op_generator = OperationGenerator{zipf_engine, workload};
 
  protected:
   void
