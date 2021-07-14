@@ -8,15 +8,18 @@ buildType:
       buildType: Debug
       settings:
         INDEX_BENCH_BUILD_TESTS: on
+        INDEX_BENCH_BUILD_PTREE: on
     relWithDebInfo:
       short: RelWithDebInfo
       long: Perform optimizations and include debugging informatin
       buildType: RelWithDebInfo
       settings:
         INDEX_BENCH_BUILD_TESTS: on
+        INDEX_BENCH_BUILD_PTREE: on
     release:
       short: Release
       long: Perform optimizations and omit debugging informatin
       buildType: Release
       settings:
         INDEX_BENCH_BUILD_TESTS: on
+        INDEX_BENCH_BUILD_PTREE: on
