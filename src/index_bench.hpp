@@ -209,7 +209,7 @@ class IndexBench
         }
         return index;
       }
-      #ifdef INDEX_BENCH_BUILD_PTREE
+#ifdef INDEX_BENCH_BUILD_PTREE
       case kPTree: {
         auto index = new PTree;
         for (size_t i = 0; i < init_insert_num_; ++i) {
@@ -217,7 +217,7 @@ class IndexBench
         }
         return index;
       }
-      #endif
+#endif
       default:
         return nullptr;
     }
@@ -240,11 +240,11 @@ class IndexBench
       case kBzTree:
         delete reinterpret_cast<NUBzTree *>(target_index);
         break;
-      #ifdef INDEX_BENCH_BUILD_PTREE
+#ifdef INDEX_BENCH_BUILD_PTREE
       case kPTree:
         delete reinterpret_cast<PTree *>(target_index);
         break;
-      #endif
+#endif
       default:
         break;
     }
@@ -271,10 +271,10 @@ class IndexBench
         return new WorkerOpenBwTree{zipf_engine_, workload_, exec_num, random_seed};
       case kBzTree:
         return new WorkerBzTree{target_index, zipf_engine_, workload_, exec_num, random_seed};
-      #ifdef INDEX_BENCH_BUILD_PTREE
+#ifdef INDEX_BENCH_BUILD_PTREE
       case kPTree:
         return new WorkerPTree{target_index, zipf_engine_, workload_, exec_num, random_seed};
-      #endif
+#endif
       default:
         return nullptr;
     }
