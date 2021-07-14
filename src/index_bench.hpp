@@ -19,10 +19,13 @@
 #include "worker.hpp"
 #include "worker_bztree.hpp"
 #include "worker_open_bwtree.hpp"
+
+#ifdef INDEX_BENCH_BUILD_PTREE
 #include "worker_ptree.hpp"
+using PTree = pam_map<ptree_entry<Key, Value>>;
+#endif
 
 using NUBzTree = ::dbgroup::index::bztree::BzTree<Key, Value>;
-using PTree = pam_map<ptree_entry<Key, Value>>;
 
 /*##################################################################################################
  * Global variables
@@ -206,6 +209,7 @@ class IndexBench
         }
         return index;
       }
+#ifdef INDEX_BENCH_BUILD_PTREE
       case kPTree: {
         auto index = new PTree;
         for (size_t i = 0; i < init_insert_num_; ++i) {
@@ -213,6 +217,7 @@ class IndexBench
         }
         return index;
       }
+#endif
       default:
         return nullptr;
     }
@@ -235,9 +240,11 @@ class IndexBench
       case kBzTree:
         delete reinterpret_cast<NUBzTree *>(target_index);
         break;
+#ifdef INDEX_BENCH_BUILD_PTREE
       case kPTree:
         delete reinterpret_cast<PTree *>(target_index);
         break;
+#endif
       default:
         break;
     }
@@ -264,8 +271,10 @@ class IndexBench
         return new WorkerOpenBwTree{zipf_engine_, workload_, exec_num, random_seed};
       case kBzTree:
         return new WorkerBzTree{target_index, zipf_engine_, workload_, exec_num, random_seed};
+#ifdef INDEX_BENCH_BUILD_PTREE
       case kPTree:
         return new WorkerPTree{target_index, zipf_engine_, workload_, exec_num, random_seed};
+#endif
       default:
         return nullptr;
     }
