@@ -44,45 +44,6 @@ class Worker
   /// execution time for each operation [ns]
   std::vector<size_t> exec_times_nano_;
 
-  /*################################################################################################
-   * Internal utility functions
-   *##############################################################################################*/
-
-  constexpr void
-  Read(const Key key)
-  {
-    index_.Read(key);
-  }
-
-  constexpr void
-  Scan([[maybe_unused]] const Key begin_key, [[maybe_unused]] const Key end_key)
-  {
-  }
-
-  constexpr void
-  Write(const Key key, const Value value)
-  {
-    index_.Write(key, value);
-  }
-
-  constexpr void
-  Insert(const Key key, const Value value)
-  {
-    index_.Insert(key, value);
-  }
-
-  constexpr void
-  Update(const Key key, const Value value)
-  {
-    index_.Update(key, value);
-  }
-
-  constexpr void
-  Delete(const Key key)
-  {
-    index_.Delete(key);
-  }
-
  public:
   /*################################################################################################
    * Public constructors/destructors
@@ -123,6 +84,45 @@ class Worker
   Worker &operator=(const Worker &) = delete;
   Worker(Worker &&) = default;
   Worker &operator=(Worker &&) = default;
+
+  /*################################################################################################
+   * Public read/write APIs
+   *##############################################################################################*/
+
+  constexpr void
+  Read(const Key key)
+  {
+    index_.Read(key);
+  }
+
+  constexpr void
+  Scan([[maybe_unused]] const Key begin_key, [[maybe_unused]] const Key end_key)
+  {
+  }
+
+  constexpr void
+  Write(const Key key, const Value value)
+  {
+    index_.Write(key, value);
+  }
+
+  constexpr void
+  Insert(const Key key, const Value value)
+  {
+    index_.Insert(key, value);
+  }
+
+  constexpr void
+  Update(const Key key, const Value value)
+  {
+    index_.Update(key, value);
+  }
+
+  constexpr void
+  Delete(const Key key)
+  {
+    index_.Delete(key);
+  }
 
   /*################################################################################################
    * Public utility functions
