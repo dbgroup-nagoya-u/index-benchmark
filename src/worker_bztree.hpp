@@ -35,9 +35,8 @@ class WorkerBzTree : public Worker
   }
 
   void
-  Scan(const Key begin_key, const Key end_key) override
+  Scan([[maybe_unused]] const Key begin_key, [[maybe_unused]] const Key end_key) override
   {
-    bztree_->Scan(begin_key, true, end_key, false);
   }
 
   void
