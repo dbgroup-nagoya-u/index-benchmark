@@ -25,6 +25,11 @@
 #include "bztree/bztree.hpp"
 using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;
 
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+#include "open_bwtree_wrapper.hpp"
+using OpenBwTree_t = OpenBwTreeWrapper<Key, Value>;
+#endif
+
 #ifdef INDEX_BENCH_BUILD_PTREE
 #include "ptree_wrapper.hpp"
 using PTree_t = PTreeWrapper<Key, Value>;

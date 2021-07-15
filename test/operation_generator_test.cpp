@@ -6,7 +6,6 @@
 #include <array>
 
 #include "gtest/gtest.h"
-#include "worker_open_bwtree.hpp"
 
 class OperationGeneratorFixture : public ::testing::Test
 {

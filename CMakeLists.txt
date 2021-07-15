@@ -62,6 +62,17 @@ target_link_libraries(
 )
 
 #--------------------------------------------------------------------------------------#
+# Build OpenBw-Tree for benchmarking
+#--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_BUILD_OPEN_BWTREE, "Build OpenBw-Tree as a benchmarking target" OFF)
+if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
+  target_compile_definitions(
+    index_bench PRIVATE
+    INDEX_BENCH_BUILD_OPEN_BWTREE
+  )
+endif()
+
+#--------------------------------------------------------------------------------------#
 # Build PTree for benchmarking
 #--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_BUILD_PTREE, "Build PTree as a benchmarking target" OFF)

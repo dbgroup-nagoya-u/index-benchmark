@@ -42,6 +42,7 @@
     "CPUs",
     "DBUILD",
     "DCMAKE",
+    "DHOMEGROWN",
     "DINDEX",
     "DMWCAS",
     "GLOG",
