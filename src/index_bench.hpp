@@ -114,8 +114,7 @@ class IndexBench
     }
     avg_nano_time /= thread_num_;
 
-    const size_t total_exec_num = total_exec_num_ * thread_num_;
-    const auto throughput = total_exec_num / (avg_nano_time / 1E9);
+    const auto throughput = total_exec_num_ / (avg_nano_time / 1E9);
 
     if (output_format_is_text) {
       std::cout << "Throughput [Ops/s]: " << throughput << std::endl;
