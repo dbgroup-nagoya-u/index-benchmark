@@ -60,6 +60,7 @@
     "libnuma",
     "mwcas",
     "numactl",
+    "pbbslib",
     "pthread",
     "ptree",
     "stoul",
