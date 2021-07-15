@@ -91,24 +91,24 @@ main(int argc, char *argv[])
   Workload workload{100, 0, 0, 0, 0, 0};
 
   Log("=== Start Benchmark ===");
-  auto bench = IndexBench{workload,      FLAGS_num_exec,        FLAGS_num_thread,
-                          FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
-                          random_seed,   FLAGS_throughput};
-  if (FLAGS_open_bw) {
-    Log("** Run Open-BwTree...");
-    bench.Run(BenchTarget::kOpenBwTree);
-    Log("** Finish.");
-  }
+  // if (FLAGS_open_bw) {
+  //   Log("** Run Open-BwTree **");
+  //   bench.Run(BenchTarget::kOpenBwTree);
+  //   Log("** Finish **");
+  // }
   if (FLAGS_bz) {
-    Log("** Run BzTree...");
-    bench.Run(BenchTarget::kBzTree);
-    Log("** Finish.");
+    auto bench = IndexBench<BzTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
+                                      FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
+                                      random_seed,   FLAGS_throughput};
+    Log("** Run BzTree **");
+    bench.Run();
+    Log("** Finish **");
   }
 #ifdef INDEX_BENCH_BUILD_PTREE
   if (FLAGS_p) {
-    Log("** Run PTree...");
+    Log("** Run PTree **");
     bench.Run(BenchTarget::kPTree);
-    Log("** Finish.");
+    Log("** Finish **");
   }
 #endif
   Log("==== End Benchmark ====");
