@@ -1,5 +1,18 @@
-// Copyright (c) Database Group, Nagoya University. All rights reserved.
-// Licensed under the MIT license.
+/*
+ * Copyright 2021 Database Group, Nagoya University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "index_bench.hpp"
 
@@ -61,8 +74,15 @@ DEFINE_double(skew_parameter, 0, "A skew parameter (based on Zipf's law)");
 DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
-DEFINE_bool(open_bw, true, "Use Open-BwTree as a benchmark target");
 DEFINE_bool(bz, true, "Use BzTree as a benchmark target");
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+DEFINE_bool(open_bw, true, "Use Open-BwTree as a benchmark target");
+#else
+DEFINE_bool(open_bw,
+            false,
+            "OpenBw-Tree is not built as a benchmark target. If you want to measure OpenBw-Tree's "
+            "performance, set 'INDEX_BENCH_BUILD_OPEN_BWTREE' as a compile option.");
+#endif
 #ifdef INDEX_BENCH_BUILD_PTREE
 DEFINE_bool(p, true, "Use PTree as a benchmark target");
 #else
@@ -91,24 +111,33 @@ main(int argc, char *argv[])
   Workload workload{100, 0, 0, 0, 0, 0};
 
   Log("=== Start Benchmark ===");
-  auto bench = IndexBench{workload,      FLAGS_num_exec,        FLAGS_num_thread,
-                          FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
-                          random_seed,   FLAGS_throughput};
-  if (FLAGS_open_bw) {
-    Log("** Run Open-BwTree...");
-    bench.Run(BenchTarget::kOpenBwTree);
-    Log("** Finish.");
-  }
   if (FLAGS_bz) {
-    Log("** Run BzTree...");
-    bench.Run(BenchTarget::kBzTree);
-    Log("** Finish.");
+    auto bench = IndexBench<BzTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
+                                      FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
+                                      random_seed,   FLAGS_throughput};
+    Log("** Run BzTree **");
+    bench.Run();
+    Log("** Finish **");
   }
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+  if (FLAGS_open_bw) {
+    auto bench =
+        IndexBench<OpenBwTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
+                                 FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
+                                 random_seed,   FLAGS_throughput};
+    Log("** Run Open-BwTree **");
+    bench.Run();
+    Log("** Finish **");
+  }
+#endif
 #ifdef INDEX_BENCH_BUILD_PTREE
   if (FLAGS_p) {
-    Log("** Run PTree...");
-    bench.Run(BenchTarget::kPTree);
-    Log("** Finish.");
+    auto bench = IndexBench<PTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
+                                     FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
+                                     random_seed,   FLAGS_throughput};
+    Log("** Run PTree **");
+    bench.Run();
+    Log("** Finish **");
   }
 #endif
   Log("==== End Benchmark ====");

@@ -14,7 +14,13 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 
 ### Build Options
 
-- `INDEX_BENCH_BUILD_TESTS`: build unit tests if `on` (default: `off`).
+- `INDEX_BENCH_BUILD_OPEN_BWTREE`: Build a benchmarker with OpenBw-Tree if `on` (default: `off`).
+- `INDEX_BENCH_BUILD_PTREE`: Build a benchmarker with PTree if `on` (default: `off`).
+    - Note: When you measure the performance of indexes other than PTree, turn off this option because PTree reserves threads for parallel writing.
+
+### Build Options for Unit Testing
+
+- `INDEX_BENCH_BUILD_TESTS`: Build unit tests if `on` (default: `off`).
 
 ### Build and Run Unit Tests
 

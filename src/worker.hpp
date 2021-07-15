@@ -1,5 +1,18 @@
-// Copyright (c) Database Group, Nagoya University. All rights reserved.
-// Licensed under the MIT license.
+/*
+ * Copyright 2021 Database Group, Nagoya University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #pragma once
 
@@ -14,9 +27,11 @@
 #include "operation_generator.hpp"
 
 /**
- * @brief An abstract class of a worker thread for benchmarking.
+ * @brief A class of a worker thread for benchmarking.
  *
+ * @tparam Index target index structure
  */
+template <class Index>
 class Worker
 {
  private:
@@ -24,11 +39,14 @@ class Worker
    * Internal member variables
    *##############################################################################################*/
 
+  /// the number of operations executed in this worker
+  const size_t operation_counts_;
+
+  /// a reference to a target index
+  Index &index_;
+
   /// an operation generator according to a given workload
   OperationGenerator operation_engine_;
-
-  /// the number of operations executed in each thread
-  size_t operation_counts_;
 
   /// a queue that holds index read/write operations
   std::vector<Operation> operation_queue_;
@@ -38,23 +56,6 @@ class Worker
 
   /// execution time for each operation [ns]
   std::vector<size_t> exec_times_nano_;
-
- protected:
-  /*################################################################################################
-   * Inherited utility functions
-   *##############################################################################################*/
-
-  virtual void Read(const Key key) = 0;
-
-  virtual void Scan(const Key begin_key, const Key end_key) = 0;
-
-  virtual void Write(const Key key, const Value value) = 0;
-
-  virtual void Insert(const Key key, const Value value) = 0;
-
-  virtual void Update(const Key key, const Value value) = 0;
-
-  virtual void Delete(const Key key) = 0;
 
  public:
   /*################################################################################################
@@ -71,12 +72,14 @@ class Worker
    * @param random_seed a random seed for reproducibility
    */
   Worker(  //
+      Index &index,
       ZipfGenerator &zipf_engine,
       const Workload workload,
       const size_t operation_counts,
       const size_t random_seed = 0)
-      : operation_engine_{zipf_engine, workload, random_seed},
-        operation_counts_{operation_counts},
+      : operation_counts_{operation_counts},
+        index_{index},
+        operation_engine_{zipf_engine, workload, random_seed},
         exec_time_nano_{0}
   {
     exec_times_nano_.reserve(operation_counts_);
@@ -88,7 +91,51 @@ class Worker
     }
   }
 
-  virtual ~Worker() = default;
+  ~Worker() = default;
+
+  Worker(const Worker &) = delete;
+  Worker &operator=(const Worker &) = delete;
+  Worker(Worker &&) = default;
+  Worker &operator=(Worker &&) = default;
+
+  /*################################################################################################
+   * Public read/write APIs
+   *##############################################################################################*/
+
+  constexpr void
+  Read(const Key key)
+  {
+    index_.Read(key);
+  }
+
+  constexpr void
+  Scan([[maybe_unused]] const Key begin_key, [[maybe_unused]] const Key end_key)
+  {
+  }
+
+  constexpr void
+  Write(const Key key, const Value value)
+  {
+    index_.Write(key, value);
+  }
+
+  constexpr void
+  Insert(const Key key, const Value value)
+  {
+    index_.Insert(key, value);
+  }
+
+  constexpr void
+  Update(const Key key, const Value value)
+  {
+    index_.Update(key, value);
+  }
+
+  constexpr void
+  Delete(const Key key)
+  {
+    index_.Delete(key);
+  }
 
   /*################################################################################################
    * Public utility functions
@@ -98,7 +145,7 @@ class Worker
    * @brief Measure and store execution time for each operation.
    *
    */
-  void
+  constexpr void
   MeasureLatency()
   {
     assert(operation_queue_.size() == operation_counts_);
@@ -141,7 +188,7 @@ class Worker
    * @brief Measure and store total execution time.
    *
    */
-  void
+  constexpr void
   MeasureThroughput()
   {
     assert(operation_queue_.size() == operation_counts_);
@@ -182,7 +229,7 @@ class Worker
    * @brief Sort execution time to compute percentiled latency.
    *
    */
-  void
+  constexpr void
   SortExecutionTimes()
   {
     std::sort(exec_times_nano_.begin(), exec_times_nano_.end());
@@ -192,7 +239,7 @@ class Worker
    * @param index a target index to get latency
    * @return size_t `index`-th execution time
    */
-  size_t
+  constexpr size_t
   GetLatency(const size_t index) const
   {
     return exec_times_nano_[index];
@@ -201,7 +248,7 @@ class Worker
   /**
    * @return size_t total execution time
    */
-  size_t
+  constexpr size_t
   GetTotalExecTime() const
   {
     return exec_time_nano_;

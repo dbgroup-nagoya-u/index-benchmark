@@ -1,5 +1,18 @@
-// Copyright (c) Database Group, Nagoya University. All rights reserved.
-// Licensed under the MIT license.
+/*
+ * Copyright 2021 Database Group, Nagoya University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #pragma once
 
@@ -17,15 +30,23 @@
 #include "gflags/gflags.h"
 #include "random/zipf.hpp"
 #include "worker.hpp"
-#include "worker_bztree.hpp"
-#include "worker_open_bwtree.hpp"
 
-#ifdef INDEX_BENCH_BUILD_PTREE
-#include "worker_ptree.hpp"
-using PTree = pam_map<ptree_entry<Key, Value>>;
+/*##################################################################################################
+ * Target index implementations
+ *################################################################################################*/
+
+#include "bztree/bztree.hpp"
+using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;
+
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+#include "open_bwtree_wrapper.hpp"
+using OpenBwTree_t = OpenBwTreeWrapper<Key, Value>;
 #endif
 
-using NUBzTree = ::dbgroup::index::bztree::BzTree<Key, Value>;
+#ifdef INDEX_BENCH_BUILD_PTREE
+#include "ptree_wrapper.hpp"
+using PTree_t = PTreeWrapper<Key, Value>;
+#endif
 
 /*##################################################################################################
  * Global variables
@@ -65,9 +86,12 @@ Log(const char *message)
  * @brief A class to run benchmark.
  *
  */
+template <class Index>
 class IndexBench
 {
  private:
+  using Worker_t = Worker<Index>;
+
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
@@ -96,6 +120,9 @@ class IndexBench
   /// true: throughput, false: latency
   const bool measure_throughput_;
 
+  /// a target index instance
+  Index target_index_;
+
   /*################################################################################################
    * Internal utility functions
    *##############################################################################################*/
@@ -106,7 +133,7 @@ class IndexBench
    * @param workers worker pointers that hold benchmark results
    */
   void
-  LogThroughput(const std::vector<Worker *> &workers) const
+  LogThroughput(const std::vector<Worker_t *> &workers) const
   {
     size_t avg_nano_time = 0;
     for (auto &&worker : workers) {
@@ -114,8 +141,7 @@ class IndexBench
     }
     avg_nano_time /= thread_num_;
 
-    const size_t total_exec_num = total_exec_num_ * thread_num_;
-    const auto throughput = total_exec_num / (avg_nano_time / 1E9);
+    const auto throughput = total_exec_num_ / (avg_nano_time / 1E9);
 
     if (output_format_is_text) {
       std::cout << "Throughput [Ops/s]: " << throughput << std::endl;
@@ -130,7 +156,7 @@ class IndexBench
    * @param workers worker pointers that hold benchmark results
    */
   void
-  LogLatency(const std::vector<Worker *> &workers) const
+  LogLatency(const std::vector<Worker_t *> &workers) const
   {
     size_t lat_0 = std::numeric_limits<size_t>::max(), lat_90, lat_95, lat_99, lat_100;
 
@@ -185,98 +211,18 @@ class IndexBench
   }
 
   /**
-   * @brief Create and initialize an index for benchmarking.
+   * @brief Initialize an index for benchmarking.
    *
-   * @param target a constant to represent a target implementation
    * @param random_seed a random seed
-   * @return void* a pointer to a created index
    */
-  void *
-  CreateTargetIndex(  //
-      const BenchTarget target,
-      const size_t random_seed)
+  void
+  InitializeTargetIndex(const size_t random_seed)
   {
     std::uniform_int_distribution<> uniform_dist{0, static_cast<int>(total_key_num_)};
     std::mt19937_64 rand_engine{random_seed};
 
-    switch (target) {
-      case kOpenBwTree:
-        return nullptr;
-      case kBzTree: {
-        auto index = new NUBzTree{};
-        for (size_t i = 0; i < init_insert_num_; ++i) {
-          index->Insert(uniform_dist(rand_engine), i);
-        }
-        return index;
-      }
-#ifdef INDEX_BENCH_BUILD_PTREE
-      case kPTree: {
-        auto index = new PTree;
-        for (size_t i = 0; i < init_insert_num_; ++i) {
-          index->insert(std::make_pair(uniform_dist(rand_engine), i));
-        }
-        return index;
-      }
-#endif
-      default:
-        return nullptr;
-    }
-  }
-
-  /**
-   * @brief Delete a target index according to its implementation.
-   *
-   * @param target a constant to represent a target implementation
-   * @param target_index a target index to delete
-   */
-  void
-  DeleteTargetIndex(  //
-      const BenchTarget target,
-      void *target_index)
-  {
-    switch (target) {
-      case kOpenBwTree:
-        break;
-      case kBzTree:
-        delete reinterpret_cast<NUBzTree *>(target_index);
-        break;
-#ifdef INDEX_BENCH_BUILD_PTREE
-      case kPTree:
-        delete reinterpret_cast<PTree *>(target_index);
-        break;
-#endif
-      default:
-        break;
-    }
-  }
-
-  /**
-   * @brief Create a worker to run benchmark for a given target implementation.
-   *
-   * @param target a target implementation
-   * @param target_index a pointer to the benchmarking target index
-   * @param exec_num the number of operations executed by this worker
-   * @param random_seed a random seed
-   * @return Worker* a created worker
-   */
-  Worker *
-  CreateWorker(  //
-      const BenchTarget target,
-      void *target_index,
-      const size_t exec_num,
-      const size_t random_seed)
-  {
-    switch (target) {
-      case kOpenBwTree:
-        return new WorkerOpenBwTree{zipf_engine_, workload_, exec_num, random_seed};
-      case kBzTree:
-        return new WorkerBzTree{target_index, zipf_engine_, workload_, exec_num, random_seed};
-#ifdef INDEX_BENCH_BUILD_PTREE
-      case kPTree:
-        return new WorkerPTree{target_index, zipf_engine_, workload_, exec_num, random_seed};
-#endif
-      default:
-        return nullptr;
+    for (size_t i = 0; i < init_insert_num_; ++i) {
+      target_index_.Insert(uniform_dist(rand_engine), uniform_dist(rand_engine));
     }
   }
 
@@ -284,25 +230,21 @@ class IndexBench
    * @brief Run a worker thread to measure throuput/latency.
    *
    * @param p a promise of a worker pointer that holds benchmark results
-   * @param target a target implementation
-   * @param target_index a pointer to the benchmarking target index
    * @param exec_num the number of operations executed by this worker
    * @param random_seed a random seed
    */
   void
   RunWorker(  //
-      std::promise<Worker *> p,
-      const BenchTarget target,
-      void *target_index,
+      std::promise<Worker_t *> p,
       const size_t exec_num,
       const size_t random_seed)
   {
     // prepare a worker
-    Worker *worker;
+    Worker_t *worker;
 
     {  // create a lock to stop a main thread
       const auto lock = std::shared_lock<std::shared_mutex>(mutex_2nd);
-      worker = CreateWorker(target, target_index, exec_num, random_seed);
+      worker = new Worker_t{target_index_, zipf_engine_, workload_, exec_num, random_seed};
     }  // unlock to notice that this worker has been created
 
     {  // wait for benchmark to be ready
@@ -358,39 +300,38 @@ class IndexBench
   /**
    * @brief Run benchmark and output results to stdout.
    *
-   * @param target a target implementation
    */
   void
-  Run(const BenchTarget target)
+  Run()
   {
     /*----------------------------------------------------------------------------------------------
      * Preparation of a target index
      *--------------------------------------------------------------------------------------------*/
     std::mt19937_64 rand_engine{random_seed_};
-    auto target_index = CreateTargetIndex(target, rand_engine());
+    InitializeTargetIndex(rand_engine());
 
     /*----------------------------------------------------------------------------------------------
      * Preparation of benchmark workers
      *--------------------------------------------------------------------------------------------*/
-    std::vector<std::future<Worker *>> futures;
+    Log("Prepare workers for benchmarking...");
+
+    std::vector<std::future<Worker_t *>> futures;
 
     {  // create a lock to stop workers from running
       const auto lock = std::unique_lock<std::shared_mutex>(mutex_1st);
 
       // create workers in each thread
-      for (size_t index = 0; index < thread_num_; ++index) {
+      for (size_t i = 0; i < thread_num_; ++i) {
         // distribute operations to each thread so that the number of executions are almost equal
         size_t exec_num = total_exec_num_ / thread_num_;
-        if (index == thread_num_ - 1) {
+        if (i == thread_num_ - 1) {
           exec_num = total_exec_num_ - exec_num * (thread_num_ - 1);
         }
 
         // create a worker instance in a certain thread
-        std::promise<Worker *> p;
+        std::promise<Worker_t *> p;
         futures.emplace_back(p.get_future());
-        std::thread{&IndexBench::RunWorker, this,     std::move(p), target,
-                    target_index,           exec_num, rand_engine()}
-            .detach();
+        std::thread{&IndexBench::RunWorker, this, std::move(p), exec_num, rand_engine()}.detach();
       }
 
       // wait for all workers to be created
@@ -422,9 +363,9 @@ class IndexBench
     /*----------------------------------------------------------------------------------------------
      * Finalization of benchmark
      *--------------------------------------------------------------------------------------------*/
-    Log("Gather benchmark results...");
+    Log("Gather benchmark results...\n");
 
-    std::vector<Worker *> results;
+    std::vector<Worker_t *> results;
     results.reserve(thread_num_);
     for (auto &&future : futures) {
       results.emplace_back(future.get());
@@ -439,6 +380,5 @@ class IndexBench
     for (auto &&worker : results) {
       delete worker;
     }
-    DeleteTargetIndex(target, target_index);
   }
 };

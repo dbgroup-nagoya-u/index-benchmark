@@ -22,12 +22,6 @@ set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 #--------------------------------------------------------------------------------------#
-# Configure PTree
-#--------------------------------------------------------------------------------------#
-#set(DOWNLOAD_PARLAY True)
-#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/PAM")
-
-#--------------------------------------------------------------------------------------#
 # Configure gflags
 #--------------------------------------------------------------------------------------#
 
@@ -55,21 +49,9 @@ target_compile_options(
   index_bench PRIVATE
   -Wall
   -Wextra
-  -mcx16
-  -DHOMEGROWN
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
-)
-if(DEFINED INDEX_BENCH_BUILD_PTREE)
-  target_compile_definitions(
-    index_bench PRIVATE
-    INDEX_BENCH_BUILD_PTREE
-  )
-endif()
-target_include_directories(
-  index_bench PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/
 )
 target_link_libraries(
   index_bench PRIVATE
@@ -78,14 +60,41 @@ target_link_libraries(
   cpp_utility
   bztree
 )
-add_dependencies(
-  cpp_utility
-  bztree
-  gflags
-  PAM
-)
 
-# build unit tests if required
+#--------------------------------------------------------------------------------------#
+# Build OpenBw-Tree for benchmarking
+#--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_BUILD_OPEN_BWTREE, "Build OpenBw-Tree as a benchmarking target" OFF)
+if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
+  target_compile_definitions(
+    index_bench PRIVATE
+    INDEX_BENCH_BUILD_OPEN_BWTREE
+  )
+endif()
+
+#--------------------------------------------------------------------------------------#
+# Build PTree for benchmarking
+#--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_BUILD_PTREE, "Build PTree as a benchmarking target" OFF)
+if(${INDEX_BENCH_BUILD_PTREE})
+  target_compile_options(
+    index_bench PRIVATE
+    -mcx16
+    -DHOMEGROWN
+  )
+  target_include_directories(
+    index_bench PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/
+  )
+  target_compile_definitions(
+    index_bench PRIVATE
+    INDEX_BENCH_BUILD_PTREE
+  )
+endif()
+
+#--------------------------------------------------------------------------------------#
+# Build unit tests if required
+#--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_BUILD_TESTS, "Build unit tests" OFF)
 if(${INDEX_BENCH_BUILD_TESTS})
   # enable CTest
