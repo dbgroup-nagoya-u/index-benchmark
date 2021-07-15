@@ -22,14 +22,43 @@
 #include <vector>
 
 #include "common.hpp"
+#include "external/open_bwtree/src/bwtree.cpp"  // NOLINT
+class WorkerKeyComparator
+{
+ public:
+  constexpr bool
+  operator()(const Key k1, const Key k2) const
+  {
+    return k1 < k2;
+  }
+
+  explicit constexpr WorkerKeyComparator([[maybe_unused]] int32_t dummy) {}
+  WorkerKeyComparator() = delete;
+};
+
+class WorkerKeyEqualityChecker
+{
+ public:
+  constexpr bool
+  operator()(const Key k1, const Key k2) const
+  {
+    return k1 == k2;
+  }
+  explicit constexpr WorkerKeyEqualityChecker([[maybe_unused]] int32_t dummy) {}
+  WorkerKeyEqualityChecker() = delete;
+};
 
 template <class Key, class Value>
 class OpenBwTreeWrapper
 {
+  using BwTree_t =
+      wangziqi2013::bwtree::BwTree<Key, Value, WorkerKeyComparator, WorkerKeyEqualityChecker>;
+
  private:
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
+  BwTree_t* bwtree_;
 
  public:
   /*################################################################################################
@@ -45,40 +74,52 @@ class OpenBwTreeWrapper
    *##############################################################################################*/
 
   constexpr void
-  Read([[maybe_unused]] const Key key)
+  Read( const Key key)
   {
+    bwtree_->GetValue(key);
   }
 
   constexpr void
   Scan(  //
-      [[maybe_unused]] const Key begin_key,
-      [[maybe_unused]] const Key end_key)
+       const Key begin_key,
+       const Key end_key)
   {
+    BwTree_t::ForwardIterator* tree_iterator = new BwTree_t::ForwardIterator(bwtree_, begin_key);
+
+    while (tree_iterator->IsEnd() == false) {
+      if ((*tree_iterator)->first > end_key) break;
+      ++(*tree_iterator);
+    }
   }
 
   constexpr void
   Write(  //
-      [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)
+       const Key key,
+       const Value value)
   {
+    // a write (upsert) operation is not implemented in Open-Bw-tree
   }
 
   constexpr void
   Insert(  //
-      [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)
+       const Key key,
+       const Value value)
   {
+    bwtree_->Insert(key, value);
   }
 
   constexpr void
   Update(  //
-      [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)
+       const Key key,
+       const Value value)
   {
+    // an update operation is not implemented in Open-Bw-tree
   }
 
   constexpr void
-  Delete([[maybe_unused]] const Key key)
+  Delete( const Key key)
   {
+    // a delete operation in Open-Bw-tree requrires a key-value pair
+    bwtree_->Delete(key, key);
   }
 };
