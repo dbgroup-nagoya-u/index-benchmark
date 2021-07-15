@@ -26,8 +26,8 @@
 using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;
 
 #ifdef INDEX_BENCH_BUILD_PTREE
-#include "worker_ptree.hpp"
-using PTree = pam_map<ptree_entry<Key, Value>>;
+#include "ptree_wrapper.hpp"
+using PTree_t = PTreeWrapper<Key, Value>;
 #endif
 
 /*##################################################################################################

@@ -106,8 +106,11 @@ main(int argc, char *argv[])
   }
 #ifdef INDEX_BENCH_BUILD_PTREE
   if (FLAGS_p) {
+    auto bench = IndexBench<PTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
+                                     FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
+                                     random_seed,   FLAGS_throughput};
     Log("** Run PTree **");
-    bench.Run(BenchTarget::kPTree);
+    bench.Run();
     Log("** Finish **");
   }
 #endif
