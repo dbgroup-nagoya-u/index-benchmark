@@ -296,7 +296,8 @@ class IndexBench
   {
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      target_index_.ReserveThreads(thread_num_);
+      target_index_.ReserveThreads(thread_num_ + 1);
+      target_index_.RegisterThread();
     }
 #endif
   }

@@ -255,7 +255,7 @@ class Worker
   }
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  constexpr void
+  void
   RegisterOpenBwTreeThread()
   {
     index_.RegisterThread();

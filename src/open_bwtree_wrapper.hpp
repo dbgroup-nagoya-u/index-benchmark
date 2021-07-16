@@ -31,30 +31,6 @@ thread_local int wangziqi2013::bwtree::BwTreeBase::gc_id = -1;
 
 std::atomic<size_t> wangziqi2013::bwtree::BwTreeBase::total_thread_num{0};
 
-class WorkerKeyComparator
-{
- public:
-  constexpr WorkerKeyComparator() {}
-
-  constexpr bool
-  operator()(const Key k1, const Key k2) const
-  {
-    return k1 < k2;
-  }
-};
-
-class WorkerKeyEqualityChecker
-{
- public:
-  constexpr WorkerKeyEqualityChecker() {}
-
-  constexpr bool
-  operator()(const Key k1, const Key k2) const
-  {
-    return k1 == k2;
-  }
-};
-
 template <class Key, class Value>
 class OpenBwTreeWrapper
 {

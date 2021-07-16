@@ -108,7 +108,7 @@ main(int argc, char *argv[])
   const auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
   // temporary workload
-  Workload workload{100, 0, 0, 0, 0, 0};
+  Workload workload{50, 0, 0, 50, 0, 0};
 
   Log("=== Start Benchmark ===");
   if (FLAGS_bz) {
@@ -121,12 +121,11 @@ main(int argc, char *argv[])
   }
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if (FLAGS_open_bw) {
-    auto bench =
-        IndexBench<OpenBwTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
-                                 FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
-                                 random_seed,   FLAGS_throughput};
+    auto bench = std::make_unique<IndexBench<OpenBwTree_t>>(
+        workload, FLAGS_num_exec, FLAGS_num_thread, FLAGS_num_key, FLAGS_num_init_insert,
+        FLAGS_skew_parameter, random_seed, FLAGS_throughput);
     Log("** Run Open-BwTree **");
-    bench.Run();
+    bench->Run();
     Log("** Finish **");
   }
 #endif
