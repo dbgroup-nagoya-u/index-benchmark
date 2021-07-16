@@ -17,6 +17,7 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <random>
 #include <utility>
 #include <vector>
@@ -85,14 +86,12 @@ class OpenBwTreeWrapper
       const Key begin_key,
       const Key end_key)
   {
-    auto tree_iterator = new ForwardIterator{bwtree_, begin_key};
+    auto tree_iterator = std::make_unique<ForwardIterator>(bwtree_, begin_key);
 
     while (tree_iterator->IsEnd() == false) {
       if ((*tree_iterator)->first > end_key) break;
       ++(*tree_iterator);
     }
-
-    delete tree_iterator;
   }
 
   constexpr void

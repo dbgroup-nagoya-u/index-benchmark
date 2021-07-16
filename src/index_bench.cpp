@@ -108,7 +108,7 @@ main(int argc, char *argv[])
   const auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
   // temporary workload
-  Workload workload{50, 0, 0, 50, 0, 0};
+  Workload workload{100, 0, 0, 0, 0, 0};
 
   Log("=== Start Benchmark ===");
   if (FLAGS_bz) {

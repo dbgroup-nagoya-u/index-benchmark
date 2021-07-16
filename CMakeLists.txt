@@ -89,7 +89,6 @@ if(${INDEX_BENCH_BUILD_PTREE})
   target_compile_options(
     index_bench PRIVATE
     -mcx16
-    -DHOMEGROWN
   )
   target_include_directories(
     index_bench PRIVATE
@@ -98,6 +97,7 @@ if(${INDEX_BENCH_BUILD_PTREE})
   target_compile_definitions(
     index_bench PRIVATE
     INDEX_BENCH_BUILD_PTREE
+    HOMEGROWN
   )
 endif()
 

@@ -89,11 +89,11 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     target_compile_options(
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
       -mcx16
-      -DHOMEGROWN
     )
     target_compile_definitions(
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_BUILD_PTREE
+      HOMEGROWN
     )
   endif()
 
