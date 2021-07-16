@@ -121,11 +121,12 @@ main(int argc, char *argv[])
   }
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if (FLAGS_open_bw) {
-    auto bench = std::make_unique<IndexBench<OpenBwTree_t>>(
-        workload, FLAGS_num_exec, FLAGS_num_thread, FLAGS_num_key, FLAGS_num_init_insert,
-        FLAGS_skew_parameter, random_seed, FLAGS_throughput);
+    auto bench =
+        IndexBench<OpenBwTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
+                                 FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
+                                 random_seed,   FLAGS_throughput};
     Log("** Run Open-BwTree **");
-    bench->Run();
+    bench.Run();
     Log("** Finish **");
   }
 #endif
