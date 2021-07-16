@@ -21,8 +21,15 @@
 #include <utility>
 #include <vector>
 
-#include "../external/open_bwtree/src/bwtree.cpp"  // NOLINT
+#include "../external/open_bwtree/src/bwtree.h"  // NOLINT
 #include "common.hpp"
+
+/// always disable print
+bool wangziqi2013::bwtree::print_flag = false;
+
+thread_local int wangziqi2013::bwtree::BwTreeBase::gc_id = -1;
+
+std::atomic<size_t> wangziqi2013::bwtree::BwTreeBase::total_thread_num{0};
 
 class WorkerKeyComparator
 {
@@ -51,33 +58,54 @@ class WorkerKeyEqualityChecker
 template <class Key, class Value>
 class OpenBwTreeWrapper
 {
-  using BwTree_t =
-      wangziqi2013::bwtree::BwTree<Key, Value, WorkerKeyComparator, WorkerKeyEqualityChecker>;
+  using BwTree_t = wangziqi2013::bwtree::BwTree<Key, Value>;
   using ForwardIterator = typename BwTree_t::ForwardIterator;
 
  private:
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
-  BwTree_t* bwtree_;
+  BwTree_t bwtree_;
 
  public:
   /*################################################################################################
    * Public constructors/destructors
    *##############################################################################################*/
 
-  OpenBwTreeWrapper() {}
+  OpenBwTreeWrapper() : bwtree_{} {}
 
-  ~OpenBwTreeWrapper() = default;
+  ~OpenBwTreeWrapper() { ReserveThreads(0); }
 
   /*################################################################################################
    * Public utility functions
    *##############################################################################################*/
 
   constexpr void
+  ReserveThreads(const size_t total_thread_num)
+  {
+    bwtree_.UpdateThreadLocal(total_thread_num);
+  }
+
+  constexpr void
+  RegisterThread(const size_t thread_id)
+  {
+    bwtree_.AssignGCID(static_cast<int>(thread_id));
+  }
+
+  constexpr void
+  UnregisterThread(const size_t thread_id)
+  {
+    bwtree_.UnregisterThread(static_cast<int>(thread_id));
+  }
+
+  /*################################################################################################
+   * Public read/write APIs
+   *##############################################################################################*/
+
+  constexpr void
   Read(const Key key)
   {
-    bwtree_->GetValue(key);
+    bwtree_.GetValue(key);
   }
 
   constexpr void
@@ -108,7 +136,7 @@ class OpenBwTreeWrapper
       const Key key,
       const Value value)
   {
-    bwtree_->Insert(key, value);
+    bwtree_.Insert(key, value);
   }
 
   constexpr void
@@ -123,6 +151,6 @@ class OpenBwTreeWrapper
   Delete(const Key key)
   {
     // a delete operation in Open-Bw-tree requrires a key-value pair
-    bwtree_->Delete(key, key);
+    bwtree_.Delete(key, key);
   }
 };

@@ -253,4 +253,24 @@ class Worker
   {
     return exec_time_nano_;
   }
+
+#ifdef INDEX_BENCH_BUILD_PTREE
+  constexpr void
+  ReserveOpenBwTreeThreads(const size_t total_thread_num)
+  {
+    index_.ReserveThreads(total_thread_num);
+  }
+
+  constexpr void
+  RegisterOpenBwTreeThread(const size_t thread_id)
+  {
+    index_.RegisterThread(thread_id);
+  }
+
+  constexpr void
+  UnregisterOpenBwTreeThread(const size_t thread_id)
+  {
+    index_.UnregisterThread(thread_id);
+  }
+#endif
 };
