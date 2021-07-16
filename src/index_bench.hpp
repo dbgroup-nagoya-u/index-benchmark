@@ -245,6 +245,11 @@ class IndexBench
     {  // create a lock to stop a main thread
       const auto lock = std::shared_lock<std::shared_mutex>(mutex_2nd);
       worker = new Worker_t{target_index_, zipf_engine_, workload_, exec_num, random_seed};
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+      if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
+        worker->RegisterOpenBwTreeThread();
+      }
+#endif
     }  // unlock to notice that this worker has been created
 
     {  // wait for benchmark to be ready
@@ -289,6 +294,11 @@ class IndexBench
         random_seed_{random_seed},
         measure_throughput_{measure_throughput}
   {
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
+      target_index_.ReserveThreads(thread_num_);
+    }
+#endif
   }
 
   ~IndexBench() = default;

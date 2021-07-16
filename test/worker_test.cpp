@@ -64,10 +64,10 @@ class WorkerFixture : public ::testing::Test
     worker =
         std::make_unique<Worker<Index>>(index, zipf_engine, workload, kOperationNum, kRandomSeed);
 
-#ifdef INDEX_BENCH_BUILD_PTREE
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      worker->ReserveOpenBwTreeThreads(1);
-      worker->RegisterOpenBwTreeThread(0);
+      index.ReserveThreads(1);
+      worker->RegisterOpenBwTreeThread();
     }
 #endif
   }
@@ -75,11 +75,6 @@ class WorkerFixture : public ::testing::Test
   void
   TearDown() override
   {
-#ifdef INDEX_BENCH_BUILD_PTREE
-    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      worker->UnregisterOpenBwTreeThread(0);
-    }
-#endif
   }
 
   /*################################################################################################

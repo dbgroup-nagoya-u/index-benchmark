@@ -74,7 +74,7 @@ class OpenBwTreeWrapper
 
   OpenBwTreeWrapper() : bwtree_{} {}
 
-  ~OpenBwTreeWrapper() { ReserveThreads(0); }
+  ~OpenBwTreeWrapper() {}
 
   /*################################################################################################
    * Public utility functions
@@ -87,15 +87,9 @@ class OpenBwTreeWrapper
   }
 
   constexpr void
-  RegisterThread(const size_t thread_id)
+  RegisterThread()
   {
-    bwtree_.AssignGCID(static_cast<int>(thread_id));
-  }
-
-  constexpr void
-  UnregisterThread(const size_t thread_id)
-  {
-    bwtree_.UnregisterThread(static_cast<int>(thread_id));
+    wangziqi2013::bwtree::BwTreeBase::RegisterThread();
   }
 
   /*################################################################################################
