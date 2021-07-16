@@ -64,6 +64,7 @@
     "pthread",
     "ptree",
     "stoul",
+    "wangziqi",
     "zipf"
   ],
   "files.associations": {
