@@ -88,6 +88,7 @@ option(INDEX_BENCH_BUILD_PTREE, "Build PTree as a benchmarking target" OFF)
 if(${INDEX_BENCH_BUILD_PTREE})
   target_compile_options(
     index_bench PRIVATE
+    -mcx16
     -DHOMEGROWN
   )
   target_include_directories(

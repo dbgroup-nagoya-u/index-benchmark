@@ -88,6 +88,7 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   if(${INDEX_BENCH_BUILD_PTREE})
     target_compile_options(
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
+      -mcx16
       -DHOMEGROWN
     )
     target_compile_definitions(
