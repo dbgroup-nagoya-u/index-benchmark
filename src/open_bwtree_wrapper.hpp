@@ -87,13 +87,17 @@ class OpenBwTreeWrapper
   constexpr void
   Scan(  //
       const Key begin_key,
-      const Key end_key)
+      const Key scan_range)
   {
-    auto tree_iterator = std::make_unique<ForwardIterator>(bwtree_, begin_key);
+    const auto end_key = begin_key + scan_range;
+    Value sum = 0;
 
-    while (tree_iterator->IsEnd() == false) {
-      if ((*tree_iterator)->first > end_key) break;
-      ++(*tree_iterator);
+    ForwardIterator tree_iterator{&bwtree_, begin_key};
+    for (; !tree_iterator.IsEnd(); ++tree_iterator) {
+      auto &&[key, value] = *tree_iterator;
+      if (key > end_key) break;
+
+      sum += value;
     }
   }
 

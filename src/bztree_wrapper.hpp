@@ -28,6 +28,7 @@ template <class Key, class Value>
 class BzTreeWrapper
 {
   using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;
+  using ReturnCode = ::dbgroup::index::bztree::ReturnCode;
   using RecordPage_t = ::dbgroup::index::bztree::RecordPage<Key, Value>;
 
  private:
@@ -59,10 +60,20 @@ class BzTreeWrapper
   constexpr void
   Scan(  //
       const Key begin_key,
-      const Key end_key)
+      const Key scan_range)
   {
+    const auto end_key = begin_key + scan_range;
+    Value sum = 0;
+
     RecordPage_t scan_results;
     bztree_.Scan(scan_results, &begin_key, true, &end_key, true);
+    while (!scan_results.empty()) {
+      for (auto &&[key, value] : scan_results) sum += value;
+
+      const auto next_key = scan_results.GetLastKey();
+      if (next_key == end_key) break;
+      bztree_.Scan(scan_results, &next_key, false, &end_key, true);
+    }
   }
 
   constexpr void

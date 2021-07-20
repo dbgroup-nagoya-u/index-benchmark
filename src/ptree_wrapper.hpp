@@ -17,6 +17,7 @@
 #pragma once
 
 #include <atomic>
+#include <limits>
 #include <random>
 #include <utility>
 #include <vector>
@@ -42,6 +43,7 @@ struct ptree_entry {
 template <class Key, class Value>
 class PTreeWrapper
 {
+  using ptree_entry_t = ptree_entry<Key, Value>;
   using PTree_t = pam_map<ptree_entry<Key, Value>>;
 
  private:
@@ -71,27 +73,37 @@ class PTreeWrapper
   }
 
   constexpr void
-  Scan(const Key begin_key, const Key end_key)
+  Scan(  //
+      const Key begin_key,
+      const Key scan_range)
   {
+    const auto end_key = begin_key + scan_range;
+
     PTree_t::entries(PTree_t::range(ptree_, begin_key, end_key));
   }
 
   constexpr void
-  Write(const Key key, const Value value)
+  Write(  //
+      const Key key,
+      const Value value)
   {
     // ptree_->insert means "upsert"
     ptree_.insert(std::make_pair(key, value));
   }
 
   constexpr void
-  Insert(const Key key, const Value value)
+  Insert(  //
+      const Key key,
+      const Value value)
   {
     // ptree_->insert means "upsert"
     ptree_.insert(std::make_pair(key, value));
   }
 
   constexpr void
-  Update(const Key key, const Value value)
+  Update(  //
+      const Key key,
+      const Value value)
   {
     // define function for updating value
     auto f = [&](std::pair<Key, Value>) { return value; };
