@@ -235,6 +235,12 @@ class Worker
     std::sort(exec_times_nano_.begin(), exec_times_nano_.end());
   }
 
+  constexpr size_t
+  GetExecNum() const
+  {
+    return this->operation_counts_;
+  }
+
   /**
    * @param index a target index to get latency
    * @return size_t `index`-th execution time

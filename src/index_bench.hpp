@@ -164,7 +164,7 @@ class IndexBench
     std::vector<size_t> indexes;
     indexes.reserve(thread_num_);
     for (size_t thread = 0; thread < thread_num_; ++thread) {
-      indexes.emplace_back(total_exec_num_ - 1);
+      indexes.emplace_back(workers[thread]->GetExecNum() - 1);
       const auto exec_time = workers[thread]->GetLatency(0);
       if (exec_time < lat_0) {
         lat_0 = exec_time;
@@ -172,8 +172,7 @@ class IndexBench
     }
 
     // check latency with descending order
-    const size_t total_exec_num = total_exec_num_ * thread_num_;
-    for (size_t count = total_exec_num; count >= total_exec_num * 0.90; --count) {
+    for (size_t count = total_exec_num_; count >= total_exec_num_ * 0.90; --count) {
       size_t target_thread = 0;
       auto max_exec_time = std::numeric_limits<size_t>::min();
       for (size_t thread = 0; thread < thread_num_; ++thread) {
@@ -185,13 +184,13 @@ class IndexBench
       }
 
       // if `count` reaches target percentiles, store its latency
-      if (count == total_exec_num) {
+      if (count == total_exec_num_) {
         lat_100 = max_exec_time;
-      } else if (count == static_cast<size_t>(total_exec_num * 0.99)) {
+      } else if (count == static_cast<size_t>(total_exec_num_ * 0.99)) {
         lat_99 = max_exec_time;
-      } else if (count == static_cast<size_t>(total_exec_num * 0.95)) {
+      } else if (count == static_cast<size_t>(total_exec_num_ * 0.95)) {
         lat_95 = max_exec_time;
-      } else if (count == static_cast<size_t>(total_exec_num * 0.90)) {
+      } else if (count == static_cast<size_t>(total_exec_num_ * 0.90)) {
         lat_90 = max_exec_time;
       }
 
