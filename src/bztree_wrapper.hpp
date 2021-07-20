@@ -50,10 +50,10 @@ class BzTreeWrapper
    * Public utility functions
    *##############################################################################################*/
 
-  constexpr void
+  constexpr bool
   Read(const Key key)
   {
-    bztree_.Read(key);
+    return bztree_.Read(key).first == ReturnCode::kSuccess;
   }
 
   constexpr void

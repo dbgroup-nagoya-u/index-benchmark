@@ -75,10 +75,13 @@ class OpenBwTreeWrapper
    * Public read/write APIs
    *##############################################################################################*/
 
-  constexpr void
+  constexpr bool
   Read(const Key key)
   {
-    bwtree_.GetValue(key);
+    std::vector<Value> read_results;
+    bwtree_.GetValue(key, read_results);
+
+    return !read_results.empty();
   }
 
   constexpr void

@@ -63,10 +63,11 @@ class PTreeWrapper
    * Public utility functions
    *##############################################################################################*/
 
-  constexpr void
+  constexpr bool
   Read(const Key key)
   {
-    ptree_.find(key);
+    constexpr Value kDefaultVal = std::numeric_limits<Value>::max();
+    return ptree_.find(key, kDefaultVal) != kDefaultVal;
   }
 
   constexpr void
