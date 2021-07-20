@@ -68,9 +68,17 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   # Build OpenBw-Tree for benchmarking
   #--------------------------------------------------------------------------------------#
   if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
+    target_compile_options(
+      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+      -mcx16
+    )
     target_compile_definitions(
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_BUILD_OPEN_BWTREE
+    )
+    target_link_libraries(
+      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+      atomic
     )
   endif()
 
@@ -81,15 +89,11 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     target_compile_options(
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
       -mcx16
-      -DHOMEGROWN
-    )
-    target_include_directories(
-      ${INDEX_BENCH_TEST_TARGET} PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/
     )
     target_compile_definitions(
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_BUILD_PTREE
+      HOMEGROWN
     )
   endif()
 

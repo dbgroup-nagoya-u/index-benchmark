@@ -43,7 +43,7 @@ class Worker
   const size_t operation_counts_;
 
   /// a reference to a target index
-  Index &index_;
+  Index *index_;
 
   /// an operation generator according to a given workload
   OperationGenerator operation_engine_;
@@ -72,7 +72,7 @@ class Worker
    * @param random_seed a random seed for reproducibility
    */
   Worker(  //
-      Index &index,
+      Index *index,
       ZipfGenerator &zipf_engine,
       const Workload workload,
       const size_t operation_counts,
@@ -105,7 +105,7 @@ class Worker
   constexpr void
   Read(const Key key)
   {
-    index_.Read(key);
+    index_->Read(key);
   }
 
   constexpr void
@@ -116,25 +116,25 @@ class Worker
   constexpr void
   Write(const Key key, const Value value)
   {
-    index_.Write(key, value);
+    index_->Write(key, value);
   }
 
   constexpr void
   Insert(const Key key, const Value value)
   {
-    index_.Insert(key, value);
+    index_->Insert(key, value);
   }
 
   constexpr void
   Update(const Key key, const Value value)
   {
-    index_.Update(key, value);
+    index_->Update(key, value);
   }
 
   constexpr void
   Delete(const Key key)
   {
-    index_.Delete(key);
+    index_->Delete(key);
   }
 
   /*################################################################################################

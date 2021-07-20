@@ -15,6 +15,7 @@ project(
 
 # define source directories
 set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
 
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
@@ -66,9 +67,17 @@ target_link_libraries(
 #--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_BUILD_OPEN_BWTREE, "Build OpenBw-Tree as a benchmarking target" OFF)
 if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
+  target_compile_options(
+    index_bench PRIVATE
+    -mcx16
+  )
   target_compile_definitions(
     index_bench PRIVATE
     INDEX_BENCH_BUILD_OPEN_BWTREE
+  )
+  target_link_libraries(
+    index_bench PRIVATE
+    atomic
   )
 endif()
 
@@ -80,7 +89,6 @@ if(${INDEX_BENCH_BUILD_PTREE})
   target_compile_options(
     index_bench PRIVATE
     -mcx16
-    -DHOMEGROWN
   )
   target_include_directories(
     index_bench PRIVATE
@@ -89,6 +97,7 @@ if(${INDEX_BENCH_BUILD_PTREE})
   target_compile_definitions(
     index_bench PRIVATE
     INDEX_BENCH_BUILD_PTREE
+    HOMEGROWN
   )
 endif()
 

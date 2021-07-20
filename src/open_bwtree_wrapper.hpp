@@ -17,26 +17,41 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <random>
 #include <utility>
 #include <vector>
 
+#include "../external/open_bwtree/src/bwtree.h"  // NOLINT
 #include "common.hpp"
+
+/// disable OpenBw-Tree's debug logs
+bool wangziqi2013::bwtree::print_flag = false;
+
+/// initialize GC ID for each thread
+thread_local int wangziqi2013::bwtree::BwTreeBase::gc_id = -1;
+
+/// initialize the counter of the total number of entering threads
+std::atomic<size_t> wangziqi2013::bwtree::BwTreeBase::total_thread_num = 0;
 
 template <class Key, class Value>
 class OpenBwTreeWrapper
 {
+  using BwTree_t = wangziqi2013::bwtree::BwTree<Key, Value>;
+  using ForwardIterator = typename BwTree_t::ForwardIterator;
+
  private:
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
+  BwTree_t bwtree_;
 
  public:
   /*################################################################################################
    * Public constructors/destructors
    *##############################################################################################*/
 
-  OpenBwTreeWrapper() {}
+  OpenBwTreeWrapper() : bwtree_{} {}
 
   ~OpenBwTreeWrapper() = default;
 
@@ -45,15 +60,38 @@ class OpenBwTreeWrapper
    *##############################################################################################*/
 
   constexpr void
-  Read([[maybe_unused]] const Key key)
+  ReserveThreads(const size_t total_thread_num)
   {
+    bwtree_.UpdateThreadLocal(total_thread_num);
+  }
+
+  constexpr void
+  RegisterThread()
+  {
+    wangziqi2013::bwtree::BwTreeBase::RegisterThread();
+  }
+
+  /*################################################################################################
+   * Public read/write APIs
+   *##############################################################################################*/
+
+  constexpr void
+  Read(const Key key)
+  {
+    bwtree_.GetValue(key);
   }
 
   constexpr void
   Scan(  //
-      [[maybe_unused]] const Key begin_key,
-      [[maybe_unused]] const Key end_key)
+      const Key begin_key,
+      const Key end_key)
   {
+    auto tree_iterator = std::make_unique<ForwardIterator>(bwtree_, begin_key);
+
+    while (tree_iterator->IsEnd() == false) {
+      if ((*tree_iterator)->first > end_key) break;
+      ++(*tree_iterator);
+    }
   }
 
   constexpr void
@@ -61,13 +99,15 @@ class OpenBwTreeWrapper
       [[maybe_unused]] const Key key,
       [[maybe_unused]] const Value value)
   {
+    // a write (upsert) operation is not implemented in Open-Bw-tree
   }
 
   constexpr void
   Insert(  //
-      [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)
+      const Key key,
+      const Value value)
   {
+    bwtree_.Insert(key, value);
   }
 
   constexpr void
@@ -75,10 +115,13 @@ class OpenBwTreeWrapper
       [[maybe_unused]] const Key key,
       [[maybe_unused]] const Value value)
   {
+    // an update operation is not implemented in Open-Bw-tree
   }
 
   constexpr void
-  Delete([[maybe_unused]] const Key key)
+  Delete(const Key key)
   {
+    // a delete operation in Open-Bw-tree requrires a key-value pair
+    bwtree_.Delete(key, key);
   }
 };

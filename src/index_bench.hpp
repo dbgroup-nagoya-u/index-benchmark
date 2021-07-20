@@ -121,7 +121,7 @@ class IndexBench
   const bool measure_throughput_;
 
   /// a target index instance
-  Index target_index_;
+  std::unique_ptr<Index> target_index_;
 
   /*################################################################################################
    * Internal utility functions
@@ -222,7 +222,7 @@ class IndexBench
     std::mt19937_64 rand_engine{random_seed};
 
     for (size_t i = 0; i < init_insert_num_; ++i) {
-      target_index_.Insert(uniform_dist(rand_engine), uniform_dist(rand_engine));
+      target_index_->Insert(uniform_dist(rand_engine), uniform_dist(rand_engine));
     }
   }
 
@@ -244,7 +244,13 @@ class IndexBench
 
     {  // create a lock to stop a main thread
       const auto lock = std::shared_lock<std::shared_mutex>(mutex_2nd);
-      worker = new Worker_t{target_index_, zipf_engine_, workload_, exec_num, random_seed};
+      worker = new Worker_t{target_index_.get(), zipf_engine_, workload_, exec_num, random_seed};
+
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+      if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
+        target_index_->RegisterThread();
+      }
+#endif
     }  // unlock to notice that this worker has been created
 
     {  // wait for benchmark to be ready
@@ -289,6 +295,15 @@ class IndexBench
         random_seed_{random_seed},
         measure_throughput_{measure_throughput}
   {
+    target_index_ = std::make_unique<Index>();
+
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
+      // reserve threads for workers and the main
+      target_index_->ReserveThreads(thread_num_ + 1);
+      target_index_->RegisterThread();
+    }
+#endif
   }
 
   ~IndexBench() = default;

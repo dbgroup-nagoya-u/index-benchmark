@@ -45,7 +45,7 @@ class WorkerFixture : public ::testing::Test
   static constexpr size_t kRandomSeed = 0;
 
   // a target index instance
-  Index index;
+  std::unique_ptr<Index> index;
 
   // a random value generator according to Zipf's law
   ZipfGenerator zipf_engine{kTotalKeyNum, kSkewParameter};
@@ -61,8 +61,16 @@ class WorkerFixture : public ::testing::Test
   SetUp() override
   {
     Workload workload{100, 0, 0, 0, 0, 0};
-    worker =
-        std::make_unique<Worker<Index>>(index, zipf_engine, workload, kOperationNum, kRandomSeed);
+    index = std::make_unique<Index>();
+    worker = std::make_unique<Worker<Index>>(index.get(), zipf_engine, workload, kOperationNum,
+                                             kRandomSeed);
+
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
+      index->ReserveThreads(1);
+      index->RegisterThread();
+    }
+#endif
   }
 
   void
@@ -91,6 +99,7 @@ class WorkerFixture : public ::testing::Test
 /*##################################################################################################
  * Preparation for typed testing
  *################################################################################################*/
+
 using Indexes = ::testing::Types<BzTree_t
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
                                  ,
