@@ -221,7 +221,7 @@ class IndexBench
     std::mt19937_64 rand_engine{random_seed};
 
     for (size_t i = 0; i < init_insert_num_; ++i) {
-      target_index_->Insert(uniform_dist(rand_engine), uniform_dist(rand_engine));
+      target_index_->Insert(i, uniform_dist(rand_engine));
     }
   }
 
