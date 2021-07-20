@@ -102,31 +102,40 @@ class Worker
    * Public read/write APIs
    *##############################################################################################*/
 
-  constexpr void
+  constexpr bool
   Read(const Key key)
   {
-    index_->Read(key);
+    return index_->Read(key);
   }
 
   constexpr void
-  Scan([[maybe_unused]] const Key begin_key, [[maybe_unused]] const Key end_key)
+  Scan(  //
+      const Key begin_key,
+      const Key end_key)
   {
+    index_->Scan(begin_key, end_key);
   }
 
   constexpr void
-  Write(const Key key, const Value value)
+  Write(  //
+      const Key key,
+      const Value value)
   {
     index_->Write(key, value);
   }
 
   constexpr void
-  Insert(const Key key, const Value value)
+  Insert(  //
+      const Key key,
+      const Value value)
   {
     index_->Insert(key, value);
   }
 
   constexpr void
-  Update(const Key key, const Value value)
+  Update(  //
+      const Key key,
+      const Value value)
   {
     index_->Update(key, value);
   }
@@ -233,6 +242,12 @@ class Worker
   SortExecutionTimes()
   {
     std::sort(exec_times_nano_.begin(), exec_times_nano_.end());
+  }
+
+  constexpr size_t
+  GetExecNum() const
+  {
+    return this->operation_counts_;
   }
 
   /**

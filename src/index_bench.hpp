@@ -35,8 +35,8 @@
  * Target index implementations
  *################################################################################################*/
 
-#include "bztree/bztree.hpp"
-using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;
+#include "bztree_wrapper.hpp"
+using BzTree_t = BzTreeWrapper<Key, Value>;
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 #include "open_bwtree_wrapper.hpp"
@@ -164,7 +164,7 @@ class IndexBench
     std::vector<size_t> indexes;
     indexes.reserve(thread_num_);
     for (size_t thread = 0; thread < thread_num_; ++thread) {
-      indexes.emplace_back(total_exec_num_ - 1);
+      indexes.emplace_back(workers[thread]->GetExecNum() - 1);
       const auto exec_time = workers[thread]->GetLatency(0);
       if (exec_time < lat_0) {
         lat_0 = exec_time;
@@ -172,8 +172,7 @@ class IndexBench
     }
 
     // check latency with descending order
-    const size_t total_exec_num = total_exec_num_ * thread_num_;
-    for (size_t count = total_exec_num; count >= total_exec_num * 0.90; --count) {
+    for (size_t count = total_exec_num_; count >= total_exec_num_ * 0.90; --count) {
       size_t target_thread = 0;
       auto max_exec_time = std::numeric_limits<size_t>::min();
       for (size_t thread = 0; thread < thread_num_; ++thread) {
@@ -185,13 +184,13 @@ class IndexBench
       }
 
       // if `count` reaches target percentiles, store its latency
-      if (count == total_exec_num) {
+      if (count == total_exec_num_) {
         lat_100 = max_exec_time;
-      } else if (count == static_cast<size_t>(total_exec_num * 0.99)) {
+      } else if (count == static_cast<size_t>(total_exec_num_ * 0.99)) {
         lat_99 = max_exec_time;
-      } else if (count == static_cast<size_t>(total_exec_num * 0.95)) {
+      } else if (count == static_cast<size_t>(total_exec_num_ * 0.95)) {
         lat_95 = max_exec_time;
-      } else if (count == static_cast<size_t>(total_exec_num * 0.90)) {
+      } else if (count == static_cast<size_t>(total_exec_num_ * 0.90)) {
         lat_90 = max_exec_time;
       }
 
@@ -222,7 +221,7 @@ class IndexBench
     std::mt19937_64 rand_engine{random_seed};
 
     for (size_t i = 0; i < init_insert_num_; ++i) {
-      target_index_->Insert(uniform_dist(rand_engine), uniform_dist(rand_engine));
+      target_index_->Insert(i, uniform_dist(rand_engine));
     }
   }
 
@@ -350,6 +349,7 @@ class IndexBench
       }
 
       // wait for all workers to be created
+      // std::this_thread::sleep_for(std::chrono::milliseconds(100));
       const auto guard = std::unique_lock<std::shared_mutex>(mutex_2nd);
     }  // unlock to run workers
 

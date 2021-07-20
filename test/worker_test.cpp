@@ -22,8 +22,8 @@
  * Target index implementations
  *################################################################################################*/
 
-#include "bztree/bztree.hpp"
-using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;
+#include "bztree_wrapper.hpp"
+using BzTree_t = BzTreeWrapper<Key, Value>;
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 #include "open_bwtree_wrapper.hpp"

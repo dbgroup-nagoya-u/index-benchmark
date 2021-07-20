@@ -17,49 +17,35 @@
 #pragma once
 
 #include <atomic>
-#include <limits>
 #include <random>
 #include <utility>
 #include <vector>
 
-#include "../external/PAM/c++/pam.h"
-#include "../external/PAM/c++/pbbslib/utilities.h"
+#include "bztree/bztree.hpp"
 #include "common.hpp"
 
 template <class Key, class Value>
-struct ptree_entry {
-  using key_t = Key;
-  using val_t = Value;
-  static_assert(!std::is_pointer<Key>::value);
-  static_assert(std::is_scalar<Key>::value);
-
-  static bool
-  comp(const Key &a, const Key &b)
-  {
-    return a < b;
-  }
-};
-
-template <class Key, class Value>
-class PTreeWrapper
+class BzTreeWrapper
 {
-  using ptree_entry_t = ptree_entry<Key, Value>;
-  using PTree_t = pam_map<ptree_entry<Key, Value>>;
+  using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;
+  using ReturnCode = ::dbgroup::index::bztree::ReturnCode;
+  using RecordPage_t = ::dbgroup::index::bztree::RecordPage<Key, Value>;
 
  private:
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
-  PTree_t ptree_;
+
+  BzTree_t bztree_{100000};
 
  public:
   /*################################################################################################
    * Public constructors/destructors
    *##############################################################################################*/
 
-  PTreeWrapper() {}
+  constexpr BzTreeWrapper() {}
 
-  ~PTreeWrapper() = default;
+  ~BzTreeWrapper() = default;
 
   /*################################################################################################
    * Public utility functions
@@ -68,8 +54,7 @@ class PTreeWrapper
   constexpr bool
   Read(const Key key)
   {
-    constexpr Value kDefaultVal = std::numeric_limits<Value>::max();
-    return ptree_.find(key, kDefaultVal) != kDefaultVal;
+    return bztree_.Read(key).first == ReturnCode::kSuccess;
   }
 
   constexpr void
@@ -78,8 +63,17 @@ class PTreeWrapper
       const Key scan_range)
   {
     const auto end_key = begin_key + scan_range;
+    Value sum = 0;
 
-    PTree_t::entries(PTree_t::range(ptree_, begin_key, end_key));
+    RecordPage_t scan_results;
+    bztree_.Scan(scan_results, &begin_key, true, &end_key, true);
+    while (!scan_results.empty()) {
+      for (auto &&[key, value] : scan_results) sum += value;
+
+      const auto next_key = scan_results.GetLastKey();
+      if (next_key == end_key) break;
+      bztree_.Scan(scan_results, &next_key, false, &end_key, true);
+    }
   }
 
   constexpr void
@@ -87,8 +81,7 @@ class PTreeWrapper
       const Key key,
       const Value value)
   {
-    // ptree_->insert means "upsert"
-    ptree_.insert(std::make_pair(key, value));
+    bztree_.Write(key, value);
   }
 
   constexpr void
@@ -96,8 +89,7 @@ class PTreeWrapper
       const Key key,
       const Value value)
   {
-    // ptree_->insert means "upsert"
-    ptree_.insert(std::make_pair(key, value));
+    bztree_.Insert(key, value);
   }
 
   constexpr void
@@ -105,15 +97,13 @@ class PTreeWrapper
       const Key key,
       const Value value)
   {
-    // define function for updating value
-    auto f = [&](std::pair<Key, Value>) { return value; };
-    // do nothing if key does not exist
-    ptree_.update(key, f);
+    bztree_.Update(key, value);
   }
 
   constexpr void
-  Delete(const Key key)
+  Delete(  //
+      const Key key)
   {
-    PTree_t::remove(ptree_, key);
+    bztree_.Delete(key);
   }
 };
