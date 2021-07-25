@@ -74,6 +74,7 @@ if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
   target_compile_definitions(
     index_bench PRIVATE
     INDEX_BENCH_BUILD_OPEN_BWTREE
+    BWTREE_NODEBUG
   )
   target_link_libraries(
     index_bench PRIVATE

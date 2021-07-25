@@ -103,10 +103,10 @@ class OpenBwTreeWrapper
 
   constexpr void
   Write(  //
-      [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)
+      const Key key,
+      const Value value)
   {
-    // a write (upsert) operation is not implemented in Open-Bw-tree
+    bwtree_.Upsert(key, value);
   }
 
   constexpr void
