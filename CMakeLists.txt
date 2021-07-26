@@ -17,10 +17,16 @@ project(
 set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
 
+# build option for efficient memory allocators
+option(INDEX_BENCH_USE_MIMALLOC, "Use mimalloc as an allocator" OFF)
+
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
 #--------------------------------------------------------------------------------------#
-set(BZTREE_USE_MIMALLOC "on" CACHE STRING "Use mimalloc as an allocator" FORCE)
+if(${INDEX_BENCH_USE_MIMALLOC})
+  set(BZTREE_USE_MIMALLOC "on" CACHE STRING "" FORCE)
+endif()
+
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 #--------------------------------------------------------------------------------------#
