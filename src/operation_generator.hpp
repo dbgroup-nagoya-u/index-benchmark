@@ -66,26 +66,22 @@ class OperationGenerator
   Operation
   operator()()
   {
-    const auto key = zipf_engine_(rand_engine_);
+    const auto rand_val = zipf_engine_(rand_engine_);
 
-    const auto rand_val = percent_generator_(rand_engine_);
-    if (rand_val < workload_.read_ratio) {
-      return Operation{IndexOperation::kRead, key};
-    } else if (rand_val < workload_.scan_ratio) {
-      const auto value = rand_engine_();
-      const auto end_key = range_generator_(rand_engine_);
-      return Operation{IndexOperation::kScan, key, value, end_key};
-    } else if (rand_val < workload_.write_ratio) {
-      const auto value = rand_engine_();
-      return Operation{IndexOperation::kWrite, key, value};
-    } else if (rand_val < workload_.insert_ratio) {
-      const auto value = rand_engine_();
-      return Operation{IndexOperation::kInsert, key, value};
-    } else if (rand_val < workload_.update_ratio) {
-      const auto value = rand_engine_();
-      return Operation{IndexOperation::kUpdate, key, value};
-    } else {  // rand_val < workload_.delete_ratio
-      return Operation{IndexOperation::kDelete, key};
+    const auto workload_rand = percent_generator_(rand_engine_);
+    if (workload_rand < workload_.read_ratio) {
+      return Operation{IndexOperation::kRead, rand_val};
+    } else if (workload_rand < workload_.scan_ratio) {
+      const auto range_val = range_generator_(rand_engine_);
+      return Operation{IndexOperation::kScan, rand_val, rand_val, range_val};
+    } else if (workload_rand < workload_.write_ratio) {
+      return Operation{IndexOperation::kWrite, rand_val, rand_val};
+    } else if (workload_rand < workload_.insert_ratio) {
+      return Operation{IndexOperation::kInsert, rand_val, rand_val};
+    } else if (workload_rand < workload_.update_ratio) {
+      return Operation{IndexOperation::kUpdate, rand_val, rand_val};
+    } else {  // workload_rand < workload_.delete_ratio
+      return Operation{IndexOperation::kDelete, rand_val};
     }
   }
 };
