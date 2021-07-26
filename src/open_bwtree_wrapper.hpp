@@ -19,6 +19,7 @@
 #include <atomic>
 #include <memory>
 #include <random>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -59,10 +60,45 @@ class OpenBwTreeWrapper
    * Public utility functions
    *##############################################################################################*/
 
+  void
+  ConstructIndex(  //
+      const size_t thread_num,
+      const size_t insert_num)
+  {
+    const size_t insert_num_per_thread = insert_num / thread_num;
+
+    // lambda function to insert key-value pairs in a certain thread
+    auto f = [&](BwTree_t* index, const size_t begin, const size_t end) {
+      RegisterThread();
+      for (size_t i = begin; i < end; ++i) {
+        index->Write(i, i);
+      }
+    };
+
+    // reserve threads for initialization
+    ReserveThreads(thread_num);
+
+    // insert initial key-value pairs in multi-threads
+    std::vector<std::thread> threads;
+    auto begin = 0UL, end = insert_num_per_thread;
+    for (size_t i = 0; i < thread_num; ++i) {
+      if (i == thread_num - 1) {
+        end = insert_num;
+      }
+      threads.emplace_back(f, &bwtree_, begin, end);
+      begin = end;
+      end += insert_num_per_thread;
+    }
+    for (auto&& t : threads) t.join();
+
+    // release reserved threads
+    ReserveThreads(0);
+  }
+
   constexpr void
   ReserveThreads(const size_t total_thread_num)
   {
-    bwtree_.UpdateThreadLocal(total_thread_num);
+    bwtree_.UpdateThreadLocal(total_thread_num + 1);
   }
 
   constexpr void
@@ -94,7 +130,7 @@ class OpenBwTreeWrapper
 
     ForwardIterator tree_iterator{&bwtree_, begin_key};
     for (; !tree_iterator.IsEnd(); ++tree_iterator) {
-      auto &&[key, value] = *tree_iterator;
+      auto&& [key, value] = *tree_iterator;
       if (key > end_key) break;
 
       sum += value;

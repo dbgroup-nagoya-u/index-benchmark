@@ -66,6 +66,8 @@ DEFINE_uint64(num_exec, 10000, "The total number of operations for benchmarking"
 DEFINE_validator(num_exec, &ValidateNonZero);
 DEFINE_uint64(num_thread, 1, "The number of worker threads");
 DEFINE_validator(num_thread, &ValidateNonZero);
+DEFINE_uint64(num_init_thread, 1, "The number of worker threads for initialization");
+DEFINE_validator(num_init_thread, &ValidateNonZero);
 DEFINE_uint64(num_key, 10000, "The total number of keys");
 DEFINE_validator(num_key, &ValidateNonZero);
 DEFINE_uint64(num_init_insert, 10000, "The number of insert operations for initialization");
@@ -111,19 +113,30 @@ main(int argc, char *argv[])
 
   Log("=== Start Benchmark ===");
   if (FLAGS_bz) {
-    auto bench = IndexBench<BzTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
-                                      FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
-                                      random_seed,   FLAGS_throughput};
+    auto bench = IndexBench<BzTree_t>{workload,
+                                      FLAGS_num_exec,
+                                      FLAGS_num_thread,
+                                      FLAGS_num_key,
+                                      FLAGS_num_init_thread,
+                                      FLAGS_num_init_insert,
+                                      FLAGS_skew_parameter,
+                                      random_seed,
+                                      FLAGS_throughput};
     Log("** Run BzTree **");
     bench.Run();
     Log("** Finish **");
   }
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if (FLAGS_open_bw) {
-    auto bench =
-        IndexBench<OpenBwTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
-                                 FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
-                                 random_seed,   FLAGS_throughput};
+    auto bench = IndexBench<OpenBwTree_t>{workload,
+                                          FLAGS_num_exec,
+                                          FLAGS_num_thread,
+                                          FLAGS_num_key,
+                                          FLAGS_num_init_thread,
+                                          FLAGS_num_init_insert,
+                                          FLAGS_skew_parameter,
+                                          random_seed,
+                                          FLAGS_throughput};
     Log("** Run Open-BwTree **");
     bench.Run();
     Log("** Finish **");
@@ -131,9 +144,15 @@ main(int argc, char *argv[])
 #endif
 #ifdef INDEX_BENCH_BUILD_PTREE
   if (FLAGS_p) {
-    auto bench = IndexBench<PTree_t>{workload,      FLAGS_num_exec,        FLAGS_num_thread,
-                                     FLAGS_num_key, FLAGS_num_init_insert, FLAGS_skew_parameter,
-                                     random_seed,   FLAGS_throughput};
+    auto bench = IndexBench<PTree_t>{workload,
+                                     FLAGS_num_exec,
+                                     FLAGS_num_thread,
+                                     FLAGS_num_key,
+                                     FLAGS_num_init_thread,
+                                     FLAGS_num_init_insert,
+                                     FLAGS_skew_parameter,
+                                     random_seed,
+                                     FLAGS_throughput};
     Log("** Run PTree **");
     bench.Run();
     Log("** Finish **");

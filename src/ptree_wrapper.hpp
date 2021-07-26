@@ -34,7 +34,7 @@ struct ptree_entry {
   static_assert(std::is_scalar<Key>::value);
 
   static bool
-  comp(const Key &a, const Key &b)
+  comp(const Key& a, const Key& b)
   {
     return a < b;
   }
@@ -63,6 +63,22 @@ class PTreeWrapper
 
   /*################################################################################################
    * Public utility functions
+   *##############################################################################################*/
+
+  void
+  ConstructIndex(  //
+      [[maybe_unused]] const size_t thread_num,
+      const size_t insert_num)
+  {
+    const size_t insert_num_per_thread = insert_num / thread_num;
+
+    for (size_t i = 0; i < insert_num; ++i) {
+      Write(i, i);
+    }
+  }
+
+  /*################################################################################################
+   * Public read/write APIs
    *##############################################################################################*/
 
   constexpr bool
