@@ -75,6 +75,7 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     target_compile_definitions(
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_BUILD_OPEN_BWTREE
+      BWTREE_NODEBUG
     )
     target_link_libraries(
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
@@ -102,4 +103,5 @@ endfunction()
 
 # add unit tests to build targets
 ADD_INDEX_BENCH_TEST("operation_generator_test")
+ADD_INDEX_BENCH_TEST("index_wrapper_test")
 ADD_INDEX_BENCH_TEST("worker_test")

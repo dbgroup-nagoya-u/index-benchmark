@@ -44,7 +44,7 @@ class BzTreeWrapper
    * Public constructors/destructors
    *##############################################################################################*/
 
-  constexpr BzTreeWrapper() {}
+  BzTreeWrapper() {}
 
   ~BzTreeWrapper() = default;
 
@@ -84,13 +84,13 @@ class BzTreeWrapper
    * Public read/write APIs
    *##############################################################################################*/
 
-  constexpr bool
+  auto
   Read(const Key key)
   {
-    return bztree_.Read(key).first == ReturnCode::kSuccess;
+    return bztree_.Read(key);
   }
 
-  constexpr void
+  void
   Scan(  //
       const Key begin_key,
       const Key scan_range)
@@ -109,7 +109,7 @@ class BzTreeWrapper
     }
   }
 
-  constexpr void
+  void
   Write(  //
       const Key key,
       const Value value)
@@ -117,7 +117,7 @@ class BzTreeWrapper
     bztree_.Write(key, value);
   }
 
-  constexpr void
+  void
   Insert(  //
       const Key key,
       const Value value)
@@ -125,7 +125,7 @@ class BzTreeWrapper
     bztree_.Insert(key, value);
   }
 
-  constexpr void
+  void
   Update(  //
       const Key key,
       const Value value)
@@ -133,7 +133,7 @@ class BzTreeWrapper
     bztree_.Update(key, value);
   }
 
-  constexpr void
+  void
   Delete(  //
       const Key key)
   {
