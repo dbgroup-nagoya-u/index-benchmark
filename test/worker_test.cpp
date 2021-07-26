@@ -68,7 +68,7 @@ class WorkerFixture : public ::testing::Test
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
       index->ReserveThreads(1);
-      index->RegisterThread();
+      index->RegisterThread(0);
     }
 #endif
   }
@@ -76,6 +76,11 @@ class WorkerFixture : public ::testing::Test
   void
   TearDown() override
   {
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
+      index->UnregisterThread(0);
+    }
+#endif
   }
 
   /*################################################################################################

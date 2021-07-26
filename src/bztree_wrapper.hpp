@@ -18,6 +18,7 @@
 
 #include <atomic>
 #include <random>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -51,6 +52,38 @@ class BzTreeWrapper
    * Public utility functions
    *##############################################################################################*/
 
+  void
+  ConstructIndex(  //
+      const size_t thread_num,
+      const size_t insert_num)
+  {
+    const size_t insert_num_per_thread = insert_num / thread_num;
+
+    // lambda function to insert key-value pairs in a certain thread
+    auto f = [&](BzTree_t* index, const size_t begin, const size_t end) {
+      for (size_t i = begin; i < end; ++i) {
+        index->Write(i, i);
+      }
+    };
+
+    // insert initial key-value pairs in multi-threads
+    std::vector<std::thread> threads;
+    auto begin = 0UL, end = insert_num_per_thread;
+    for (size_t i = 0; i < thread_num; ++i) {
+      if (i == thread_num - 1) {
+        end = insert_num;
+      }
+      threads.emplace_back(f, &bztree_, begin, end);
+      begin = end;
+      end += insert_num_per_thread;
+    }
+    for (auto&& t : threads) t.join();
+  }
+
+  /*################################################################################################
+   * Public read/write APIs
+   *##############################################################################################*/
+
   constexpr bool
   Read(const Key key)
   {
@@ -68,7 +101,7 @@ class BzTreeWrapper
     RecordPage_t scan_results;
     bztree_.Scan(scan_results, &begin_key, true, &end_key, true);
     while (!scan_results.empty()) {
-      for (auto &&[key, value] : scan_results) sum += value;
+      for (auto&& [key, value] : scan_results) sum += value;
 
       const auto next_key = scan_results.GetLastKey();
       if (next_key == end_key) break;

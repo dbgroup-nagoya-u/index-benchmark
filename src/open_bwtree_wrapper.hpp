@@ -19,6 +19,7 @@
 #include <atomic>
 #include <memory>
 #include <random>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -59,6 +60,42 @@ class OpenBwTreeWrapper
    * Public utility functions
    *##############################################################################################*/
 
+  void
+  ConstructIndex(  //
+      const size_t thread_num,
+      const size_t insert_num)
+  {
+    const size_t insert_num_per_thread = insert_num / thread_num;
+
+    // lambda function to insert key-value pairs in a certain thread
+    auto f = [&](BwTree_t* index, const size_t begin, const size_t end, const size_t thread_id) {
+      index->AssignGCID(thread_id);
+      for (size_t i = begin; i < end; ++i) {
+        index->Upsert(i, i);
+      }
+      index->UnregisterThread(thread_id);
+    };
+
+    // reserve threads for initialization
+    ReserveThreads(thread_num);
+
+    // insert initial key-value pairs in multi-threads
+    std::vector<std::thread> threads;
+    auto begin = 0UL, end = insert_num_per_thread;
+    for (size_t i = 0; i < thread_num; ++i) {
+      if (i == thread_num - 1) {
+        end = insert_num;
+      }
+      threads.emplace_back(f, &bwtree_, begin, end, i);
+      begin = end;
+      end += insert_num_per_thread;
+    }
+    for (auto&& t : threads) t.join();
+
+    // release reserved threads
+    ReserveThreads(0);
+  }
+
   constexpr void
   ReserveThreads(const size_t total_thread_num)
   {
@@ -66,9 +103,15 @@ class OpenBwTreeWrapper
   }
 
   constexpr void
-  RegisterThread()
+  RegisterThread(const size_t thread_id)
   {
-    wangziqi2013::bwtree::BwTreeBase::RegisterThread();
+    bwtree_.AssignGCID(thread_id);
+  }
+
+  constexpr void
+  UnregisterThread(const size_t thread_id)
+  {
+    bwtree_.UnregisterThread(thread_id);
   }
 
   /*################################################################################################
@@ -94,7 +137,7 @@ class OpenBwTreeWrapper
 
     ForwardIterator tree_iterator{&bwtree_, begin_key};
     for (; !tree_iterator.IsEnd(); ++tree_iterator) {
-      auto &&[key, value] = *tree_iterator;
+      auto&& [key, value] = *tree_iterator;
       if (key > end_key) break;
 
       sum += value;
@@ -103,10 +146,10 @@ class OpenBwTreeWrapper
 
   constexpr void
   Write(  //
-      [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)
+      const Key key,
+      const Value value)
   {
-    // a write (upsert) operation is not implemented in Open-Bw-tree
+    bwtree_.Upsert(key, value);
   }
 
   constexpr void
