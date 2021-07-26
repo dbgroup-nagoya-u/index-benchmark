@@ -47,6 +47,7 @@
     "DMWCAS",
     "GCID",
     "GLOG",
+    "MIMALLOC",
     "NUMS",
     "PMEM",
     "PMWCAS",
