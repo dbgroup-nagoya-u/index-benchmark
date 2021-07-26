@@ -233,7 +233,7 @@ class IndexBench
     Worker_t *worker;
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    const auto thread_id = _thread_counter.fetch_add(1);
+    [[maybe_unused]] const auto thread_id = _thread_counter.fetch_add(1);
 #endif
 
     {  // create a lock to stop a main thread
@@ -321,7 +321,8 @@ class IndexBench
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
       // reserve threads for workers and the main
-      target_index_->ReserveThreads(thread_num_ + init_thread_num_);
+      _thread_counter.store(0);
+      target_index_->ReserveThreads(thread_num_);
     }
 #endif
 
