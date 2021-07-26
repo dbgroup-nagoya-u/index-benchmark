@@ -99,6 +99,14 @@ class IndexWrapperFixture : public ::testing::Test
     index->Write(keys[key_id], payloads[payload_id]);
   }
 
+  void
+  Insert(  //
+      const size_t key_id,
+      const size_t payload_id)
+  {
+    index->Insert(keys[key_id], payloads[payload_id]);
+  }
+
   /*################################################################################################
    * Functions for verification
    *##############################################################################################*/
@@ -116,6 +124,21 @@ class IndexWrapperFixture : public ::testing::Test
     } else {
       EXPECT_EQ(0, rc);
       EXPECT_EQ(payloads[expected_id], payload);
+    }
+  }
+
+  void
+  VerifyInsert(  //
+      const size_t key_id,
+      const size_t payload_id,
+      const bool expect_fail = false)
+  {
+    const auto rc = index->Insert(keys[key_id], payloads[payload_id]);
+
+    if (expect_fail) {
+      EXPECT_NE(0, rc);
+    } else {
+      EXPECT_EQ(0, rc);
     }
   }
 };
@@ -140,6 +163,10 @@ TYPED_TEST_CASE(IndexWrapperFixture, Indexes);
  * Unit test definitions
  *################################################################################################*/
 
+/*--------------------------------------------------------------------------------------------------
+ * Write operation
+ *------------------------------------------------------------------------------------------------*/
+
 TYPED_TEST(IndexWrapperFixture, Write_UniqueKeys_ReadInsertedPayloads)
 {
   for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
@@ -160,5 +187,29 @@ TYPED_TEST(IndexWrapperFixture, Write_DuplicateKeys_ReadUpdatedPayloads)
   }
   for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
     TestFixture::VerifyRead(i, i + 1);
+  }
+}
+
+/*--------------------------------------------------------------------------------------------------
+ * Insert operation
+ *------------------------------------------------------------------------------------------------*/
+
+TYPED_TEST(IndexWrapperFixture, Insert_UniqueKeys_ReadInsertedPayloads)
+{
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyInsert(i, i);
+  }
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyRead(i, i);
+  }
+}
+
+TYPED_TEST(IndexWrapperFixture, Insert_DuplicateKeys_InsertFail)
+{
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyInsert(i, i);
+  }
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyInsert(i, i, true);
   }
 }

@@ -117,12 +117,12 @@ class BzTreeWrapper
     bztree_.Write(key, value);
   }
 
-  void
+  auto
   Insert(  //
       const Key key,
       const Value value)
   {
-    bztree_.Insert(key, value);
+    return bztree_.Insert(key, value);
   }
 
   void
