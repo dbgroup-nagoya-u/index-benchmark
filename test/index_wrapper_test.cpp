@@ -43,9 +43,6 @@ class IndexWrapperFixture : public ::testing::Test
 
   // constant values for testing
   static constexpr size_t kTotalKeyNum = 8192;
-  static constexpr size_t kOperationNum = 1000;
-  static constexpr double kSkewParameter = 0;
-  static constexpr size_t kRandomSeed = 0;
 
   /*################################################################################################
    * Internal member variables
@@ -143,12 +140,25 @@ TYPED_TEST_CASE(IndexWrapperFixture, Indexes);
  * Unit test definitions
  *################################################################################################*/
 
-TYPED_TEST(IndexWrapperFixture, Write_UniqueKeys_ReadWrittenPayloads)
+TYPED_TEST(IndexWrapperFixture, Write_UniqueKeys_ReadInsertedPayloads)
 {
   for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
     TestFixture::Write(i, i);
   }
   for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
     TestFixture::VerifyRead(i, i);
+  }
+}
+
+TYPED_TEST(IndexWrapperFixture, Write_DuplicateKeys_ReadUpdatedPayloads)
+{
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
+    TestFixture::Write(i, i);
+  }
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
+    TestFixture::Write(i, i + 1);
+  }
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
+    TestFixture::VerifyRead(i, i + 1);
   }
 }
