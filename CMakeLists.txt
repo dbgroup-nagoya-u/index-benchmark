@@ -20,6 +20,7 @@ set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
 #--------------------------------------------------------------------------------------#
+set(BZTREE_USE_MIMALLOC "on" CACHE STRING "Use mimalloc as an allocator" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 #--------------------------------------------------------------------------------------#
