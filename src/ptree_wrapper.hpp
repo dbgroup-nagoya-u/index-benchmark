@@ -73,7 +73,7 @@ class PTreeWrapper
     const size_t insert_num_per_thread = insert_num / thread_num;
 
     for (size_t i = 0; i < insert_num; ++i) {
-      Write(i, i);
+      ptree_.insert(std::make_pair(i, i));
     }
   }
 

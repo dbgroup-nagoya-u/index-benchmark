@@ -68,11 +68,12 @@ class OpenBwTreeWrapper
     const size_t insert_num_per_thread = insert_num / thread_num;
 
     // lambda function to insert key-value pairs in a certain thread
-    auto f = [&](BwTree_t* index, const size_t begin, const size_t end) {
-      RegisterThread();
+    auto f = [&](BwTree_t* index, const size_t begin, const size_t end, const size_t thread_id) {
+      index->AssignGCID(thread_id);
       for (size_t i = begin; i < end; ++i) {
-        index->Write(i, i);
+        index->Upsert(i, i);
       }
+      index->UnregisterThread(thread_id);
     };
 
     // reserve threads for initialization
@@ -85,7 +86,7 @@ class OpenBwTreeWrapper
       if (i == thread_num - 1) {
         end = insert_num;
       }
-      threads.emplace_back(f, &bwtree_, begin, end);
+      threads.emplace_back(f, &bwtree_, begin, end, i);
       begin = end;
       end += insert_num_per_thread;
     }
@@ -98,13 +99,19 @@ class OpenBwTreeWrapper
   constexpr void
   ReserveThreads(const size_t total_thread_num)
   {
-    bwtree_.UpdateThreadLocal(total_thread_num + 1);
+    bwtree_.UpdateThreadLocal(total_thread_num);
   }
 
   constexpr void
-  RegisterThread()
+  RegisterThread(const size_t thread_id)
   {
-    wangziqi2013::bwtree::BwTreeBase::RegisterThread();
+    bwtree_.AssignGCID(thread_id);
+  }
+
+  constexpr void
+  UnregisterThread(const size_t thread_id)
+  {
+    bwtree_.UnregisterThread(thread_id);
   }
 
   /*################################################################################################
