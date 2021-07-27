@@ -125,12 +125,12 @@ class BzTreeWrapper
     return bztree_.Insert(key, value);
   }
 
-  void
+  auto
   Update(  //
       const Key key,
       const Value value)
   {
-    bztree_.Update(key, value);
+    return bztree_.Update(key, value);
   }
 
   void

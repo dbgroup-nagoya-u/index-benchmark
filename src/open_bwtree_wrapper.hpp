@@ -163,12 +163,14 @@ class OpenBwTreeWrapper
     return !bwtree_.Insert(key, value);
   }
 
-  void
+  int64_t
   Update(  //
       [[maybe_unused]] const Key key,
       [[maybe_unused]] const Value value)
   {
     // an update operation is not implemented in Open-Bw-tree
+    assert(false);
+    return 1;
   }
 
   void

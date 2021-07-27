@@ -112,6 +112,21 @@ class IndexWrapperFixture : public ::testing::Test
       EXPECT_EQ(0, rc);
     }
   }
+
+  void
+  VerifyUpdate(  //
+      const Key key,
+      const Value payload,
+      const bool expect_fail = false)
+  {
+    const auto rc = index->Update(key, payload);
+
+    if (expect_fail) {
+      EXPECT_NE(0, rc);
+    } else {
+      EXPECT_EQ(0, rc);
+    }
+  }
 };
 
 /*##################################################################################################
@@ -150,13 +165,13 @@ TYPED_TEST(IndexWrapperFixture, Write_UniqueKeys_ReadInsertedPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Write_DuplicateKeys_ReadUpdatedPayloads)
 {
-  for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
     TestFixture::index->Write(i, i);
   }
-  for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
     TestFixture::index->Write(i, i + 1);
   }
-  for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
     TestFixture::VerifyRead(i, i + 1);
   }
 }
@@ -182,5 +197,39 @@ TYPED_TEST(IndexWrapperFixture, Insert_DuplicateKeys_InsertFail)
   }
   for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
     TestFixture::VerifyInsert(i, i, true);
+  }
+}
+
+/*--------------------------------------------------------------------------------------------------
+ * Update operation
+ *------------------------------------------------------------------------------------------------*/
+
+TYPED_TEST(IndexWrapperFixture, Update_UniqueKeys_UpdateFail)
+{
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+  // update is not implemented in OpenBw-Tree
+  return;
+#endif
+
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyUpdate(i, i + 1, true);
+  }
+}
+
+TYPED_TEST(IndexWrapperFixture, Update_DuplicateKeys_ReadUpdatedPayloads)
+{
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+  // update is not implemented in OpenBw-Tree
+  return;
+#endif
+
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::index->Insert(i, i);
+  }
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyUpdate(i, i + 1);
+  }
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyRead(i, i + 1);
   }
 }
