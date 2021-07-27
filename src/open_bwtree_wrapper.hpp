@@ -23,7 +23,7 @@
 #include <utility>
 #include <vector>
 
-#include "../external/open_bwtree/src/bwtree.h"  // NOLINT
+#include "../external/open_bwtree/BwTree/bwtree.h"  // NOLINT
 #include "common.hpp"
 
 /// disable OpenBw-Tree's debug logs
