@@ -195,6 +195,12 @@ TYPED_TEST(IndexWrapperFixture, Write_DuplicateKeys_ReadUpdatedPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Insert_UniqueKeys_ReadInsertedPayloads)
 {
+#ifdef INDEX_BENCH_BUILD_PTREE
+  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
+    return;
+  }
+#endif
+
   for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
     TestFixture::VerifyInsert(i, i);
   }
@@ -205,6 +211,12 @@ TYPED_TEST(IndexWrapperFixture, Insert_UniqueKeys_ReadInsertedPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Insert_DuplicateKeys_InsertFail)
 {
+#ifdef INDEX_BENCH_BUILD_PTREE
+  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
+    return;
+  }
+#endif
+
   for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
     TestFixture::VerifyInsert(i, i);
   }
@@ -220,8 +232,15 @@ TYPED_TEST(IndexWrapperFixture, Insert_DuplicateKeys_InsertFail)
 TYPED_TEST(IndexWrapperFixture, Update_UniqueKeys_UpdateFail)
 {
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  // update is not implemented in OpenBw-Tree
-  return;
+  if constexpr (std::is_same_v<TypeParam, OpenBwTree_t>) {
+    // update is not implemented in OpenBw-Tree
+    return;
+  }
+#endif
+#ifdef INDEX_BENCH_BUILD_PTREE
+  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
+    return;
+  }
 #endif
 
   for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
@@ -232,8 +251,10 @@ TYPED_TEST(IndexWrapperFixture, Update_UniqueKeys_UpdateFail)
 TYPED_TEST(IndexWrapperFixture, Update_DuplicateKeys_ReadUpdatedPayloads)
 {
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  // update is not implemented in OpenBw-Tree
-  return;
+  if constexpr (std::is_same_v<TypeParam, OpenBwTree_t>) {
+    // update is not implemented in OpenBw-Tree
+    return;
+  }
 #endif
 
   for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
@@ -253,6 +274,12 @@ TYPED_TEST(IndexWrapperFixture, Update_DuplicateKeys_ReadUpdatedPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Delete_UniqueKeys_DeleteFail)
 {
+#ifdef INDEX_BENCH_BUILD_PTREE
+  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
+    return;
+  }
+#endif
+
   for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
     TestFixture::VerifyDelete(i, true);
   }
@@ -260,6 +287,12 @@ TYPED_TEST(IndexWrapperFixture, Delete_UniqueKeys_DeleteFail)
 
 TYPED_TEST(IndexWrapperFixture, Delete_DuplicateKeys_ReadFailWithDeletedKeys)
 {
+#ifdef INDEX_BENCH_BUILD_PTREE
+  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
+    return;
+  }
+#endif
+
   for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
     TestFixture::index->Insert(i, i);
   }

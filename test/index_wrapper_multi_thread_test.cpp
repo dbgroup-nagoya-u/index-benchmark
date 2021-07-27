@@ -199,7 +199,6 @@ class IndexWrapperFixture : public ::testing::Test
   RunOverMultiThread(const WriteType w_type)
   {
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    if (std::is_same_v<Index, OpenBwTree_t> && w_type == WriteType::kUpdate) return;
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
       index->ReserveThreads(kThreadNum);
       thread_counter.store(0);
@@ -283,6 +282,12 @@ TYPED_TEST(IndexWrapperFixture, Insert_MultiThreads_ReadInsertedPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Update_MultiThreads_ReadUpdatedPayloads)
 {
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+  if constexpr (std::is_same_v<TypeParam, OpenBwTree_t>) {
+    return;
+  }
+#endif
+
   TestFixture::RunOverMultiThread(TestFixture::WriteType::kWrite);
   TestFixture::RunOverMultiThread(TestFixture::WriteType::kUpdate);
 }
