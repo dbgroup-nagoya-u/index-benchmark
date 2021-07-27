@@ -120,7 +120,7 @@ class Worker
           index_->Read(ops.key);
           break;
         case kScan:
-          index_->Scan(ops.key, ops.end_key);
+          index_->Scan(ops.key, ops.value);
           break;
         case kWrite:
           index_->Write(ops.key, ops.value);
@@ -162,7 +162,7 @@ class Worker
           index_->Read(ops.key);
           break;
         case kScan:
-          index_->Scan(ops.key, ops.end_key);
+          index_->Scan(ops.key, ops.value);
           break;
         case kWrite:
           index_->Write(ops.key, ops.value);

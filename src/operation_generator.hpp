@@ -66,22 +66,26 @@ class OperationGenerator
   Operation
   operator()()
   {
-    const auto rand_val = zipf_engine_(rand_engine_);
+    const auto key = zipf_engine_(rand_engine_);
+    auto value = key;
 
+    IndexOperation ops;
     const auto workload_rand = percent_generator_(rand_engine_);
     if (workload_rand < workload_.read_ratio) {
-      return Operation{IndexOperation::kRead, rand_val};
+      ops = IndexOperation::kRead;
     } else if (workload_rand < workload_.scan_ratio) {
-      const auto range_val = range_generator_(rand_engine_);
-      return Operation{IndexOperation::kScan, rand_val, rand_val, range_val};
+      value = range_generator_(rand_engine_);
+      ops = IndexOperation::kScan;
     } else if (workload_rand < workload_.write_ratio) {
-      return Operation{IndexOperation::kWrite, rand_val, rand_val};
+      ops = IndexOperation::kWrite;
     } else if (workload_rand < workload_.insert_ratio) {
-      return Operation{IndexOperation::kInsert, rand_val, rand_val};
+      ops = IndexOperation::kInsert;
     } else if (workload_rand < workload_.update_ratio) {
-      return Operation{IndexOperation::kUpdate, rand_val, rand_val};
+      ops = IndexOperation::kUpdate;
     } else {  // workload_rand < workload_.delete_ratio
-      return Operation{IndexOperation::kDelete, rand_val};
+      ops = IndexOperation::kDelete;
     }
+
+    return Operation{ops, key, value};
   }
 };

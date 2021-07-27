@@ -35,8 +35,5 @@ struct Operation {
   const Key key;
 
   /// a target data of this operation
-  const Value value = 0;
-
-  ///  a key to represent the end of a scan operation
-  const Key end_key = 0;
+  const Value value;
 };
