@@ -62,7 +62,7 @@ class IndexWrapperFixture : public ::testing::Test
    *##############################################################################################*/
 
 #ifdef INDEX_BENCH_TEST_THREAD_NUM
-  static constexpr size_t kThreadNum = BZTREE_TEST_THREAD_NUM;
+  static constexpr size_t kThreadNum = INDEX_BENCH_TEST_THREAD_NUM;
 #else
   static constexpr size_t kThreadNum = 8;
 #endif
