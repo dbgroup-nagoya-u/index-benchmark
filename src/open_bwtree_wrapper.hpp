@@ -96,19 +96,19 @@ class OpenBwTreeWrapper
     ReserveThreads(0);
   }
 
-  constexpr void
+  void
   ReserveThreads(const size_t total_thread_num)
   {
     bwtree_.UpdateThreadLocal(total_thread_num);
   }
 
-  constexpr void
+  void
   RegisterThread(const size_t thread_id)
   {
     bwtree_.AssignGCID(thread_id);
   }
 
-  constexpr void
+  void
   UnregisterThread(const size_t thread_id)
   {
     bwtree_.UnregisterThread(thread_id);
@@ -118,16 +118,19 @@ class OpenBwTreeWrapper
    * Public read/write APIs
    *##############################################################################################*/
 
-  constexpr bool
+  std::pair<int64_t, Value>
   Read(const Key key)
   {
     std::vector<Value> read_results;
     bwtree_.GetValue(key, read_results);
 
-    return !read_results.empty();
+    if (read_results.empty()) {
+      return {1, Value{}};
+    }
+    return {0, read_results[0]};
   }
 
-  constexpr void
+  void
   Scan(  //
       const Key begin_key,
       const Key scan_range)
@@ -144,34 +147,37 @@ class OpenBwTreeWrapper
     }
   }
 
-  constexpr void
+  int64_t
   Write(  //
       const Key key,
       const Value value)
   {
     bwtree_.Upsert(key, value);
+    return 0;
   }
 
-  constexpr void
+  int64_t
   Insert(  //
       const Key key,
       const Value value)
   {
-    bwtree_.Insert(key, value);
+    return !bwtree_.Insert(key, value);
   }
 
-  constexpr void
+  int64_t
   Update(  //
       [[maybe_unused]] const Key key,
       [[maybe_unused]] const Value value)
   {
     // an update operation is not implemented in Open-Bw-tree
+    assert(false);
+    return 1;
   }
 
-  constexpr void
+  int64_t
   Delete(const Key key)
   {
     // a delete operation in Open-Bw-tree requrires a key-value pair
-    bwtree_.Delete(key, key);
+    return !bwtree_.Delete(key, key);
   }
 };

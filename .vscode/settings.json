@@ -22,6 +22,9 @@
     "**/node_modules/*/**": true,
     "**/.hg/store/**": true,
   },
+  "terminal.integrated.env.linux": {
+    "NUM_THREADS": "1",
+  },
   "testMate.cpp.test.runtimeLimit": 60,
   "testMate.cpp.test.executables": "build/**/test/*_test",
   "[cmake]": {

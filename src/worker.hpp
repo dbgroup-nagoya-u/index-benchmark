@@ -99,54 +99,6 @@ class Worker
   Worker &operator=(Worker &&) = default;
 
   /*################################################################################################
-   * Public read/write APIs
-   *##############################################################################################*/
-
-  constexpr bool
-  Read(const Key key)
-  {
-    return index_->Read(key);
-  }
-
-  constexpr void
-  Scan(  //
-      const Key begin_key,
-      const Key end_key)
-  {
-    index_->Scan(begin_key, end_key);
-  }
-
-  constexpr void
-  Write(  //
-      const Key key,
-      const Value value)
-  {
-    index_->Write(key, value);
-  }
-
-  constexpr void
-  Insert(  //
-      const Key key,
-      const Value value)
-  {
-    index_->Insert(key, value);
-  }
-
-  constexpr void
-  Update(  //
-      const Key key,
-      const Value value)
-  {
-    index_->Update(key, value);
-  }
-
-  constexpr void
-  Delete(const Key key)
-  {
-    index_->Delete(key);
-  }
-
-  /*################################################################################################
    * Public utility functions
    *##############################################################################################*/
 
@@ -154,7 +106,7 @@ class Worker
    * @brief Measure and store execution time for each operation.
    *
    */
-  constexpr void
+  void
   MeasureLatency()
   {
     assert(operation_queue_.size() == operation_counts_);
@@ -165,22 +117,22 @@ class Worker
       const auto start_time = std::chrono::high_resolution_clock::now();
       switch (ops.type) {
         case kRead:
-          Read(ops.key);
+          index_->Read(ops.key);
           break;
         case kScan:
-          Scan(ops.key, ops.end_key);
+          index_->Scan(ops.key, ops.end_key);
           break;
         case kWrite:
-          Write(ops.key, ops.value);
+          index_->Write(ops.key, ops.value);
           break;
         case kInsert:
-          Insert(ops.key, ops.value);
+          index_->Insert(ops.key, ops.value);
           break;
         case kUpdate:
-          Update(ops.key, ops.value);
+          index_->Update(ops.key, ops.value);
           break;
         case kDelete:
-          Delete(ops.key);
+          index_->Delete(ops.key);
           break;
         default:
           break;
@@ -197,7 +149,7 @@ class Worker
    * @brief Measure and store total execution time.
    *
    */
-  constexpr void
+  void
   MeasureThroughput()
   {
     assert(operation_queue_.size() == operation_counts_);
@@ -207,22 +159,22 @@ class Worker
       const auto ops = operation_queue_[i];
       switch (ops.type) {
         case kRead:
-          Read(ops.key);
+          index_->Read(ops.key);
           break;
         case kScan:
-          Scan(ops.key, ops.end_key);
+          index_->Scan(ops.key, ops.end_key);
           break;
         case kWrite:
-          Write(ops.key, ops.value);
+          index_->Write(ops.key, ops.value);
           break;
         case kInsert:
-          Insert(ops.key, ops.value);
+          index_->Insert(ops.key, ops.value);
           break;
         case kUpdate:
-          Update(ops.key, ops.value);
+          index_->Update(ops.key, ops.value);
           break;
         case kDelete:
-          Delete(ops.key);
+          index_->Delete(ops.key);
           break;
         default:
           break;

@@ -39,10 +39,18 @@ template <class Index>
 class WorkerFixture : public ::testing::Test
 {
  protected:
-  static constexpr size_t kTotalKeyNum = 2;
-  static constexpr size_t kOperationNum = 1000;
+  /*################################################################################################
+   * Internal constants
+   *##############################################################################################*/
+
+  static constexpr size_t kTotalKeyNum = 8192;
+  static constexpr size_t kOperationNum = 8192;
   static constexpr double kSkewParameter = 0;
   static constexpr size_t kRandomSeed = 0;
+
+  /*################################################################################################
+   * Internal member variables
+   *##############################################################################################*/
 
   // a target index instance
   std::unique_ptr<Index> index;

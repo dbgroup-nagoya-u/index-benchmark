@@ -12,6 +12,8 @@ env:
 jobs:
   unit_test:
     runs-on: ubuntu-20.04
+    env:
+      NUM_THREADS: 1
     steps:
 
     - name: Clone Repository
@@ -30,7 +32,7 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DINDEX_BENCH_BUILD_TESTS=on -DINDEX_BENCH_BUILD_PTREE=on -DINDEX_BENCH_BUILD_OPEN_BWTREE=on
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DINDEX_BENCH_BUILD_TESTS=on -DINDEX_BENCH_TEST_THREAD_NUM=2 -DINDEX_BENCH_BUILD_PTREE=on -DINDEX_BENCH_BUILD_OPEN_BWTREE=on
 
     - name: Build
       shell: bash

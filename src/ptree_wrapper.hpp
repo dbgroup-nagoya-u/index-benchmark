@@ -70,8 +70,6 @@ class PTreeWrapper
       [[maybe_unused]] const size_t thread_num,
       const size_t insert_num)
   {
-    const size_t insert_num_per_thread = insert_num / thread_num;
-
     for (size_t i = 0; i < insert_num; ++i) {
       ptree_.insert(std::make_pair(i, i));
     }
@@ -81,14 +79,19 @@ class PTreeWrapper
    * Public read/write APIs
    *##############################################################################################*/
 
-  constexpr bool
+  std::pair<int64_t, Value>
   Read(const Key key)
   {
     constexpr Value kDefaultVal = std::numeric_limits<Value>::max();
-    return ptree_.find(key, kDefaultVal) != kDefaultVal;
+
+    const auto read_val = ptree_.find(key, kDefaultVal);
+    if (read_val == kDefaultVal) {
+      return {1, kDefaultVal};
+    }
+    return {0, read_val};
   }
 
-  constexpr void
+  void
   Scan(  //
       const Key begin_key,
       const Key scan_range)
@@ -98,25 +101,30 @@ class PTreeWrapper
     PTree_t::entries(PTree_t::range(ptree_, begin_key, end_key));
   }
 
-  constexpr void
+  int64_t
   Write(  //
       const Key key,
       const Value value)
   {
     // ptree_->insert means "upsert"
     ptree_.insert(std::make_pair(key, value));
+
+    return 0;
   }
 
-  constexpr void
+  int64_t
   Insert(  //
       const Key key,
       const Value value)
   {
     // ptree_->insert means "upsert"
+    assert(false);
     ptree_.insert(std::make_pair(key, value));
+
+    return 0;
   }
 
-  constexpr void
+  int64_t
   Update(  //
       const Key key,
       const Value value)
@@ -125,11 +133,15 @@ class PTreeWrapper
     auto f = [&](std::pair<Key, Value>) { return value; };
     // do nothing if key does not exist
     ptree_.update(key, f);
+
+    return 0;
   }
 
-  constexpr void
+  int64_t
   Delete(const Key key)
   {
     PTree_t::remove(ptree_, key);
+
+    return 0;
   }
 };
