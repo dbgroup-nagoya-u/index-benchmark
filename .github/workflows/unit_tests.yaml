@@ -12,6 +12,8 @@ env:
 jobs:
   unit_test:
     runs-on: ubuntu-20.04
+    env:
+      NUM_THREADS: 1
     steps:
 
     - name: Clone Repository
