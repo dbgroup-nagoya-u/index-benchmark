@@ -42,7 +42,7 @@ class IndexWrapperFixture : public ::testing::Test
    *##############################################################################################*/
 
   // constant values for testing
-  static constexpr size_t kTotalKeyNum = 8192;
+  static constexpr size_t kTotalKeyNum = 1e6;
 
   /*################################################################################################
    * Internal member variables
@@ -50,10 +50,6 @@ class IndexWrapperFixture : public ::testing::Test
 
   // a target index instance
   std::unique_ptr<Index> index;
-
-  // actual keys and values for testing
-  Key keys[kTotalKeyNum];
-  Value payloads[kTotalKeyNum];
 
   /*################################################################################################
    * Setup/Teardown
@@ -63,11 +59,6 @@ class IndexWrapperFixture : public ::testing::Test
   SetUp() override
   {
     index = std::make_unique<Index>();
-
-    for (size_t i = 0; i < kTotalKeyNum; ++i) {
-      keys[i] = i;
-      payloads[i] = i;
-    }
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
@@ -88,52 +79,32 @@ class IndexWrapperFixture : public ::testing::Test
   }
 
   /*################################################################################################
-   * Functions for wrapping APIs
-   *##############################################################################################*/
-
-  void
-  Write(  //
-      const size_t key_id,
-      const size_t payload_id)
-  {
-    index->Write(keys[key_id], payloads[payload_id]);
-  }
-
-  void
-  Insert(  //
-      const size_t key_id,
-      const size_t payload_id)
-  {
-    index->Insert(keys[key_id], payloads[payload_id]);
-  }
-
-  /*################################################################################################
    * Functions for verification
    *##############################################################################################*/
 
   void
   VerifyRead(  //
-      const size_t key_id,
-      const size_t expected_id,
+      const Key key,
+      const Value expected,
       const bool expect_fail = false)
   {
-    const auto [rc, payload] = index->Read(keys[key_id]);
+    const auto [rc, actual] = index->Read(key);
 
     if (expect_fail) {
       EXPECT_NE(0, rc);
     } else {
       EXPECT_EQ(0, rc);
-      EXPECT_EQ(payloads[expected_id], payload);
+      EXPECT_EQ(expected, actual);
     }
   }
 
   void
   VerifyInsert(  //
-      const size_t key_id,
-      const size_t payload_id,
+      const Key key,
+      const Value payload,
       const bool expect_fail = false)
   {
-    const auto rc = index->Insert(keys[key_id], payloads[payload_id]);
+    const auto rc = index->Insert(key, payload);
 
     if (expect_fail) {
       EXPECT_NE(0, rc);
@@ -170,7 +141,7 @@ TYPED_TEST_CASE(IndexWrapperFixture, Indexes);
 TYPED_TEST(IndexWrapperFixture, Write_UniqueKeys_ReadInsertedPayloads)
 {
   for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
-    TestFixture::Write(i, i);
+    TestFixture::index->Write(i, i);
   }
   for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
     TestFixture::VerifyRead(i, i);
@@ -180,10 +151,10 @@ TYPED_TEST(IndexWrapperFixture, Write_UniqueKeys_ReadInsertedPayloads)
 TYPED_TEST(IndexWrapperFixture, Write_DuplicateKeys_ReadUpdatedPayloads)
 {
   for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
-    TestFixture::Write(i, i);
+    TestFixture::index->Write(i, i);
   }
   for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
-    TestFixture::Write(i, i + 1);
+    TestFixture::index->Write(i, i + 1);
   }
   for (size_t i = 0; i < TestFixture::kTotalKeyNum - 1; ++i) {
     TestFixture::VerifyRead(i, i + 1);
