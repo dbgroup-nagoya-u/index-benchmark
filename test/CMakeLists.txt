@@ -64,6 +64,13 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     gtest_main
   )
 
+  if(DEFINED INDEX_BENCH_TEST_THREAD_NUM)
+    target_compile_definitions(
+      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+      INDEX_BENCH_TEST_THREAD_NUM=${INDEX_BENCH_TEST_THREAD_NUM}
+    )
+  endif()
+
   #--------------------------------------------------------------------------------------#
   # Build OpenBw-Tree for benchmarking
   #--------------------------------------------------------------------------------------#
@@ -104,4 +111,5 @@ endfunction()
 # add unit tests to build targets
 ADD_INDEX_BENCH_TEST("operation_generator_test")
 ADD_INDEX_BENCH_TEST("index_wrapper_test")
+ADD_INDEX_BENCH_TEST("index_wrapper_multi_thread_test")
 ADD_INDEX_BENCH_TEST("worker_test")

@@ -109,12 +109,12 @@ class BzTreeWrapper
     }
   }
 
-  void
+  auto
   Write(  //
       const Key key,
       const Value value)
   {
-    bztree_.Write(key, value);
+    return bztree_.Write(key, value);
   }
 
   auto

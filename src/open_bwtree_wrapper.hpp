@@ -147,12 +147,13 @@ class OpenBwTreeWrapper
     }
   }
 
-  void
+  int64_t
   Write(  //
       const Key key,
       const Value value)
   {
     bwtree_.Upsert(key, value);
+    return 0;
   }
 
   int64_t

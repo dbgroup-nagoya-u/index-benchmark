@@ -43,7 +43,6 @@ class WorkerFixture : public ::testing::Test
    * Internal constants
    *##############################################################################################*/
 
-  // constant values for testing
   static constexpr size_t kTotalKeyNum = 8192;
   static constexpr size_t kOperationNum = 8192;
   static constexpr double kSkewParameter = 0;
