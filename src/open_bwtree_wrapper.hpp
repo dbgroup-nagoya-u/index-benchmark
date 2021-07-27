@@ -173,10 +173,10 @@ class OpenBwTreeWrapper
     return 1;
   }
 
-  void
+  int64_t
   Delete(const Key key)
   {
     // a delete operation in Open-Bw-tree requrires a key-value pair
-    bwtree_.Delete(key, key);
+    return !bwtree_.Delete(key, key);
   }
 };

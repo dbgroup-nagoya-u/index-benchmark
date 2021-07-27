@@ -133,10 +133,10 @@ class BzTreeWrapper
     return bztree_.Update(key, value);
   }
 
-  void
+  auto
   Delete(  //
       const Key key)
   {
-    bztree_.Delete(key);
+    return bztree_.Delete(key);
   }
 };

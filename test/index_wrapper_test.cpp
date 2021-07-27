@@ -127,6 +127,20 @@ class IndexWrapperFixture : public ::testing::Test
       EXPECT_EQ(0, rc);
     }
   }
+
+  void
+  VerifyDelete(  //
+      const Key key,
+      const bool expect_fail = false)
+  {
+    const auto rc = index->Delete(key);
+
+    if (expect_fail) {
+      EXPECT_NE(0, rc);
+    } else {
+      EXPECT_EQ(0, rc);
+    }
+  }
 };
 
 /*##################################################################################################
@@ -231,5 +245,29 @@ TYPED_TEST(IndexWrapperFixture, Update_DuplicateKeys_ReadUpdatedPayloads)
   }
   for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
     TestFixture::VerifyRead(i, i + 1);
+  }
+}
+
+/*--------------------------------------------------------------------------------------------------
+ * Delete operation
+ *------------------------------------------------------------------------------------------------*/
+
+TYPED_TEST(IndexWrapperFixture, Delete_UniqueKeys_DeleteFail)
+{
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyDelete(i, true);
+  }
+}
+
+TYPED_TEST(IndexWrapperFixture, Delete_DuplicateKeys_ReadFailWithDeletedKeys)
+{
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::index->Insert(i, i);
+  }
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyDelete(i);
+  }
+  for (size_t i = 0; i < TestFixture::kTotalKeyNum; ++i) {
+    TestFixture::VerifyRead(i, i, true);
   }
 }
