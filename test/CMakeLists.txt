@@ -97,8 +97,21 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     target_compile_definitions(
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_BUILD_MASSTREE
-      CACHE_LINE_SIZE=64
     )
+    if(${INDEX_BENCH_TEST_TARGET} STREQUAL "index_wrapper_test")
+      target_link_libraries(
+        ${INDEX_BENCH_TEST_TARGET} PRIVATE
+        ${MASSTREE_SOURCE_DIR}/misc.o
+        ${MASSTREE_SOURCE_DIR}/checkpoint.o
+        ${MASSTREE_SOURCE_DIR}/query_masstree.o
+        ${MASSTREE_SOURCE_DIR}/value_string.o
+        ${MASSTREE_SOURCE_DIR}/value_array.o
+        ${MASSTREE_SOURCE_DIR}/value_versioned_array.o
+        ${MASSTREE_SOURCE_DIR}/string_slice.o
+        ${MASSTREE_SOURCE_DIR}/kvio.o
+        ${MASSTREE_SOURCE_DIR}/libjson.a
+      )
+    endif()
   endif()
 
   #--------------------------------------------------------------------------------------#

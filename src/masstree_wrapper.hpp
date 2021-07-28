@@ -17,18 +17,34 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <random>
 #include <thread>
 #include <utility>
 #include <vector>
 
-// suppress Masstree's assertion
-#define precondition(x, ...) \
-  {                          \
-  }
-
-#include "../external/masstree/masstree.hh"
+#include "../external/masstree/clp.h"
+#include "../external/masstree/config.h"
+#include "../external/masstree/json.hh"
+#include "../external/masstree/kvio.hh"
+#include "../external/masstree/kvrandom.hh"
+#include "../external/masstree/kvrow.hh"
+#include "../external/masstree/kvstats.hh"
+#include "../external/masstree/kvtest.hh"
+#include "../external/masstree/masstree_insert.hh"
+#include "../external/masstree/masstree_remove.hh"
+#include "../external/masstree/masstree_scan.hh"
+#include "../external/masstree/masstree_tcursor.hh"
+#include "../external/masstree/nodeversion.hh"
+#include "../external/masstree/query_masstree.hh"
+#include "../external/masstree/timestamp.hh"
 #include "common.hpp"
+
+volatile mrcu_epoch_type globalepoch = 1;  // global epoch, updated by main thread regularly
+volatile mrcu_epoch_type active_epoch = 1;
+kvepoch_t global_log_epoch = 0;
+volatile bool recovering = false;  // so don't add log entries, and free old value immediately
+kvtimestamp_t initial_timestamp;
 
 template <class Key, class Value>
 class MasstreeWrapper
@@ -38,14 +54,19 @@ class MasstreeWrapper
    * Internal member variables
    *##############################################################################################*/
 
-  void* masstree_{};
+  Masstree::default_table masstree_;
+
+  threadinfo* main_ti_;
 
  public:
   /*################################################################################################
    * Public constructors/destructors
    *##############################################################################################*/
 
-  MasstreeWrapper() {}
+  MasstreeWrapper() : masstree_{}, main_ti_{threadinfo::make(threadinfo::TI_MAIN, -1)}
+  {
+    masstree_.initialize(*main_ti_);
+  }
 
   ~MasstreeWrapper() = default;
 
