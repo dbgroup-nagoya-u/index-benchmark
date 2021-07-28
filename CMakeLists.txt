@@ -16,6 +16,7 @@ project(
 # define source directories
 set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
+set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
 
 # build option for efficient memory allocators
 option(INDEX_BENCH_USE_MIMALLOC, "Use mimalloc as an allocator" OFF)
@@ -28,6 +29,39 @@ if(${INDEX_BENCH_USE_MIMALLOC})
 endif()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
+
+#--------------------------------------------------------------------------------------#
+# Configure Masstree
+#--------------------------------------------------------------------------------------#
+
+option(INDEX_BENCH_BUILD_MASSTREE, "Build Masstree as a benchmarking target" OFF)
+
+if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
+  execute_process(
+    COMMAND ./bootstrap.sh
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
+  )
+  if(result)
+    message(FATAL_ERROR "Bootstrap step for Masstree failed: ${result}")
+  endif()
+  execute_process(
+    COMMAND ./configure --disable-assertions
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
+  )
+  if(result)
+    message(FATAL_ERROR "Configure step for Masstree failed: ${result}")
+  endif()
+  execute_process(
+    COMMAND make -j
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
+  )
+  if(result)
+    message(FATAL_ERROR "Build step for Masstree failed: ${result}")
+  endif()
+endif()
 
 #--------------------------------------------------------------------------------------#
 # Configure gflags
@@ -92,12 +126,10 @@ endif()
 #--------------------------------------------------------------------------------------#
 # Build Masstree for benchmarking
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_MASSTREE, "Build Masstree as a benchmarking target" OFF)
 if(${INDEX_BENCH_BUILD_MASSTREE})
   target_compile_definitions(
     index_bench PRIVATE
     INDEX_BENCH_BUILD_MASSTREE
-    CACHE_LINE_SIZE=64
   )
 endif()
 
