@@ -90,6 +90,18 @@ if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
 endif()
 
 #--------------------------------------------------------------------------------------#
+# Build Masstree for benchmarking
+#--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_BUILD_MASSTREE, "Build Masstree as a benchmarking target" OFF)
+if(${INDEX_BENCH_BUILD_MASSTREE})
+  target_compile_definitions(
+    index_bench PRIVATE
+    INDEX_BENCH_BUILD_MASSTREE
+    CACHE_LINE_SIZE=64
+  )
+endif()
+
+#--------------------------------------------------------------------------------------#
 # Build PTree for benchmarking
 #--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_BUILD_PTREE, "Build PTree as a benchmarking target" OFF)

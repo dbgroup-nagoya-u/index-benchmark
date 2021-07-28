@@ -91,6 +91,17 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   endif()
 
   #--------------------------------------------------------------------------------------#
+  # Build Masstree for benchmarking
+  #--------------------------------------------------------------------------------------#
+  if(${INDEX_BENCH_BUILD_MASSTREE})
+    target_compile_definitions(
+      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+      INDEX_BENCH_BUILD_MASSTREE
+      CACHE_LINE_SIZE=64
+    )
+  endif()
+
+  #--------------------------------------------------------------------------------------#
   # Build PTree for benchmarking
   #--------------------------------------------------------------------------------------#
   if(${INDEX_BENCH_BUILD_PTREE})

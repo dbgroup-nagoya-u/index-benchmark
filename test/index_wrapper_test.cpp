@@ -28,6 +28,11 @@ using BzTree_t = BzTreeWrapper<Key, Value>;
 using OpenBwTree_t = OpenBwTreeWrapper<Key, Value>;
 #endif
 
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+#include "masstree_wrapper.hpp"
+using Masstree_t = MasstreeWrapper<Key, Value>;
+#endif
+
 #ifdef INDEX_BENCH_BUILD_PTREE
 #include "ptree_wrapper.hpp"
 using PTree_t = PTreeWrapper<Key, Value>;
@@ -150,6 +155,10 @@ using Indexes = ::testing::Types<BzTree_t
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
                                  ,
                                  OpenBwTree_t
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+                                 ,
+                                 Masstree_t
 #endif
 #ifdef INDEX_BENCH_BUILD_PTREE
                                  ,
