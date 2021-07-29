@@ -285,6 +285,11 @@ TYPED_TEST(IndexWrapperFixture, Update_DuplicateKeys_ReadUpdatedPayloads)
     return;
   }
 #endif
+#ifdef INDEX_BENCH_BUILD_PTREE
+  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
+    return;
+  }
+#endif
 
   for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
     TestFixture::index->Insert(i, i);

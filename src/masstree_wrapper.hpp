@@ -41,11 +41,26 @@
 #include "../external/masstree/timestamp.hh"
 #include "common.hpp"
 
-volatile mrcu_epoch_type globalepoch = 1;  // global epoch, updated by main thread regularly
+/*##################################################################################################
+ * Global variables
+ *################################################################################################*/
+
+// global epoch, updated by main thread regularly
+volatile mrcu_epoch_type globalepoch = 1;
+
 volatile mrcu_epoch_type active_epoch = 1;
+
 kvepoch_t global_log_epoch = 0;
-volatile bool recovering = false;  // so don't add log entries, and free old value immediately
+
+// don't add log entries, and free old value immediately
+volatile bool recovering = false;
+
 kvtimestamp_t initial_timestamp;
+
+/*##################################################################################################
+ * Global thread-local storages
+ *################################################################################################*/
+
 thread_local threadinfo* thread_info;
 
 template <class Key, class Value>
@@ -129,18 +144,7 @@ class MasstreeWrapper
       [[maybe_unused]] const Key begin_key,
       [[maybe_unused]] const Key scan_range)
   {
-    // const auto end_key = begin_key + scan_range;
-    // Value sum = 0;
-
-    // RecordPage_t scan_results;
-    // masstree_.Scan(scan_results, &begin_key, true, &end_key, true);
-    // while (!scan_results.empty()) {
-    //   for (auto&& [key, value] : scan_results) sum += value;
-
-    //   const auto next_key = scan_results.GetLastKey();
-    //   if (next_key == end_key) break;
-    //   masstree_.Scan(scan_results, &next_key, false, &end_key, true);
-    // }
+    // begin-end scan is not implemented in Masstree
   }
 
   int64_t
