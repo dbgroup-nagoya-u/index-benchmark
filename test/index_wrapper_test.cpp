@@ -204,6 +204,11 @@ TYPED_TEST(IndexWrapperFixture, Write_DuplicateKeys_ReadUpdatedPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Insert_UniqueKeys_ReadInsertedPayloads)
 {
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
+    return;
+  }
+#endif
 #ifdef INDEX_BENCH_BUILD_PTREE
   if constexpr (std::is_same_v<TypeParam, PTree_t>) {
     return;
@@ -220,6 +225,11 @@ TYPED_TEST(IndexWrapperFixture, Insert_UniqueKeys_ReadInsertedPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Insert_DuplicateKeys_InsertFail)
 {
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
+    return;
+  }
+#endif
 #ifdef INDEX_BENCH_BUILD_PTREE
   if constexpr (std::is_same_v<TypeParam, PTree_t>) {
     return;
@@ -240,6 +250,11 @@ TYPED_TEST(IndexWrapperFixture, Insert_DuplicateKeys_InsertFail)
 
 TYPED_TEST(IndexWrapperFixture, Update_UniqueKeys_UpdateFail)
 {
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
+    return;
+  }
+#endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if constexpr (std::is_same_v<TypeParam, OpenBwTree_t>) {
     // update is not implemented in OpenBw-Tree
@@ -259,6 +274,11 @@ TYPED_TEST(IndexWrapperFixture, Update_UniqueKeys_UpdateFail)
 
 TYPED_TEST(IndexWrapperFixture, Update_DuplicateKeys_ReadUpdatedPayloads)
 {
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
+    return;
+  }
+#endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if constexpr (std::is_same_v<TypeParam, OpenBwTree_t>) {
     // update is not implemented in OpenBw-Tree
@@ -283,6 +303,11 @@ TYPED_TEST(IndexWrapperFixture, Update_DuplicateKeys_ReadUpdatedPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Delete_UniqueKeys_DeleteFail)
 {
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
+    return;
+  }
+#endif
 #ifdef INDEX_BENCH_BUILD_PTREE
   if constexpr (std::is_same_v<TypeParam, PTree_t>) {
     return;
@@ -296,6 +321,11 @@ TYPED_TEST(IndexWrapperFixture, Delete_UniqueKeys_DeleteFail)
 
 TYPED_TEST(IndexWrapperFixture, Delete_DuplicateKeys_ReadFailWithDeletedKeys)
 {
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
+    return;
+  }
+#endif
 #ifdef INDEX_BENCH_BUILD_PTREE
   if constexpr (std::is_same_v<TypeParam, PTree_t>) {
     return;

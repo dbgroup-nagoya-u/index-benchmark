@@ -19,6 +19,7 @@
 #include <atomic>
 #include <memory>
 #include <random>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -45,27 +46,33 @@ volatile mrcu_epoch_type active_epoch = 1;
 kvepoch_t global_log_epoch = 0;
 volatile bool recovering = false;  // so don't add log entries, and free old value immediately
 kvtimestamp_t initial_timestamp;
+thread_local threadinfo* thread_info;
 
 template <class Key, class Value>
 class MasstreeWrapper
 {
+  using Table_t = Masstree::default_table;
+  using Str_t = lcdf::Str;
+
  private:
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
 
-  Masstree::default_table masstree_;
+  query<row_type> masstree_;
 
-  threadinfo* main_ti_;
+  Table_t table_;
 
  public:
   /*################################################################################################
    * Public constructors/destructors
    *##############################################################################################*/
 
-  MasstreeWrapper() : masstree_{}, main_ti_{threadinfo::make(threadinfo::TI_MAIN, -1)}
+  MasstreeWrapper() : table_{}
   {
-    masstree_.initialize(*main_ti_);
+    // assume that a main thread construct this instance
+    thread_info = threadinfo::make(threadinfo::TI_MAIN, -1);
+    table_.initialize(*thread_info);
   }
 
   ~MasstreeWrapper() = default;
@@ -107,10 +114,14 @@ class MasstreeWrapper
    *##############################################################################################*/
 
   std::pair<int64_t, Value>
-  Read([[maybe_unused]] const Key key)
+  Read(const Key key)
   {
-    // return masstree_.Read(key);
-    return {0, Value{}};
+    const auto str_key = quick_istr{key}.string();
+
+    Str_t payload;
+    auto found_key = masstree_.run_get1(table_.table(), str_key, 0, payload, *thread_info);
+
+    return {!found_key, payload.to_i()};
   }
 
   void
@@ -134,10 +145,15 @@ class MasstreeWrapper
 
   int64_t
   Write(  //
-      [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)
+      const Key key,
+      const Value value)
   {
-    // return masstree_.Write(key, value);
+    // unique quick_istr converters are required for each key/value
+    quick_istr key_conv{key}, val_conv{value};
+
+    // run replace procedure as write (upsert)
+    masstree_.run_replace(table_.table(), key_conv.string(), val_conv.string(), *thread_info);
+
     return 0;
   }
 
@@ -146,7 +162,8 @@ class MasstreeWrapper
       [[maybe_unused]] const Key key,
       [[maybe_unused]] const Value value)
   {
-    // return masstree_.Insert(key, value);
+    // an insert operation is not implemented in Masstree
+    assert(false);
     return 0;
   }
 
