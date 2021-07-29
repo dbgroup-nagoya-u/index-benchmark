@@ -45,27 +45,37 @@
  * Global variables
  *################################################################################################*/
 
-// global epoch, updated by main thread regularly
+/// global epoch, updated by main thread regularly
 volatile mrcu_epoch_type globalepoch = 1;
 
+///
 volatile mrcu_epoch_type active_epoch = 1;
 
+///
 kvepoch_t global_log_epoch = 0;
 
-// don't add log entries, and free old value immediately
+/// don't add log entries, and free old value immediately
 volatile bool recovering = false;
 
+///
 kvtimestamp_t initial_timestamp;
 
+/// an atomic counter to count the number of worker threads
 std::atomic_size_t mass_thread_counter = 0;
 
 /*##################################################################################################
  * Global thread-local storages
  *################################################################################################*/
 
+/// information of each worker thread
 thread_local threadinfo* mass_thread_info;
 
+/// a thread id for each worker thread
 thread_local size_t mass_thread_id;
+
+/*##################################################################################################
+ * Class definition
+ *################################################################################################*/
 
 template <class Key, class Value>
 class MasstreeWrapper
@@ -158,7 +168,8 @@ class MasstreeWrapper
       [[maybe_unused]] const Key begin_key,
       [[maybe_unused]] const Key scan_range)
   {
-    // begin-end scan is not implemented in Masstree
+    // this operation is not implemented
+    assert(false);
   }
 
   int64_t
@@ -180,9 +191,9 @@ class MasstreeWrapper
       [[maybe_unused]] const Key key,
       [[maybe_unused]] const Value value)
   {
-    // an insert operation is not implemented in Masstree
+    // this operation is not implemented
     assert(false);
-    return 0;
+    return 1;
   }
 
   int64_t
@@ -190,9 +201,9 @@ class MasstreeWrapper
       [[maybe_unused]] const Key key,
       [[maybe_unused]] const Value value)
   {
-    // an update operation is not implemented in Masstree
+    // this operation is not implemented
     assert(false);
-    return 0;
+    return 1;
   }
 
   int64_t

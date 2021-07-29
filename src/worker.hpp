@@ -48,6 +48,10 @@ using Masstree_t = MasstreeWrapper<Key, Value>;
 using PTree_t = PTreeWrapper<Key, Value>;
 #endif
 
+/*##################################################################################################
+ * Class definition
+ *################################################################################################*/
+
 /**
  * @brief A class of a worker thread for benchmarking.
  *

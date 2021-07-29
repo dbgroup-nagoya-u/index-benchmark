@@ -37,14 +37,14 @@ class BzTreeWrapper
    * Internal member variables
    *##############################################################################################*/
 
-  BzTree_t bztree_{};
+  BzTree_t bztree_;
 
  public:
   /*################################################################################################
    * Public constructors/destructors
    *##############################################################################################*/
 
-  BzTreeWrapper() {}
+  BzTreeWrapper() : bztree_{} {}
 
   ~BzTreeWrapper() = default;
 
@@ -134,8 +134,7 @@ class BzTreeWrapper
   }
 
   auto
-  Delete(  //
-      const Key key)
+  Delete(const Key key)
   {
     return bztree_.Delete(key);
   }

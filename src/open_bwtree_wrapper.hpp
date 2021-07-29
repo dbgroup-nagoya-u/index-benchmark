@@ -26,6 +26,10 @@
 #include "../external/open_bwtree/BwTree/bwtree.h"  // NOLINT
 #include "common.hpp"
 
+/*##################################################################################################
+ * Global variables
+ *################################################################################################*/
+
 /// disable OpenBw-Tree's debug logs
 bool wangziqi2013::bwtree::print_flag = false;
 
@@ -35,9 +39,19 @@ thread_local int wangziqi2013::bwtree::BwTreeBase::gc_id = -1;
 /// initialize the counter of the total number of entering threads
 std::atomic<size_t> wangziqi2013::bwtree::BwTreeBase::total_thread_num = 0;
 
+/// an atomic counter to count the number of worker threads
 std::atomic_size_t open_bw_thread_counter = 0;
 
+/*##################################################################################################
+ * Global thread-local storages
+ *################################################################################################*/
+
+/// a thread id for each worker thread
 thread_local size_t open_bw_thread_id;
+
+/*##################################################################################################
+ * Class definition
+ *################################################################################################*/
 
 template <class Key, class Value>
 class OpenBwTreeWrapper
@@ -49,6 +63,7 @@ class OpenBwTreeWrapper
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
+
   BwTree_t bwtree_;
 
  public:
@@ -175,7 +190,7 @@ class OpenBwTreeWrapper
       [[maybe_unused]] const Key key,
       [[maybe_unused]] const Value value)
   {
-    // an update operation is not implemented in Open-Bw-tree
+    // this operation is not implemented
     assert(false);
     return 1;
   }
