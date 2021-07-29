@@ -98,7 +98,8 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
       ${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_BUILD_MASSTREE
     )
-    if(${INDEX_BENCH_TEST_TARGET} STREQUAL "index_wrapper_test")
+    if(${INDEX_BENCH_TEST_TARGET} STREQUAL "index_wrapper_test"
+       OR ${INDEX_BENCH_TEST_TARGET} STREQUAL "index_wrapper_multi_thread_test")
       target_link_libraries(
         ${INDEX_BENCH_TEST_TARGET} PRIVATE
         ${MASSTREE_SOURCE_DIR}/misc.o
