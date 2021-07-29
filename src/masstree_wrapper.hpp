@@ -19,61 +19,92 @@
 #include <atomic>
 #include <memory>
 #include <random>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>
 
-#include "../external/open_bwtree/BwTree/bwtree.h"  // NOLINT
+#include "../external/masstree/clp.h"
+#include "../external/masstree/config.h"
+#include "../external/masstree/json.hh"
+#include "../external/masstree/kvio.hh"
+#include "../external/masstree/kvrandom.hh"
+#include "../external/masstree/kvrow.hh"
+#include "../external/masstree/kvstats.hh"
+#include "../external/masstree/kvtest.hh"
+#include "../external/masstree/masstree_insert.hh"
+#include "../external/masstree/masstree_remove.hh"
+#include "../external/masstree/masstree_scan.hh"
+#include "../external/masstree/masstree_tcursor.hh"
+#include "../external/masstree/nodeversion.hh"
+#include "../external/masstree/query_masstree.hh"
+#include "../external/masstree/timestamp.hh"
 #include "common.hpp"
 
 /*##################################################################################################
  * Global variables
  *################################################################################################*/
 
-/// disable OpenBw-Tree's debug logs
-bool wangziqi2013::bwtree::print_flag = false;
+/// global epoch, updated by main thread regularly
+volatile mrcu_epoch_type globalepoch = 1;
 
-/// initialize GC ID for each thread
-thread_local int wangziqi2013::bwtree::BwTreeBase::gc_id = -1;
+///
+volatile mrcu_epoch_type active_epoch = 1;
 
-/// initialize the counter of the total number of entering threads
-std::atomic<size_t> wangziqi2013::bwtree::BwTreeBase::total_thread_num = 0;
+///
+kvepoch_t global_log_epoch = 0;
+
+/// don't add log entries, and free old value immediately
+volatile bool recovering = false;
+
+///
+kvtimestamp_t initial_timestamp;
 
 /// an atomic counter to count the number of worker threads
-std::atomic_size_t open_bw_thread_counter = 0;
+std::atomic_size_t mass_thread_counter = 0;
 
 /*##################################################################################################
  * Global thread-local storages
  *################################################################################################*/
 
+/// information of each worker thread
+thread_local threadinfo* mass_thread_info;
+
 /// a thread id for each worker thread
-thread_local size_t open_bw_thread_id;
+thread_local size_t mass_thread_id;
 
 /*##################################################################################################
  * Class definition
  *################################################################################################*/
 
 template <class Key, class Value>
-class OpenBwTreeWrapper
+class MasstreeWrapper
 {
-  using BwTree_t = wangziqi2013::bwtree::BwTree<Key, Value>;
-  using ForwardIterator = typename BwTree_t::ForwardIterator;
+  using Table_t = Masstree::default_table;
+  using Str_t = lcdf::Str;
 
  private:
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
 
-  BwTree_t bwtree_;
+  query<row_type> masstree_;
+
+  Table_t table_;
 
  public:
   /*################################################################################################
    * Public constructors/destructors
    *##############################################################################################*/
 
-  OpenBwTreeWrapper() : bwtree_{} {}
+  MasstreeWrapper() : table_{}
+  {
+    // assume that a main thread construct this instance
+    mass_thread_info = threadinfo::make(threadinfo::TI_MAIN, -1);
+    table_.initialize(*mass_thread_info);
+  }
 
-  ~OpenBwTreeWrapper() = default;
+  ~MasstreeWrapper() = default;
 
   /*################################################################################################
    * Public utility functions
@@ -87,16 +118,14 @@ class OpenBwTreeWrapper
     const size_t insert_num_per_thread = insert_num / thread_num;
 
     // lambda function to insert key-value pairs in a certain thread
-    auto f = [&](BwTree_t* index, const size_t begin, const size_t end, const size_t thread_id) {
-      index->AssignGCID(thread_id);
-      for (size_t i = begin; i < end; ++i) {
-        index->Upsert(i, i);
-      }
-      index->UnregisterThread(thread_id);
-    };
+    auto f = [&](const size_t begin, const size_t end) {
+      const auto thread_id = mass_thread_counter.fetch_add(1);
+      mass_thread_info = threadinfo::make(threadinfo::TI_PROCESS, thread_id);
 
-    // reserve threads for initialization
-    ReserveThreads(thread_num);
+      for (size_t i = begin; i < end; ++i) {
+        this->Write(i, i);
+      }
+    };
 
     // insert initial key-value pairs in multi-threads
     std::vector<std::thread> threads;
@@ -105,34 +134,18 @@ class OpenBwTreeWrapper
       if (i == thread_num - 1) {
         end = insert_num;
       }
-      threads.emplace_back(f, &bwtree_, begin, end, i);
+      threads.emplace_back(f, begin, end);
       begin = end;
       end += insert_num_per_thread;
     }
     for (auto&& t : threads) t.join();
-
-    // release reserved threads
-    open_bw_thread_counter.store(0);
-    ReserveThreads(0);
-  }
-
-  void
-  ReserveThreads(const size_t total_thread_num)
-  {
-    bwtree_.UpdateThreadLocal(total_thread_num);
   }
 
   void
   RegisterThread()
   {
-    open_bw_thread_id = open_bw_thread_counter.fetch_add(1);
-    bwtree_.AssignGCID(open_bw_thread_id);
-  }
-
-  void
-  UnregisterThread()
-  {
-    bwtree_.UnregisterThread(open_bw_thread_id);
+    mass_thread_id = mass_thread_counter.fetch_add(1);
+    mass_thread_info = threadinfo::make(threadinfo::TI_PROCESS, mass_thread_id);
   }
 
   /*################################################################################################
@@ -142,30 +155,21 @@ class OpenBwTreeWrapper
   std::pair<int64_t, Value>
   Read(const Key key)
   {
-    std::vector<Value> read_results;
-    bwtree_.GetValue(key, read_results);
+    const auto str_key = quick_istr{key}.string();
 
-    if (read_results.empty()) {
-      return {1, Value{}};
-    }
-    return {0, read_results[0]};
+    Str_t payload;
+    auto found_key = masstree_.run_get1(table_.table(), str_key, 0, payload, *mass_thread_info);
+
+    return {!found_key, payload.to_i()};
   }
 
   void
   Scan(  //
-      const Key begin_key,
-      const Key scan_range)
+      [[maybe_unused]] const Key begin_key,
+      [[maybe_unused]] const Key scan_range)
   {
-    const auto end_key = begin_key + scan_range;
-    Value sum = 0;
-
-    ForwardIterator tree_iterator{&bwtree_, begin_key};
-    for (; !tree_iterator.IsEnd(); ++tree_iterator) {
-      auto&& [key, value] = *tree_iterator;
-      if (key > end_key) break;
-
-      sum += value;
-    }
+    // this operation is not implemented
+    assert(false);
   }
 
   int64_t
@@ -173,16 +177,23 @@ class OpenBwTreeWrapper
       const Key key,
       const Value value)
   {
-    bwtree_.Upsert(key, value);
+    // unique quick_istr converters are required for each key/value
+    quick_istr key_conv{key}, val_conv{value};
+
+    // run replace procedure as write (upsert)
+    masstree_.run_replace(table_.table(), key_conv.string(), val_conv.string(), *mass_thread_info);
+
     return 0;
   }
 
   int64_t
   Insert(  //
-      const Key key,
-      const Value value)
+      [[maybe_unused]] const Key key,
+      [[maybe_unused]] const Value value)
   {
-    return !bwtree_.Insert(key, value);
+    // this operation is not implemented
+    assert(false);
+    return 1;
   }
 
   int64_t
@@ -198,7 +209,8 @@ class OpenBwTreeWrapper
   int64_t
   Delete(const Key key)
   {
-    // a delete operation in Open-Bw-tree requrires a key-value pair
-    return !bwtree_.Delete(key, key);
+    const auto str_key = quick_istr{key}.string();
+    auto deleted = masstree_.run_remove(table_.table(), str_key, *mass_thread_info);
+    return !deleted;
   }
 };

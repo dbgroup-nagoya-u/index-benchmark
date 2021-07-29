@@ -26,6 +26,32 @@
 #include "common.hpp"
 #include "operation_generator.hpp"
 
+/*##################################################################################################
+ * Target index implementations
+ *################################################################################################*/
+
+#include "bztree_wrapper.hpp"
+using BzTree_t = BzTreeWrapper<Key, Value>;
+
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+#include "open_bwtree_wrapper.hpp"
+using OpenBwTree_t = OpenBwTreeWrapper<Key, Value>;
+#endif
+
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+#include "masstree_wrapper.hpp"
+using Masstree_t = MasstreeWrapper<Key, Value>;
+#endif
+
+#ifdef INDEX_BENCH_BUILD_PTREE
+#include "ptree_wrapper.hpp"
+using PTree_t = PTreeWrapper<Key, Value>;
+#endif
+
+/*##################################################################################################
+ * Class definition
+ *################################################################################################*/
+
 /**
  * @brief A class of a worker thread for benchmarking.
  *
@@ -89,9 +115,27 @@ class Worker
     for (size_t i = 0; i < operation_counts_; ++i) {
       operation_queue_.emplace_back(operation_engine_());
     }
+
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
+      index_->RegisterThread();
+    }
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+    if constexpr (std::is_same_v<Index, Masstree_t>) {
+      index_->RegisterThread();
+    }
+#endif
   }
 
-  ~Worker() = default;
+  ~Worker()
+  {
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
+      index_->UnregisterThread();
+    }
+#endif
+  }
 
   Worker(const Worker &) = delete;
   Worker &operator=(const Worker &) = delete;

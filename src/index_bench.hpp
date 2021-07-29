@@ -33,26 +33,6 @@
 #include "worker.hpp"
 
 /*##################################################################################################
- * Target index implementations
- *################################################################################################*/
-
-#include "bztree_wrapper.hpp"
-using BzTree_t = BzTreeWrapper<Key, Value>;
-
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-#include "open_bwtree_wrapper.hpp"
-using OpenBwTree_t = OpenBwTreeWrapper<Key, Value>;
-
-/// global thread counter for GC
-std::atomic_size_t _thread_counter = 0;
-#endif
-
-#ifdef INDEX_BENCH_BUILD_PTREE
-#include "ptree_wrapper.hpp"
-using PTree_t = PTreeWrapper<Key, Value>;
-#endif
-
-/*##################################################################################################
  * Global variables
  *################################################################################################*/
 
@@ -83,7 +63,7 @@ Log(const char *message)
 }
 
 /*##################################################################################################
- * Utility Classes
+ * Class definition
  *################################################################################################*/
 
 /**
@@ -232,19 +212,9 @@ class IndexBench
     // prepare a worker
     Worker_t *worker;
 
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    [[maybe_unused]] const auto thread_id = _thread_counter.fetch_add(1);
-#endif
-
     {  // create a lock to stop a main thread
       const auto lock = std::shared_lock<std::shared_mutex>(mutex_2nd);
       worker = new Worker_t{target_index_.get(), zipf_engine_, workload_, exec_num, random_seed};
-
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-      if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-        target_index_->RegisterThread(thread_id);
-      }
-#endif
     }  // unlock to notice that this worker has been created
 
     {  // wait for benchmark to be ready
@@ -254,12 +224,6 @@ class IndexBench
       } else {
         worker->MeasureLatency();
       }
-
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-      if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-        target_index_->UnregisterThread(thread_id);
-      }
-#endif
     }  // unlock to notice that this worker has finished
 
     if (!measure_throughput_) {
@@ -321,7 +285,6 @@ class IndexBench
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
       // reserve threads for workers and the main
-      _thread_counter.store(0);
       target_index_->ReserveThreads(thread_num_);
     }
 #endif

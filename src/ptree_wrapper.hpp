@@ -117,11 +117,9 @@ class PTreeWrapper
       const Key key,
       const Value value)
   {
-    // ptree_->insert means "upsert"
+    // this operation is not implemented
     assert(false);
-    ptree_.insert(std::make_pair(key, value));
-
-    return 0;
+    return 1;
   }
 
   int64_t

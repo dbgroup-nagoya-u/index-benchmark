@@ -61,8 +61,15 @@
     "ctest",
     "gflags",
     "gtest",
+    "istr",
+    "kvepoch",
+    "kvio",
+    "kvtimestamp",
+    "lcdf",
     "libgflags",
+    "libjson",
     "libnuma",
+    "mrcu",
     "mwcas",
     "numactl",
     "pbbslib",
@@ -147,6 +154,7 @@
     "variant": "cpp",
     "shared_mutex": "cpp",
     "bitset": "cpp",
-    "regex": "cpp"
+    "regex": "cpp",
+    "csignal": "cpp"
   },
 }

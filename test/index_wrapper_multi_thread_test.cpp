@@ -36,6 +36,11 @@ using BzTree_t = BzTreeWrapper<Key, Value>;
 using OpenBwTree_t = OpenBwTreeWrapper<Key, Value>;
 #endif
 
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+#include "masstree_wrapper.hpp"
+using Masstree_t = MasstreeWrapper<Key, Value>;
+#endif
+
 template <class Index>
 class IndexWrapperFixture : public ::testing::Test
 {
@@ -86,10 +91,6 @@ class IndexWrapperFixture : public ::testing::Test
 
   // a lock to stop worker threads
   std::shared_mutex worker_lock;
-
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  std::atomic_size_t thread_counter;
-#endif
 
   /*################################################################################################
    * Setup/Teardown
@@ -152,9 +153,13 @@ class IndexWrapperFixture : public ::testing::Test
       const size_t rand_seed)
   {
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    [[maybe_unused]] const auto thread_id = thread_counter.fetch_add(1);
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      index->RegisterThread(thread_id);
+      index->RegisterThread();
+    }
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+    if constexpr (std::is_same_v<Index, Masstree_t>) {
+      index->RegisterThread();
     }
 #endif
 
@@ -190,7 +195,7 @@ class IndexWrapperFixture : public ::testing::Test
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      index->UnregisterThread(thread_id);
+      index->UnregisterThread();
     }
 #endif
   }
@@ -201,7 +206,7 @@ class IndexWrapperFixture : public ::testing::Test
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
       index->ReserveThreads(kThreadNum);
-      thread_counter.store(0);
+      open_bw_thread_counter.store(0);
     }
 #endif
 
@@ -263,6 +268,10 @@ using Indexes = ::testing::Types<BzTree_t
                                  ,
                                  OpenBwTree_t
 #endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+                                 ,
+                                 Masstree_t
+#endif
                                  >;
 TYPED_TEST_CASE(IndexWrapperFixture, Indexes);
 
@@ -277,6 +286,12 @@ TYPED_TEST(IndexWrapperFixture, Write_MultiThreads_ReadWrittenPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Insert_MultiThreads_ReadInsertedPayloads)
 {
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
+    return;
+  }
+#endif
+
   TestFixture::RunOverMultiThread(TestFixture::WriteType::kInsert);
 }
 
@@ -284,6 +299,11 @@ TYPED_TEST(IndexWrapperFixture, Update_MultiThreads_ReadUpdatedPayloads)
 {
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if constexpr (std::is_same_v<TypeParam, OpenBwTree_t>) {
+    return;
+  }
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
     return;
   }
 #endif

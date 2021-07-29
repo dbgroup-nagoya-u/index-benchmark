@@ -16,3 +16,6 @@
 [submodule "latest-open-bw-repo"]
 	path = external/open_bwtree
 	url = https://github.com/wangziqi2016/index-microbench.git
+[submodule "masstree-beta"]
+	path = external/masstree
+	url = https://github.com/kohler/masstree-beta.git
