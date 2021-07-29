@@ -84,6 +84,14 @@ DEFINE_bool(open_bw,
             "OpenBw-Tree is not built as a benchmark target. If you want to measure OpenBw-Tree's "
             "performance, set 'INDEX_BENCH_BUILD_OPEN_BWTREE' as a compile option.");
 #endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+DEFINE_bool(mass, true, "Use Masstree as a benchmark target");
+#else
+DEFINE_bool(mass,
+            false,
+            "Massree is not built as a benchmark target. If you want to measure Masstree's "
+            "performance, set 'INDEX_BENCH_BUILD_MASSTREE' as a compile option.");
+#endif
 #ifdef INDEX_BENCH_BUILD_PTREE
 DEFINE_bool(p, true, "Use PTree as a benchmark target");
 #else
@@ -138,6 +146,22 @@ main(int argc, char *argv[])
                                           random_seed,
                                           FLAGS_throughput};
     Log("** Run Open-BwTree **");
+    bench.Run();
+    Log("** Finish **");
+  }
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if (FLAGS_mass) {
+    auto bench = IndexBench<Masstree_t>{workload,
+                                        FLAGS_num_exec,
+                                        FLAGS_num_thread,
+                                        FLAGS_num_key,
+                                        FLAGS_num_init_thread,
+                                        FLAGS_num_init_insert,
+                                        FLAGS_skew_parameter,
+                                        random_seed,
+                                        FLAGS_throughput};
+    Log("** Run Masstree **");
     bench.Run();
     Log("** Finish **");
   }

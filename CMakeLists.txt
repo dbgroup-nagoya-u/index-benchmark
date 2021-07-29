@@ -131,6 +131,18 @@ if(${INDEX_BENCH_BUILD_MASSTREE})
     index_bench PRIVATE
     INDEX_BENCH_BUILD_MASSTREE
   )
+  target_link_libraries(
+    index_bench PRIVATE
+    ${MASSTREE_SOURCE_DIR}/misc.o
+    ${MASSTREE_SOURCE_DIR}/checkpoint.o
+    ${MASSTREE_SOURCE_DIR}/query_masstree.o
+    ${MASSTREE_SOURCE_DIR}/value_string.o
+    ${MASSTREE_SOURCE_DIR}/value_array.o
+    ${MASSTREE_SOURCE_DIR}/value_versioned_array.o
+    ${MASSTREE_SOURCE_DIR}/string_slice.o
+    ${MASSTREE_SOURCE_DIR}/kvio.o
+    ${MASSTREE_SOURCE_DIR}/libjson.a
+  )
 endif()
 
 #--------------------------------------------------------------------------------------#

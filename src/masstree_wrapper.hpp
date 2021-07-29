@@ -57,11 +57,15 @@ volatile bool recovering = false;
 
 kvtimestamp_t initial_timestamp;
 
+std::atomic_size_t mass_thread_counter = 0;
+
 /*##################################################################################################
  * Global thread-local storages
  *################################################################################################*/
 
-thread_local threadinfo* thread_info;
+thread_local threadinfo* mass_thread_info;
+
+thread_local size_t mass_thread_id;
 
 template <class Key, class Value>
 class MasstreeWrapper
@@ -86,8 +90,8 @@ class MasstreeWrapper
   MasstreeWrapper() : table_{}
   {
     // assume that a main thread construct this instance
-    thread_info = threadinfo::make(threadinfo::TI_MAIN, -1);
-    table_.initialize(*thread_info);
+    mass_thread_info = threadinfo::make(threadinfo::TI_MAIN, -1);
+    table_.initialize(*mass_thread_info);
   }
 
   ~MasstreeWrapper() = default;
@@ -101,27 +105,37 @@ class MasstreeWrapper
       const size_t thread_num,
       const size_t insert_num)
   {
-    // const size_t insert_num_per_thread = insert_num / thread_num;
+    const size_t insert_num_per_thread = insert_num / thread_num;
 
-    // // lambda function to insert key-value pairs in a certain thread
-    // auto f = [&](BzTree_t* index, const size_t begin, const size_t end) {
-    //   for (size_t i = begin; i < end; ++i) {
-    //     index->Write(i, i);
-    //   }
-    // };
+    // lambda function to insert key-value pairs in a certain thread
+    auto f = [&](const size_t begin, const size_t end) {
+      const auto thread_id = mass_thread_counter.fetch_add(1);
+      mass_thread_info = threadinfo::make(threadinfo::TI_PROCESS, thread_id);
 
-    // // insert initial key-value pairs in multi-threads
-    // std::vector<std::thread> threads;
-    // auto begin = 0UL, end = insert_num_per_thread;
-    // for (size_t i = 0; i < thread_num; ++i) {
-    //   if (i == thread_num - 1) {
-    //     end = insert_num;
-    //   }
-    //   threads.emplace_back(f, &masstree_, begin, end);
-    //   begin = end;
-    //   end += insert_num_per_thread;
-    // }
-    // for (auto&& t : threads) t.join();
+      for (size_t i = begin; i < end; ++i) {
+        this->Write(i, i);
+      }
+    };
+
+    // insert initial key-value pairs in multi-threads
+    std::vector<std::thread> threads;
+    auto begin = 0UL, end = insert_num_per_thread;
+    for (size_t i = 0; i < thread_num; ++i) {
+      if (i == thread_num - 1) {
+        end = insert_num;
+      }
+      threads.emplace_back(f, begin, end);
+      begin = end;
+      end += insert_num_per_thread;
+    }
+    for (auto&& t : threads) t.join();
+  }
+
+  void
+  RegisterThread()
+  {
+    mass_thread_id = mass_thread_counter.fetch_add(1);
+    mass_thread_info = threadinfo::make(threadinfo::TI_PROCESS, mass_thread_id);
   }
 
   /*################################################################################################
@@ -134,7 +148,7 @@ class MasstreeWrapper
     const auto str_key = quick_istr{key}.string();
 
     Str_t payload;
-    auto found_key = masstree_.run_get1(table_.table(), str_key, 0, payload, *thread_info);
+    auto found_key = masstree_.run_get1(table_.table(), str_key, 0, payload, *mass_thread_info);
 
     return {!found_key, payload.to_i()};
   }
@@ -156,7 +170,7 @@ class MasstreeWrapper
     quick_istr key_conv{key}, val_conv{value};
 
     // run replace procedure as write (upsert)
-    masstree_.run_replace(table_.table(), key_conv.string(), val_conv.string(), *thread_info);
+    masstree_.run_replace(table_.table(), key_conv.string(), val_conv.string(), *mass_thread_info);
 
     return 0;
   }
@@ -185,7 +199,7 @@ class MasstreeWrapper
   Delete(const Key key)
   {
     const auto str_key = quick_istr{key}.string();
-    auto deleted = masstree_.run_remove(table_.table(), str_key, *thread_info);
+    auto deleted = masstree_.run_remove(table_.table(), str_key, *mass_thread_info);
     return !deleted;
   }
 };

@@ -35,6 +35,10 @@ thread_local int wangziqi2013::bwtree::BwTreeBase::gc_id = -1;
 /// initialize the counter of the total number of entering threads
 std::atomic<size_t> wangziqi2013::bwtree::BwTreeBase::total_thread_num = 0;
 
+std::atomic_size_t open_bw_thread_counter = 0;
+
+thread_local size_t open_bw_thread_id;
+
 template <class Key, class Value>
 class OpenBwTreeWrapper
 {
@@ -93,6 +97,7 @@ class OpenBwTreeWrapper
     for (auto&& t : threads) t.join();
 
     // release reserved threads
+    open_bw_thread_counter.store(0);
     ReserveThreads(0);
   }
 
@@ -103,15 +108,16 @@ class OpenBwTreeWrapper
   }
 
   void
-  RegisterThread(const size_t thread_id)
+  RegisterThread()
   {
-    bwtree_.AssignGCID(thread_id);
+    open_bw_thread_id = open_bw_thread_counter.fetch_add(1);
+    bwtree_.AssignGCID(open_bw_thread_id);
   }
 
   void
-  UnregisterThread(const size_t thread_id)
+  UnregisterThread()
   {
-    bwtree_.UnregisterThread(thread_id);
+    bwtree_.UnregisterThread(open_bw_thread_id);
   }
 
   /*################################################################################################

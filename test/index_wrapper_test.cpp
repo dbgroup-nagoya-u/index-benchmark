@@ -66,8 +66,9 @@ class IndexWrapperFixture : public ::testing::Test
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
+      open_bw_thread_counter.store(0);
       index->ReserveThreads(1);
-      index->RegisterThread(0);
+      index->RegisterThread();
     }
 #endif
   }
@@ -77,7 +78,7 @@ class IndexWrapperFixture : public ::testing::Test
   {
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      index->UnregisterThread(0);
+      index->UnregisterThread();
     }
 #endif
   }

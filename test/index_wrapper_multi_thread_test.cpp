@@ -92,10 +92,6 @@ class IndexWrapperFixture : public ::testing::Test
   // a lock to stop worker threads
   std::shared_mutex worker_lock;
 
-#if defined(INDEX_BENCH_BUILD_OPEN_BWTREE) || defined(INDEX_BENCH_BUILD_MASSTREE)
-  std::atomic_size_t thread_counter;
-#endif
-
   /*################################################################################################
    * Setup/Teardown
    *##############################################################################################*/
@@ -156,17 +152,14 @@ class IndexWrapperFixture : public ::testing::Test
       const WriteType w_type,
       const size_t rand_seed)
   {
-#if defined(INDEX_BENCH_BUILD_OPEN_BWTREE) || defined(INDEX_BENCH_BUILD_MASSTREE)
-    [[maybe_unused]] const auto thread_id = thread_counter.fetch_add(1);
-#endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      index->RegisterThread(thread_id);
+      index->RegisterThread();
     }
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
     if constexpr (std::is_same_v<Index, Masstree_t>) {
-      thread_info = threadinfo::make(threadinfo::TI_PROCESS, thread_id);
+      index->RegisterThread();
     }
 #endif
 
@@ -202,7 +195,7 @@ class IndexWrapperFixture : public ::testing::Test
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      index->UnregisterThread(thread_id);
+      index->UnregisterThread();
     }
 #endif
   }
@@ -213,7 +206,7 @@ class IndexWrapperFixture : public ::testing::Test
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
     if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
       index->ReserveThreads(kThreadNum);
-      thread_counter.store(0);
+      open_bw_thread_counter.store(0);
     }
 #endif
 
