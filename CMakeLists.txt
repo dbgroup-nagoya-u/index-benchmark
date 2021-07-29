@@ -36,7 +36,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 option(INDEX_BENCH_BUILD_MASSTREE, "Build Masstree as a benchmarking target" OFF)
 
-if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
+if(DEFINED INDEX_BENCH_BUILD_MASSTREE AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
   execute_process(
     COMMAND ./bootstrap.sh
     RESULT_VARIABLE result
