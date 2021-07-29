@@ -303,11 +303,6 @@ TYPED_TEST(IndexWrapperFixture, Update_DuplicateKeys_ReadUpdatedPayloads)
 
 TYPED_TEST(IndexWrapperFixture, Delete_UniqueKeys_DeleteFail)
 {
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
-    return;
-  }
-#endif
 #ifdef INDEX_BENCH_BUILD_PTREE
   if constexpr (std::is_same_v<TypeParam, PTree_t>) {
     return;
@@ -321,11 +316,6 @@ TYPED_TEST(IndexWrapperFixture, Delete_UniqueKeys_DeleteFail)
 
 TYPED_TEST(IndexWrapperFixture, Delete_DuplicateKeys_ReadFailWithDeletedKeys)
 {
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
-    return;
-  }
-#endif
 #ifdef INDEX_BENCH_BUILD_PTREE
   if constexpr (std::is_same_v<TypeParam, PTree_t>) {
     return;
@@ -333,7 +323,7 @@ TYPED_TEST(IndexWrapperFixture, Delete_DuplicateKeys_ReadFailWithDeletedKeys)
 #endif
 
   for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::index->Insert(i, i);
+    TestFixture::index->Write(i, i);
   }
   for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
     TestFixture::VerifyDelete(i);

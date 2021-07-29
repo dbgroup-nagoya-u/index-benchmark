@@ -172,15 +172,16 @@ class MasstreeWrapper
       [[maybe_unused]] const Key key,
       [[maybe_unused]] const Value value)
   {
-    // return masstree_.Update(key, value);
+    // an update operation is not implemented in Masstree
+    assert(false);
     return 0;
   }
 
   int64_t
-  Delete(  //
-      [[maybe_unused]] const Key key)
+  Delete(const Key key)
   {
-    // return masstree_.Delete(key);
-    return 0;
+    const auto str_key = quick_istr{key}.string();
+    auto deleted = masstree_.run_remove(table_.table(), str_key, *thread_info);
+    return !deleted;
   }
 };
