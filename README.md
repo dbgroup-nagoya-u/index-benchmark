@@ -14,17 +14,37 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 
 ### Build Options
 
-- `INDEX_BENCH_USE_MIMALLOC`: use mimalloc as an allocator if `on` (default: `off`).
+#### Memory Allocation
+
+Note that only one of the following options can be specified.
+
+- `INDEX_BENCH_OVERRIDE_JEMALLOC`: override entire memory allocation with jemalloc if `ON` (default: `OFF`).
+    - We assume that jemalloc is configured with the following command.
+
+    ```bash
+    ./configure --prefix=/usr/local --with-version=VERSION
+    ```
+
+- `INDEX_BENCH_USE_MIMALLOC`: use mimalloc as an allocator if `ON` (default: `OFF`).
     - Currently, only BzTree is supported.
-- `INDEX_BENCH_BUILD_OPEN_BWTREE`: build a benchmarker with OpenBw-Tree if `on` (default: `off`).
-- `INDEX_BENCH_BUILD_MASSTREE`: build a benchmarker with Masstree if `on` (default: `off`).
+- `INDEX_BENCH_USE_JEMALLOC`: use jemalloc as an allocator if `ON` (default: `OFF`).
+    - Currently, only BzTree is supported. We assume that jemalloc is configured with the following command.
+
+    ```bash
+    ./configure --prefix=/usr/local --with-version=VERSION --with-jemalloc-prefix=je_ --with-install-suffix=_without_override --disable-cxx
+    ```
+
+#### Optional Benchmarking Targets
+
+- `INDEX_BENCH_BUILD_OPEN_BWTREE`: build a benchmarker with OpenBw-Tree if `ON` (default: `OFF`).
+- `INDEX_BENCH_BUILD_MASSTREE`: build a benchmarker with Masstree if `ON` (default: `OFF`).
     - Note: when you turn on both `INDEX_BENCH_BUILD_MASSTREE` and `INDEX_BENCH_BUILD_OPEN_BWTREE`, the performance of Masstree decreases (we do not know what caused it).
-- `INDEX_BENCH_BUILD_PTREE`: build a benchmarker with PTree if `on` (default: `off`).
+- `INDEX_BENCH_BUILD_PTREE`: build a benchmarker with PTree if `ON` (default: `OFF`).
     - Note: when you measure the performance of indexes other than PTree, turn off this option because PTree reserves threads for parallel writing.
 
 ### Build Options for Unit Testing
 
-- `INDEX_BENCH_BUILD_TESTS`: build unit tests if `on` (default: `off`).
+- `INDEX_BENCH_BUILD_TESTS`: build unit tests if `ON` (default: `OFF`).
 - `INDEX_BENCH_TEST_THREAD_NUM`: The maximum number of threads to perform unit tests (default `8`).
 
 ### Build and Run Unit Tests
