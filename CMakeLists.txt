@@ -18,14 +18,28 @@ set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
 set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
 
-# build option for efficient memory allocators
-option(INDEX_BENCH_USE_MIMALLOC, "Use mimalloc as an allocator" OFF)
+#--------------------------------------------------------------------------------------#
+# Build option for efficient memory allocators
+#--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_USE_MIMALLOC "Use mimalloc as a memory allocator" OFF)
+option(INDEX_BENCH_USE_JEMALLOC "Use jemalloc as a memory allocator" OFF)
+
+if(${INDEX_BENCH_USE_MIMALLOC} AND ${INDEX_BENCH_USE_JEMALLOC})
+  message(FATAL_ERROR "Only one memory allocator can be specified.")
+endif()
 
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
 #--------------------------------------------------------------------------------------#
 if(${INDEX_BENCH_USE_MIMALLOC})
-  set(BZTREE_USE_MIMALLOC "on" CACHE STRING "" FORCE)
+  message("Use mimalloc for running BzTree")
+  set(BZTREE_USE_MIMALLOC "ON" CACHE BOOL "" FORCE)
+  set(BZTREE_USE_JEMALLOC "OFF" CACHE BOOL "" FORCE)
+endif()
+if(${INDEX_BENCH_USE_JEMALLOC})
+  message("Use jemalloc for running BzTree")
+  set(BZTREE_USE_MIMALLOC "OFF" CACHE BOOL "" FORCE)
+  set(BZTREE_USE_JEMALLOC "ON" CACHE BOOL "" FORCE)
 endif()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
