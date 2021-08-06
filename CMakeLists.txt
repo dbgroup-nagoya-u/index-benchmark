@@ -33,6 +33,13 @@ if(${INDEX_BENCH_OVERRIDE_JEMALLOC} AND (${INDEX_BENCH_USE_MIMALLOC} OR ${INDEX_
 endif()
 
 #--------------------------------------------------------------------------------------#
+# Build option for target indexes
+#--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_BUILD_OPEN_BWTREE, "Build OpenBw-Tree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_MASSTREE, "Build Masstree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_PTREE, "Build PTree as a benchmarking target" OFF)
+
+#--------------------------------------------------------------------------------------#
 # Configure BzTree
 #--------------------------------------------------------------------------------------#
 if(${INDEX_BENCH_USE_MIMALLOC})
@@ -54,9 +61,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 # Configure Masstree
 #--------------------------------------------------------------------------------------#
 
-option(INDEX_BENCH_BUILD_MASSTREE, "Build Masstree as a benchmarking target" OFF)
-
-if(DEFINED INDEX_BENCH_BUILD_MASSTREE AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
+if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
   execute_process(
     COMMAND ./bootstrap.sh
     RESULT_VARIABLE result
@@ -140,7 +145,6 @@ endif()
 #--------------------------------------------------------------------------------------#
 # Build OpenBw-Tree for benchmarking
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_OPEN_BWTREE, "Build OpenBw-Tree as a benchmarking target" OFF)
 if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
   target_compile_options(
     index_bench PRIVATE
@@ -182,7 +186,6 @@ endif()
 #--------------------------------------------------------------------------------------#
 # Build PTree for benchmarking
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_PTREE, "Build PTree as a benchmarking target" OFF)
 if(${INDEX_BENCH_BUILD_PTREE})
   target_compile_options(
     index_bench PRIVATE
