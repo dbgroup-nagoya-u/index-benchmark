@@ -7,31 +7,31 @@ buildType:
       long: Include debugging information without optimizations
       buildType: Debug
       settings:
-        INDEX_BENCH_USE_MIMALLOC: off
-        INDEX_BENCH_USE_JEMALLOC: off
-        INDEX_BENCH_BUILD_TESTS: on
-        INDEX_BENCH_BUILD_OPEN_BWTREE: off
-        INDEX_BENCH_BUILD_MASSTREE: on
-        INDEX_BENCH_BUILD_PTREE: off
+        INDEX_BENCH_USE_MIMALLOC: OFF
+        INDEX_BENCH_USE_JEMALLOC: OFF
+        INDEX_BENCH_BUILD_TESTS: ON
+        INDEX_BENCH_BUILD_OPEN_BWTREE: OFF
+        INDEX_BENCH_BUILD_MASSTREE: ON
+        INDEX_BENCH_BUILD_PTREE: OFF
     relWithDebInfo:
       short: RelWithDebInfo
       long: Perform optimizations and include debugging informatin
       buildType: RelWithDebInfo
       settings:
-        INDEX_BENCH_USE_MIMALLOC: off
-        INDEX_BENCH_USE_JEMALLOC: off
-        INDEX_BENCH_BUILD_TESTS: on
-        INDEX_BENCH_BUILD_OPEN_BWTREE: on
-        INDEX_BENCH_BUILD_MASSTREE: on
-        INDEX_BENCH_BUILD_PTREE: on
+        INDEX_BENCH_USE_MIMALLOC: OFF
+        INDEX_BENCH_USE_JEMALLOC: OFF
+        INDEX_BENCH_BUILD_TESTS: ON
+        INDEX_BENCH_BUILD_OPEN_BWTREE: ON
+        INDEX_BENCH_BUILD_MASSTREE: ON
+        INDEX_BENCH_BUILD_PTREE: ON
     release:
       short: Release
       long: Perform optimizations and omit debugging informatin
       buildType: Release
       settings:
-        INDEX_BENCH_USE_MIMALLOC: off
-        INDEX_BENCH_USE_JEMALLOC: off
-        INDEX_BENCH_BUILD_TESTS: on
-        INDEX_BENCH_BUILD_OPEN_BWTREE: on
-        INDEX_BENCH_BUILD_MASSTREE: on
-        INDEX_BENCH_BUILD_PTREE: on
+        INDEX_BENCH_USE_MIMALLOC: OFF
+        INDEX_BENCH_USE_JEMALLOC: OFF
+        INDEX_BENCH_BUILD_TESTS: ON
+        INDEX_BENCH_BUILD_OPEN_BWTREE: ON
+        INDEX_BENCH_BUILD_MASSTREE: ON
+        INDEX_BENCH_BUILD_PTREE: ON

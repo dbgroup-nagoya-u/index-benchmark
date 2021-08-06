@@ -50,6 +50,7 @@
     "DMWCAS",
     "GCID",
     "GLOG",
+    "JEMALLOC",
     "MIMALLOC",
     "NUMS",
     "PMEM",
