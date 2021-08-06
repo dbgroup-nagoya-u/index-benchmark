@@ -22,31 +22,28 @@
 #include <utility>
 #include <vector>
 
-#include "bztree/bztree.hpp"
 #include "common.hpp"
 
-template <class Key, class Value>
-class BzTreeWrapper
+template <class Key, class Value, template <class K, class V> class Index>
+class IndexWrapper
 {
-  using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Value>;
-  using ReturnCode = ::dbgroup::index::bztree::ReturnCode;
-  using RecordPage_t = ::dbgroup::index::bztree::RecordPage<Key, Value>;
+  using Index_t = Index<Key, Value>;
 
  private:
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
 
-  BzTree_t bztree_;
+  Index_t index_;
 
  public:
   /*################################################################################################
    * Public constructors/destructors
    *##############################################################################################*/
 
-  BzTreeWrapper() : bztree_{} {}
+  IndexWrapper() : index_{} {}
 
-  ~BzTreeWrapper() = default;
+  ~IndexWrapper() = default;
 
   /*################################################################################################
    * Public utility functions
@@ -60,9 +57,9 @@ class BzTreeWrapper
     const size_t insert_num_per_thread = insert_num / thread_num;
 
     // lambda function to insert key-value pairs in a certain thread
-    auto f = [&](BzTree_t* index, const size_t begin, const size_t end) {
+    auto f = [&](const size_t begin, const size_t end) {
       for (size_t i = begin; i < end; ++i) {
-        index->Write(i, i);
+        this->Write(i, i);
       }
     };
 
@@ -73,7 +70,7 @@ class BzTreeWrapper
       if (i == thread_num - 1) {
         end = insert_num;
       }
-      threads.emplace_back(f, &bztree_, begin, end);
+      threads.emplace_back(f, begin, end);
       begin = end;
       end += insert_num_per_thread;
     }
@@ -87,7 +84,7 @@ class BzTreeWrapper
   auto
   Read(const Key key)
   {
-    return bztree_.Read(key);
+    return index_.Read(key);
   }
 
   void
@@ -96,16 +93,11 @@ class BzTreeWrapper
       const Key scan_range)
   {
     const auto end_key = begin_key + scan_range;
+
     Value sum = 0;
-
-    RecordPage_t scan_results;
-    bztree_.Scan(scan_results, &begin_key, true, &end_key, true);
-    while (!scan_results.empty()) {
-      for (auto&& [key, value] : scan_results) sum += value;
-
-      const auto next_key = scan_results.GetLastKey();
-      if (next_key == end_key) break;
-      bztree_.Scan(scan_results, &next_key, false, &end_key, true);
+    for (auto iter = index_.Scan(&begin_key, true, &end_key, true); iter.HasNext(); ++iter) {
+      auto&& [key, value] = *iter;
+      sum += value;
     }
   }
 
@@ -114,7 +106,7 @@ class BzTreeWrapper
       const Key key,
       const Value value)
   {
-    return bztree_.Write(key, value);
+    return index_.Write(key, value);
   }
 
   auto
@@ -122,7 +114,7 @@ class BzTreeWrapper
       const Key key,
       const Value value)
   {
-    return bztree_.Insert(key, value);
+    return index_.Insert(key, value);
   }
 
   auto
@@ -130,12 +122,12 @@ class BzTreeWrapper
       const Key key,
       const Value value)
   {
-    return bztree_.Update(key, value);
+    return index_.Update(key, value);
   }
 
   auto
   Delete(const Key key)
   {
-    return bztree_.Delete(key);
+    return index_.Delete(key);
   }
 };

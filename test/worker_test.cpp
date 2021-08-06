@@ -17,13 +17,14 @@
 #include "worker.hpp"
 
 #include "gtest/gtest.h"
+#include "index_wrapper.hpp"
 
 /*##################################################################################################
  * Target index implementations
  *################################################################################################*/
 
-#include "bztree_wrapper.hpp"
-using BzTree_t = BzTreeWrapper<Key, Value>;
+#include "bztree/bztree.hpp"
+using BzTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bztree::BzTree>;
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 #include "open_bwtree_wrapper.hpp"
