@@ -18,14 +18,41 @@ set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
 set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
 
-# build option for efficient memory allocators
-option(INDEX_BENCH_USE_MIMALLOC, "Use mimalloc as an allocator" OFF)
+#--------------------------------------------------------------------------------------#
+# Build option for efficient memory allocators
+#--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_USE_MIMALLOC "Use mimalloc as a memory allocator" OFF)
+option(INDEX_BENCH_USE_JEMALLOC "Use jemalloc as a memory allocator" OFF)
+option(INDEX_BENCH_OVERRIDE_JEMALLOC "Override entire memory allocation with jemalloc" OFF)
+
+if(${INDEX_BENCH_USE_MIMALLOC} AND ${INDEX_BENCH_USE_JEMALLOC})
+  message(FATAL_ERROR "Only one memory allocator can be specified.")
+endif()
+if(${INDEX_BENCH_OVERRIDE_JEMALLOC} AND (${INDEX_BENCH_USE_MIMALLOC} OR ${INDEX_BENCH_USE_JEMALLOC}))
+  message(FATAL_ERROR "Only one memory allocator can be specified.")
+endif()
+
+#--------------------------------------------------------------------------------------#
+# Build option for target indexes
+#--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_BUILD_OPEN_BWTREE, "Build OpenBw-Tree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_MASSTREE, "Build Masstree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_PTREE, "Build PTree as a benchmarking target" OFF)
 
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
 #--------------------------------------------------------------------------------------#
 if(${INDEX_BENCH_USE_MIMALLOC})
-  set(BZTREE_USE_MIMALLOC "on" CACHE STRING "" FORCE)
+  message("Use mimalloc for running BzTree")
+  set(BZTREE_USE_MIMALLOC "ON" CACHE BOOL "" FORCE)
+  set(BZTREE_USE_JEMALLOC "OFF" CACHE BOOL "" FORCE)
+elseif(${INDEX_BENCH_USE_JEMALLOC})
+  message("Use jemalloc for running BzTree")
+  set(BZTREE_USE_MIMALLOC "OFF" CACHE BOOL "" FORCE)
+  set(BZTREE_USE_JEMALLOC "ON" CACHE BOOL "" FORCE)
+else()
+  set(BZTREE_USE_MIMALLOC "OFF" CACHE BOOL "" FORCE)
+  set(BZTREE_USE_JEMALLOC "OFF" CACHE BOOL "" FORCE)
 endif()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
@@ -34,9 +61,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 # Configure Masstree
 #--------------------------------------------------------------------------------------#
 
-option(INDEX_BENCH_BUILD_MASSTREE, "Build Masstree as a benchmarking target" OFF)
-
-if(DEFINED INDEX_BENCH_BUILD_MASSTREE AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
+if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
   execute_process(
     COMMAND ./bootstrap.sh
     RESULT_VARIABLE result
@@ -103,10 +128,23 @@ target_link_libraries(
   bztree
 )
 
+if(${INDEX_BENCH_OVERRIDE_JEMALLOC})
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET jemalloc)
+
+  target_include_directories(
+    index_bench PRIVATE
+    ${JEMALLOC_INCLUDE_DIRS}
+  )
+  target_link_libraries(
+    index_bench PRIVATE
+    PkgConfig::JEMALLOC
+  )
+endif()
+
 #--------------------------------------------------------------------------------------#
 # Build OpenBw-Tree for benchmarking
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_OPEN_BWTREE, "Build OpenBw-Tree as a benchmarking target" OFF)
 if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
   target_compile_options(
     index_bench PRIVATE
@@ -148,7 +186,6 @@ endif()
 #--------------------------------------------------------------------------------------#
 # Build PTree for benchmarking
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_PTREE, "Build PTree as a benchmarking target" OFF)
 if(${INDEX_BENCH_BUILD_PTREE})
   target_compile_options(
     index_bench PRIVATE
