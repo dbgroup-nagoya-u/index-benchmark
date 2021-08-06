@@ -114,8 +114,8 @@ class PTreeWrapper
 
   int64_t
   Insert(  //
-      const Key key,
-      const Value value)
+      [[maybe_unused]] const Key key,
+      [[maybe_unused]] const Value value)
   {
     // this operation is not implemented
     assert(false);
