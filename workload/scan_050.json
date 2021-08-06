@@ -1,0 +1,10 @@
+{
+  "operation_ratio": {
+    "read": 0,
+    "scan": 50,
+    "write": 50,
+    "insert": 0,
+    "update": 0,
+    "delete": 0
+  }
+}

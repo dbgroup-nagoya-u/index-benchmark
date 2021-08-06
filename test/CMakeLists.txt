@@ -59,6 +59,7 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   target_link_libraries(
     ${INDEX_BENCH_TEST_TARGET} PRIVATE
     gflags
+    nlohmann_json::nlohmann_json
     cpp_utility
     bztree
     gtest_main

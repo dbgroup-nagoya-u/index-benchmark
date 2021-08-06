@@ -16,9 +16,11 @@
 
 #pragma once
 
+#include <fstream>
 #include <string>
 
 #include "common.hpp"
+#include "nlohmann/json.hpp"
 
 /**
  * @brief A class to represent workload for benchmarking.
@@ -27,28 +29,35 @@
 struct Workload {
  public:
   /*################################################################################################
-   * Public member variables
+   * Internal member variables
    *##############################################################################################*/
 
-  const size_t read_ratio = 100;
+  const size_t read_ratio;
 
-  const size_t scan_ratio = 100;
+  const size_t scan_ratio;
 
-  const size_t write_ratio = 100;
+  const size_t write_ratio;
 
-  const size_t insert_ratio = 100;
+  const size_t insert_ratio;
 
-  const size_t update_ratio = 100;
+  const size_t update_ratio;
 
-  const size_t delete_ratio = 100;
+  const size_t delete_ratio;
 
   /*################################################################################################
    * Public builders
    *##############################################################################################*/
 
   static Workload
-  CreateWorkloadFromJson([[maybe_unused]] const std::string &filename)
+  CreateWorkloadFromJson(const std::string &filename)
   {
-    return Workload{};
+    std::ifstream workload_in{filename};
+
+    ::nlohmann::json workload_json;
+    workload_in >> workload_json;
+    workload_json = workload_json["operation_ratio"];
+
+    return Workload{workload_json["read"],   workload_json["scan"],   workload_json["write"],
+                    workload_json["insert"], workload_json["update"], workload_json["delete"]};
   }
 };

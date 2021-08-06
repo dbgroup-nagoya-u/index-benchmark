@@ -98,6 +98,13 @@ set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/gflags")
 
 #--------------------------------------------------------------------------------------#
+# Configure nlohmann_json
+#--------------------------------------------------------------------------------------#
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
+
+#--------------------------------------------------------------------------------------#
 # Configure cpp-utility
 #--------------------------------------------------------------------------------------#
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
@@ -124,6 +131,7 @@ target_link_libraries(
   index_bench PRIVATE
   pthread
   gflags
+  nlohmann_json::nlohmann_json
   cpp_utility
   bztree
 )

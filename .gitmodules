@@ -19,3 +19,6 @@
 [submodule "masstree-beta"]
 	path = external/masstree
 	url = https://github.com/kohler/masstree-beta.git
+[submodule "external/json"]
+	path = external/json
+	url = https://github.com/nlohmann/json.git

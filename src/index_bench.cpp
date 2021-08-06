@@ -16,6 +16,8 @@
 
 #include "index_bench.hpp"
 
+#include <filesystem>
+
 /*##################################################################################################
  * CLI validators
  *################################################################################################*/
@@ -58,6 +60,23 @@ ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &see
   return true;
 }
 
+static bool
+ValidateWorkload([[maybe_unused]] const char *flagname, const std::string &workload)
+{
+  if (workload.empty()) {
+    std::cout << "A workload file is not specified." << std::endl;
+    return false;
+  }
+
+  const auto abs_path = std::filesystem::absolute(workload);
+  if (!std::filesystem::exists(abs_path)) {
+    std::cout << "The specified file does not exist." << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
 /*##################################################################################################
  * CLI arguments
  *################################################################################################*/
@@ -75,6 +94,8 @@ DEFINE_double(skew_parameter, 0, "A skew parameter (based on Zipf's law)");
 DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
+DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
+DEFINE_validator(workload, &ValidateWorkload);
 DEFINE_bool(bz, true, "Use BzTree as a benchmark target");
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 DEFINE_bool(open_bw, true, "Use Open-BwTree as a benchmark target");
@@ -116,8 +137,8 @@ main(int argc, char *argv[])
   output_format_is_text = !FLAGS_csv;
   const auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
-  // temporary workload
-  Workload workload{100, 0, 0, 0, 0, 0};
+  // load a target workload from a JSON file
+  const auto workload = Workload::CreateWorkloadFromJson(FLAGS_workload);
 
   Log("=== Start Benchmark ===");
   if (FLAGS_bz) {
