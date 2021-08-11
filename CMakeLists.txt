@@ -35,9 +35,9 @@ endif()
 #--------------------------------------------------------------------------------------#
 # Build option for target indexes
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_OPEN_BWTREE, "Build OpenBw-Tree as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_MASSTREE, "Build Masstree as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_PTREE, "Build PTree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_PTREE "Build PTree as a benchmarking target" OFF)
 
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
@@ -213,7 +213,7 @@ endif()
 #--------------------------------------------------------------------------------------#
 # Build unit tests if required
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_TESTS, "Build unit tests" OFF)
+option(INDEX_BENCH_BUILD_TESTS "Build unit tests" OFF)
 if(${INDEX_BENCH_BUILD_TESTS})
   # enable CTest
   enable_testing()
