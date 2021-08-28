@@ -234,11 +234,28 @@ class Worker
   /**
    * @brief Sort execution time to compute percentiled latency.
    *
+   * To reduce computation time, this function performs ramdom samping on the execution
+   * time array.
+   *
+   * @param sample_num the number of samples.
    */
-  constexpr void
-  SortExecutionTimes()
+  void
+  SortExecutionTimes(const size_t sample_num)
   {
-    std::sort(exec_times_nano_.begin(), exec_times_nano_.end());
+    std::vector<size_t> exec_time_samples;
+    exec_time_samples.reserve(sample_num);
+    std::uniform_int_distribution<size_t> percent_generator_{0, operation_counts_ - 1};
+    std::mt19937_64 rand_engine_{std::random_device{}()};
+
+    // perform random sampling to reduce sorting targets
+    for (size_t i = 0; i < sample_num; ++i) {
+      const auto sample_idx = percent_generator_(rand_engine_);
+      exec_time_samples.emplace_back(exec_times_nano_[sample_idx]);
+    }
+
+    // sort sampled execution times
+    std::sort(exec_time_samples.begin(), exec_time_samples.end());
+    exec_times_nano_ = std::move(exec_time_samples);
   }
 
   constexpr size_t
