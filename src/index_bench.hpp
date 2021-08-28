@@ -16,8 +16,10 @@
 
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 #include <future>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -75,6 +77,13 @@ class IndexBench
 {
  private:
   using Worker_t = Worker<Index>;
+
+  /*################################################################################################
+   * Internal constants
+   *##############################################################################################*/
+
+  /// the maximum number of elements to compute percentiled latency
+  static constexpr size_t kMaxLatencyTargetNum = 1e6;
 
   /*################################################################################################
    * Internal member variables
@@ -145,54 +154,30 @@ class IndexBench
   void
   LogLatency(const std::vector<Worker_t *> &workers) const
   {
-    size_t lat_0 = std::numeric_limits<size_t>::max(), lat_90, lat_95, lat_99, lat_100;
+    std::vector<size_t> latencies;
+    latencies.reserve(kMaxLatencyTargetNum);
 
-    // compute the minimum latency and initialize an index list
-    std::vector<size_t> indexes;
-    indexes.reserve(thread_num_);
-    for (size_t thread = 0; thread < thread_num_; ++thread) {
-      indexes.emplace_back(workers[thread]->GetExecNum() - 1);
-      const auto exec_time = workers[thread]->GetLatency(0);
-      if (exec_time < lat_0) {
-        lat_0 = exec_time;
-      }
+    // sort all execution time
+    for (auto &&worker : workers) {
+      auto worker_latencies = worker->GetExecTimeVec();
+      latencies.insert(latencies.end(), worker_latencies.begin(), worker_latencies.end());
     }
-
-    // check latency with descending order
-    for (size_t count = total_exec_num_; count >= total_exec_num_ * 0.90; --count) {
-      size_t target_thread = 0;
-      auto max_exec_time = std::numeric_limits<size_t>::min();
-      for (size_t thread = 0; thread < thread_num_; ++thread) {
-        const auto exec_time = workers[thread]->GetLatency(indexes[thread]);
-        if (exec_time > max_exec_time) {
-          max_exec_time = exec_time;
-          target_thread = thread;
-        }
-      }
-
-      // if `count` reaches target percentiles, store its latency
-      if (count == total_exec_num_) {
-        lat_100 = max_exec_time;
-      } else if (count == static_cast<size_t>(total_exec_num_ * 0.99)) {
-        lat_99 = max_exec_time;
-      } else if (count == static_cast<size_t>(total_exec_num_ * 0.95)) {
-        lat_95 = max_exec_time;
-      } else if (count == static_cast<size_t>(total_exec_num_ * 0.90)) {
-        lat_90 = max_exec_time;
-      }
-
-      --indexes[target_thread];
-    }
+    std::sort(latencies.begin(), latencies.end());
 
     Log("Percentiled Latencies [ns]:");
-    if (output_format_is_text) {
-      std::cout << "  MIN: " << lat_0 << std::endl;
-      std::cout << "  90%: " << lat_90 << std::endl;
-      std::cout << "  95%: " << lat_95 << std::endl;
-      std::cout << "  99%: " << lat_99 << std::endl;
-      std::cout << "  MAX: " << lat_100 << std::endl;
-    } else {
-      std::cout << lat_0 << "," << lat_90 << "," << lat_95 << "," << lat_99 << "," << lat_100;
+    for (double percentile = 0; percentile < 1.01; percentile += 0.05) {
+      if (percentile > 0.99) percentile = 0.99;
+
+      const size_t percentiled_idx = latencies.size() * percentile;
+      if (output_format_is_text) {
+        std::cout << "  " << std::fixed << std::setprecision(2) << percentile << ": ";
+      }
+      std::cout << latencies[percentiled_idx];
+      if (output_format_is_text) {
+        std::cout << std::endl;
+      } else if (percentile < 0.99) {
+        std::cout << ",";
+      }
     }
   }
 
@@ -207,6 +192,7 @@ class IndexBench
   RunWorker(  //
       std::promise<Worker_t *> p,
       const size_t exec_num,
+      const size_t sample_num,
       const size_t random_seed)
   {
     // prepare a worker
@@ -229,7 +215,7 @@ class IndexBench
     if (!measure_throughput_) {
       {  // wait for benchmark to finish
         const auto guard = std::shared_lock<std::shared_mutex>(mutex_2nd);
-        worker->SortExecutionTimes();
+        worker->SortExecutionTimes(sample_num);
       }  // unlock to notice that this worker has finished
     }
 
@@ -300,17 +286,22 @@ class IndexBench
       const auto lock = std::unique_lock<std::shared_mutex>(mutex_1st);
 
       // create workers in each thread
+      const size_t lat_arr_size =
+          (total_exec_num_ < kMaxLatencyTargetNum) ? total_exec_num_ : kMaxLatencyTargetNum;
       for (size_t i = 0; i < thread_num_; ++i) {
         // distribute operations to each thread so that the number of executions are almost equal
         size_t exec_num = total_exec_num_ / thread_num_;
+        size_t sample_num = lat_arr_size / thread_num_;
         if (i == thread_num_ - 1) {
           exec_num = total_exec_num_ - exec_num * (thread_num_ - 1);
+          sample_num = lat_arr_size - sample_num * (thread_num_ - 1);
         }
 
         // create a worker instance in a certain thread
         std::promise<Worker_t *> p;
         futures.emplace_back(p.get_future());
-        std::thread{&IndexBench::RunWorker, this, std::move(p), exec_num, rand_engine()}.detach();
+        std::thread{&IndexBench::RunWorker, this, std::move(p), exec_num, sample_num, rand_engine()}
+            .detach();
       }
 
       // wait for all workers to be created

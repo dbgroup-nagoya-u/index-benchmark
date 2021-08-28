@@ -258,22 +258,6 @@ class Worker
     exec_times_nano_ = std::move(exec_time_samples);
   }
 
-  constexpr size_t
-  GetExecNum() const
-  {
-    return this->operation_counts_;
-  }
-
-  /**
-   * @param index a target index to get latency
-   * @return size_t `index`-th execution time
-   */
-  constexpr size_t
-  GetLatency(const size_t index) const
-  {
-    return exec_times_nano_[index];
-  }
-
   /**
    * @return size_t total execution time
    */
@@ -281,5 +265,11 @@ class Worker
   GetTotalExecTime() const
   {
     return exec_time_nano_;
+  }
+
+  std::vector<size_t> &
+  GetExecTimeVec()
+  {
+    return exec_times_nano_;
   }
 };
