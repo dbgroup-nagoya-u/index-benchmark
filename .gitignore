@@ -33,6 +33,7 @@
 
 # ignore build directories
 build
+out
 
 # ignore a directory for unit tests
 Testing
