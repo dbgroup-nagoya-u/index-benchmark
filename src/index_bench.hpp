@@ -305,7 +305,7 @@ class IndexBench
       }
 
       // wait for all workers to be created
-      // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
       const auto guard = std::unique_lock<std::shared_mutex>(mutex_2nd);
     }  // unlock to run workers
 
