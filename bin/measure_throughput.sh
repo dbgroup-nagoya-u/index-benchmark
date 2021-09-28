@@ -64,21 +64,21 @@ fi
 
 source ${WORKSPACE_DIR}/config/bench.env
 
-for SKEW_PARAMETER in ${SKEW_CANDIDATES}; do
-  for THREAD_NUM in ${THREAD_CANDIDATES}; do
-    for IMPL in ${IMPL_CANDIDATES}; do
-      if [ ${IMPL} == 0 ]; then
-        IMPL_ARGS="--bz=t --open-bw=f --mass=f --p=f"
-      elif [ ${IMPL} == 1 ]; then
-        IMPL_ARGS="--bz=f --open-bw=t --mass=f --p=f"
-      elif [ ${IMPL} == 2 ]; then
-        IMPL_ARGS="--bz=f --open-bw=f --mass=t --p=f"
-      else
-        continue
-      fi
+for IMPL in ${IMPL_CANDIDATES}; do
+  if [ ${IMPL} == 0 ]; then
+    IMPL_ARGS="--bz=t --open-bw=f --mass=f --p=f"
+  elif [ ${IMPL} == 1 ]; then
+    IMPL_ARGS="--bz=f --open-bw=t --mass=f --p=f"
+  elif [ ${IMPL} == 2 ]; then
+    IMPL_ARGS="--bz=f --open-bw=f --mass=t --p=f"
+  else
+    continue
+  fi
+  for SKEW_PARAMETER in ${SKEW_CANDIDATES}; do
+    for THREAD_NUM in ${THREAD_CANDIDATES}; do
       for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
         echo -n "${SKEW_PARAMETER},${IMPL},${THREAD_NUM},"
-        ${BENCH_BIN} ${IMPL} \
+        ${BENCH_BIN} ${IMPL_ARGS} \
           --csv --throughput=t --workload "${WORKLOAD}" \
           --num-exec ${OPERATION_COUNT} --num-key ${TOTAL_KEY_NUM} \
           --num-init-insert ${INIT_INSERT_NUM} --num-init-thread ${INIT_THREAD_NUM} \
