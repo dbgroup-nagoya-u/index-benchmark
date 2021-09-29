@@ -16,22 +16,11 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 
 #### Memory Allocation
 
-Note that only one of the following options can be specified.
-
 - `INDEX_BENCH_OVERRIDE_JEMALLOC`: override entire memory allocation with jemalloc if `ON` (default: `OFF`).
     - We assume that jemalloc is configured with the following command.
 
     ```bash
     ./configure --prefix=/usr/local --with-version=VERSION
-    ```
-
-- `INDEX_BENCH_USE_MIMALLOC`: use mimalloc as an allocator if `ON` (default: `OFF`).
-    - Currently, only BzTree is supported.
-- `INDEX_BENCH_USE_JEMALLOC`: use jemalloc as an allocator if `ON` (default: `OFF`).
-    - Currently, only BzTree is supported. We assume that jemalloc is configured with the following command.
-
-    ```bash
-    ./configure --prefix=/usr/local --with-version=VERSION --with-jemalloc-prefix=je_ --with-install-suffix=_without_override --disable-cxx
     ```
 
 #### Optional Benchmarking Targets
