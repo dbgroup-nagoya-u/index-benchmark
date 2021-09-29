@@ -136,6 +136,11 @@ class Worker
       index_->UnregisterThread();
     }
 #endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+    if constexpr (std::is_same_v<Index, Masstree_t>) {
+      index_->UnregisterThread();
+    }
+#endif
   }
 
   Worker(const Worker &) = delete;
@@ -182,6 +187,13 @@ class Worker
         default:
           break;
       }
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+      if constexpr (std::is_same_v<Index, Masstree_t>) {
+        if ((i & Masstree_t::kGCThresholdMask) == 0) {
+          index_->RunGC();
+        }
+      }
+#endif
       const auto end_time = std::chrono::high_resolution_clock::now();
       const auto exec_time =
           std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
@@ -224,6 +236,13 @@ class Worker
         default:
           break;
       }
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+      if constexpr (std::is_same_v<Index, Masstree_t>) {
+        if ((i & Masstree_t::kGCThresholdMask) == 0) {
+          index_->RunGC();
+        }
+      }
+#endif
     }
     const auto end_time = std::chrono::high_resolution_clock::now();
 

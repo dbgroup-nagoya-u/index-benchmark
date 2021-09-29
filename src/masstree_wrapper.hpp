@@ -45,11 +45,13 @@
  * Global variables
  *################################################################################################*/
 
+static nodeversion32 global_epoch_lock(false);
+
 /// global epoch, updated by main thread regularly
-volatile mrcu_epoch_type globalepoch = 1;
+volatile mrcu_epoch_type globalepoch = timestamp() >> 16;
 
 ///
-volatile mrcu_epoch_type active_epoch = 1;
+volatile mrcu_epoch_type active_epoch = globalepoch;
 
 ///
 kvepoch_t global_log_epoch = 0;
@@ -94,6 +96,12 @@ class MasstreeWrapper
 
  public:
   /*################################################################################################
+   * Public constants
+   *##############################################################################################*/
+
+  static constexpr size_t kGCThresholdMask = (1 << 6) - 1;
+
+  /*################################################################################################
    * Public constructors/destructors
    *##############################################################################################*/
 
@@ -102,9 +110,10 @@ class MasstreeWrapper
     // assume that a main thread construct this instance
     mass_thread_info = threadinfo::make(threadinfo::TI_MAIN, -1);
     table_.initialize(*mass_thread_info);
+    mass_thread_info->rcu_start();
   }
 
-  ~MasstreeWrapper() = default;
+  ~MasstreeWrapper() { mass_thread_info->rcu_stop(); }
 
   /*################################################################################################
    * Public utility functions
@@ -121,10 +130,13 @@ class MasstreeWrapper
     auto f = [&](const size_t begin, const size_t end) {
       const auto thread_id = mass_thread_counter.fetch_add(1);
       mass_thread_info = threadinfo::make(threadinfo::TI_PROCESS, thread_id);
+      mass_thread_info->rcu_start();
 
       for (size_t i = begin; i < end; ++i) {
         this->Write(i, i);
       }
+
+      mass_thread_info->rcu_stop();
     };
 
     // insert initial key-value pairs in multi-threads
@@ -146,6 +158,32 @@ class MasstreeWrapper
   {
     mass_thread_id = mass_thread_counter.fetch_add(1);
     mass_thread_info = threadinfo::make(threadinfo::TI_PROCESS, mass_thread_id);
+    mass_thread_info->rcu_start();
+  }
+
+  void
+  UnregisterThread()
+  {
+    mass_thread_info->rcu_stop();
+  }
+
+  void
+  RunGC()
+  {
+    const auto e = timestamp() >> 16;
+    if (e != globalepoch) SetGlobalEpoch(e);
+    mass_thread_info->rcu_quiesce();
+  }
+
+  void
+  SetGlobalEpoch(const mrcu_epoch_type e)
+  {
+    global_epoch_lock.lock();
+    if (mrcu_signed_epoch_type(e - globalepoch) > 0) {
+      globalepoch = e;
+      active_epoch = threadinfo::min_active_epoch();
+    }
+    global_epoch_lock.unlock();
   }
 
   /*################################################################################################
