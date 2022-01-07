@@ -21,7 +21,7 @@ buildType:
         INDEX_BENCH_BUILD_TESTS: ON
         INDEX_BENCH_BUILD_OPEN_BWTREE: ON
         INDEX_BENCH_BUILD_MASSTREE: ON
-        INDEX_BENCH_BUILD_PTREE: ON
+        INDEX_BENCH_BUILD_PTREE: OFF
     release:
       short: Release
       long: Perform optimizations and omit debugging informatin
@@ -31,4 +31,4 @@ buildType:
         INDEX_BENCH_BUILD_TESTS: ON
         INDEX_BENCH_BUILD_OPEN_BWTREE: ON
         INDEX_BENCH_BUILD_MASSTREE: ON
-        INDEX_BENCH_BUILD_PTREE: ON
+        INDEX_BENCH_BUILD_PTREE: OFF
