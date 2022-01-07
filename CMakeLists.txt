@@ -19,6 +19,12 @@ set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src
 set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
 
 #--------------------------------------------------------------------------------------#
+# Use gflags to manage CLI options
+#--------------------------------------------------------------------------------------#
+
+find_package(gflags REQUIRED)
+
+#--------------------------------------------------------------------------------------#
 # Build option for efficient memory allocators
 #--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_OVERRIDE_JEMALLOC "Override entire memory allocation with jemalloc" OFF)
@@ -65,15 +71,6 @@ if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h
     message(FATAL_ERROR "Build step for Masstree failed: ${result}")
   endif()
 endif()
-
-#--------------------------------------------------------------------------------------#
-# Configure gflags
-#--------------------------------------------------------------------------------------#
-
-# prevent building unit tests
-set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/gflags")
 
 #--------------------------------------------------------------------------------------#
 # Configure nlohmann_json

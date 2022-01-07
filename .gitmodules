@@ -6,10 +6,6 @@
 	path = external/cpp-utility
 	url = https://github.com/dbgroup-nagoya-u/cpp-utility.git
 	branch = main
-[submodule "external/gflags"]
-	path = external/gflags
-	url = https://github.com/gflags/gflags.git
-	branch = master
 [submodule "external/PAM"]
 	path = external/PAM
 	url = git@github.com:cmuparlay/PAM.git
