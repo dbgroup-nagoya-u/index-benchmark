@@ -18,3 +18,9 @@
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
+[submodule "external/bw-tree"]
+	path = external/bw-tree
+	url = git@github.com:dbgroup-nagoya-u/bw-tree.git
+[submodule "external/cpp-benchmark"]
+	path = external/cpp-benchmark
+	url = git@github.com:dbgroup-nagoya-u/cpp-benchmark.git
