@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef INDEX_BENCHMARK_COMMON_HPP
+#define INDEX_BENCHMARK_COMMON_HPP
 
 #include <cassert>
 #include <cstddef>
@@ -37,13 +38,4 @@ enum IndexOperation
   kDelete
 };
 
-/**
- * @brief A list of thread-safe index implementations.
- *
- */
-enum BenchTarget
-{
-  kOpenBwTree,
-  kBzTree,
-  kPTree
-};
+#endif  // INDEX_BENCHMARK_COMMON_HPP
