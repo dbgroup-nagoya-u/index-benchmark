@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef INDEX_BENCHMARK_WORKLOAD_HPP
+#define INDEX_BENCHMARK_WORKLOAD_HPP
 
 #include <fstream>
 #include <string>
@@ -29,27 +30,12 @@
 struct Workload {
  public:
   /*####################################################################################
-   * Internal member variables
-   *##################################################################################*/
-
-  const size_t read_ratio;
-
-  const size_t scan_ratio;
-
-  const size_t write_ratio;
-
-  const size_t insert_ratio;
-
-  const size_t update_ratio;
-
-  const size_t delete_ratio;
-
-  /*####################################################################################
    * Public builders
    *##################################################################################*/
 
-  static Workload
-  CreateWorkloadFromJson(const std::string &filename)
+  static auto
+  CreateWorkloadFromJson(const std::string &filename)  //
+      -> Workload
   {
     std::ifstream workload_in{filename};
 
@@ -57,7 +43,26 @@ struct Workload {
     workload_in >> workload_json;
     workload_json = workload_json["operation_ratio"];
 
-    return Workload{workload_json["read"],   workload_json["scan"],   workload_json["write"],
-                    workload_json["insert"], workload_json["update"], workload_json["delete"]};
+    return Workload{workload_json["read"],   workload_json["scan"],  //
+                    workload_json["write"],  workload_json["insert"],
+                    workload_json["update"], workload_json["delete"]};
   }
+
+  /*####################################################################################
+   * Public member variables
+   *##################################################################################*/
+
+  size_t read_ratio{100};
+
+  size_t scan_ratio{0};
+
+  size_t write_ratio{0};
+
+  size_t insert_ratio{0};
+
+  size_t update_ratio{0};
+
+  size_t delete_ratio{0};
 };
+
+#endif  // INDEX_BENCHMARK_WORKLOAD_HPP
