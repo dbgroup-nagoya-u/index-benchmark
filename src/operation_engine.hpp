@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef INDEX_BENCHMARK_OPERATION_ENGINE_HPP
+#define INDEX_BENCHMARK_OPERATION_ENGINE_HPP
 
 #include <random>
 
@@ -23,69 +24,96 @@
 #include "random/zipf.hpp"
 #include "workload.hpp"
 
-using ::dbgroup::random::zipf::ZipfGenerator;
-
 /**
  * @brief A class to represent index read/write operations.
  *
  */
-class OperationGenerator
+class OperationEngine
 {
+  /*####################################################################################
+   * Type aliases
+   *##################################################################################*/
+
+  using ZipfGenerator = ::dbgroup::random::zipf::ZipfGenerator;
+
+ public:
+  /*####################################################################################
+   * Public constructors and assignment operators
+   *##################################################################################*/
+
+  OperationEngine(  //
+      Workload workload,
+      const size_t key_num,
+      const double skew_parameter)
+      : workload_{std::move(workload)}, zipf_engine_{key_num, skew_parameter}
+  {
+  }
+
+  OperationEngine(const OperationEngine &) = default;
+  OperationEngine(OperationEngine &&) = default;
+
+  auto operator=(const OperationEngine &) -> OperationEngine & = default;
+  auto operator=(OperationEngine &&) -> OperationEngine & = default;
+
+  /*####################################################################################
+   * Public destructors
+   *##################################################################################*/
+
+  ~OperationEngine() = default;
+
+  /*####################################################################################
+   * Public utilities
+   *##################################################################################*/
+
+  auto
+  Generate(  //
+      const size_t n,
+      const size_t random_seed)  //
+      -> std::vector<Operation>
+  {
+    std::mt19937_64 rand_engine{random_seed};
+
+    // generate an operation-queue for benchmarking
+    std::vector<Operation> operations;
+    operations.reserve(n);
+    for (size_t i = 0; i < n; ++i) {
+      auto key = zipf_engine_(rand_engine);
+      auto value = range_generator_(rand_engine);
+      auto rand = percent_generator_(rand_engine);
+      operations.emplace_back(GetOperationType(rand), key, value);
+    }
+
+    return operations;
+  }
+
  private:
+  /*####################################################################################
+   * Internal utilities
+   *##################################################################################*/
+
+  auto
+  GetOperationType(const size_t rand) const  //
+      -> IndexOperation
+  {
+    if (rand < workload_.read_ratio) return IndexOperation::kRead;
+    if (rand < workload_.scan_ratio) return IndexOperation::kScan;
+    if (rand < workload_.write_ratio) return IndexOperation::kWrite;
+    if (rand < workload_.insert_ratio) return IndexOperation::kInsert;
+    if (rand < workload_.update_ratio) return IndexOperation::kUpdate;
+    return IndexOperation::kDelete;
+  }
+
   /*####################################################################################
    * Internal member variables
    *##################################################################################*/
 
-  const Workload workload_;
+  Workload workload_{};
 
-  std::mt19937_64 rand_engine_;
-
-  ZipfGenerator &zipf_engine_;
+  ZipfGenerator zipf_engine_{};
 
   std::uniform_int_distribution<size_t> percent_generator_{0, 99};
 
   std::uniform_int_distribution<size_t> range_generator_{50, 150};
-
- public:
-  /*####################################################################################
-   * Public constructors/destructors
-   *##################################################################################*/
-
-  OperationGenerator(  //
-      ZipfGenerator &zipf_engine,
-      const Workload workload,
-      const size_t random_seed = std::random_device{}())
-      : workload_{workload}, rand_engine_{random_seed}, zipf_engine_{zipf_engine}
-  {
-  }
-
-  /*####################################################################################
-   * Public utility operators
-   *##################################################################################*/
-
-  Operation
-  operator()()
-  {
-    const auto key = zipf_engine_(rand_engine_);
-    auto value = key;
-
-    IndexOperation ops;
-    const auto workload_rand = percent_generator_(rand_engine_);
-    if (workload_rand < workload_.read_ratio) {
-      ops = IndexOperation::kRead;
-    } else if (workload_rand < workload_.scan_ratio) {
-      value = range_generator_(rand_engine_);
-      ops = IndexOperation::kScan;
-    } else if (workload_rand < workload_.write_ratio) {
-      ops = IndexOperation::kWrite;
-    } else if (workload_rand < workload_.insert_ratio) {
-      ops = IndexOperation::kInsert;
-    } else if (workload_rand < workload_.update_ratio) {
-      ops = IndexOperation::kUpdate;
-    } else {  // workload_rand < workload_.delete_ratio
-      ops = IndexOperation::kDelete;
-    }
-
-    return Operation{ops, key, value};
-  }
 };
+
+#endif  // INDEX_BENCHMARK_OPERATION_ENGINE_HPP
