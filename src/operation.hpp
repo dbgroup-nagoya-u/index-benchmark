@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef INDEX_BENCHMARK_OPERATION_HPP
+#define INDEX_BENCHMARK_OPERATION_HPP
 
 #include "common.hpp"
 
@@ -29,11 +30,13 @@ struct Operation {
    *##################################################################################*/
 
   /// a read/write operation to perform
-  const IndexOperation type;
+  IndexOperation type{kRead};
 
   /// a target key of this operation
-  const Key key;
+  Key key{};
 
   /// a target data of this operation
-  const Value value;
+  Value value{};
 };
+
+#endif  // INDEX_BENCHMARK_OPERATION_HPP
