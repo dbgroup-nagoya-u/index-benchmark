@@ -38,4 +38,10 @@ enum IndexOperation
   kDelete
 };
 
+constexpr size_t kGCInterval = 100000;
+
+constexpr size_t kGCThreadNum = 8;
+
+constexpr bool kClosed = true;
+
 #endif  // INDEX_BENCHMARK_COMMON_HPP

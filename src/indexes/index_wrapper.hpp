@@ -22,26 +22,23 @@
 #include <utility>
 #include <vector>
 
-#include "common.hpp"
+#include "../common.hpp"
 
 template <class Key, class Value, template <class K, class V> class Index>
 class IndexWrapper
 {
-  using Index_t = Index<Key, Value>;
-
- private:
   /*####################################################################################
-   * Internal member variables
+   * Type aliases
    *##################################################################################*/
 
-  Index_t index_;
+  using Index_t = Index<Key, Value>;
 
  public:
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
 
-  IndexWrapper() : index_{} {}
+  IndexWrapper() = default;
 
   ~IndexWrapper() = default;
 
@@ -54,8 +51,6 @@ class IndexWrapper
       const size_t thread_num,
       const size_t insert_num)
   {
-    const size_t insert_num_per_thread = insert_num / thread_num;
-
     // lambda function to insert key-value pairs in a certain thread
     auto f = [&](const size_t begin, const size_t end) {
       for (size_t i = begin; i < end; ++i) {
@@ -65,16 +60,14 @@ class IndexWrapper
 
     // insert initial key-value pairs in multi-threads
     std::vector<std::thread> threads;
-    auto begin = 0UL, end = insert_num_per_thread;
+    size_t begin = 0;
     for (size_t i = 0; i < thread_num; ++i) {
-      if (i == thread_num - 1) {
-        end = insert_num;
-      }
+      size_t n = (insert_num + i) / thread_num;
+      size_t end = begin + n;
       threads.emplace_back(f, begin, end);
       begin = end;
-      end += insert_num_per_thread;
     }
-    for (auto&& t : threads) t.join();
+    for (auto &&t : threads) t.join();
   }
 
   /*####################################################################################
@@ -82,52 +75,59 @@ class IndexWrapper
    *##################################################################################*/
 
   auto
-  Read(const Key key)
+  Read(const Key &key)
   {
     return index_.Read(key);
   }
 
   void
   Scan(  //
-      const Key begin_key,
-      const Key scan_range)
+      const Key &begin_key,
+      const Key &scan_range)
   {
-    const auto end_key = begin_key + scan_range;
+    const auto &begin_k = std::make_pair(begin_key, kClosed);
+    const auto &end_k = std::make_pair(begin_key + scan_range, kClosed);
 
     Value sum = 0;
-    for (auto iter = index_.Scan(&begin_key, true, &end_key, true); iter.HasNext(); ++iter) {
-      auto&& [key, value] = *iter;
-      sum += value;
+    for (auto &&iter = index_.Scan(begin_k, end_k); iter.HasNext(); ++iter) {
+      sum += iter.GetPayload();
     }
   }
 
   auto
   Write(  //
-      const Key key,
-      const Value value)
+      const Key &key,
+      const Value &value)
   {
     return index_.Write(key, value);
   }
 
   auto
   Insert(  //
-      const Key key,
-      const Value value)
+      const Key &key,
+      const Value &value)
   {
     return index_.Insert(key, value);
   }
 
   auto
   Update(  //
-      const Key key,
-      const Value value)
+      const Key &key,
+      const Value &value)
   {
     return index_.Update(key, value);
   }
 
   auto
-  Delete(const Key key)
+  Delete(const Key &key)
   {
     return index_.Delete(key);
   }
+
+ private:
+  /*####################################################################################
+   * Internal member variables
+   *##################################################################################*/
+
+  Index_t index_{kGCInterval, kGCThreadNum};
 };

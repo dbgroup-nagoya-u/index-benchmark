@@ -157,6 +157,7 @@
     "shared_mutex": "cpp",
     "bitset": "cpp",
     "regex": "cpp",
-    "csignal": "cpp"
+    "csignal": "cpp",
+    "valarray": "cpp"
   },
 }
