@@ -39,13 +39,19 @@ using BzTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bztree::BzTree>;
 using OpenBw_t = OpenBwTreeWrapper<Key, Value>;
 #endif
 
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+#include "indexes/masstree_wrapper.hpp"
+using Mass_t = MasstreeWrapper<Key, Value>;
+#endif
+
 /*######################################################################################
  * CLI validators
  *####################################################################################*/
 
 template <class Number>
-static bool
-ValidatePositiveVal(const char *flagname, const Number value)
+static auto
+ValidatePositiveVal(const char *flagname, const Number value)  //
+    -> bool
 {
   if (value >= 0) {
     return true;
@@ -55,8 +61,9 @@ ValidatePositiveVal(const char *flagname, const Number value)
 }
 
 template <class Number>
-static bool
-ValidateNonZero(const char *flagname, const Number value)
+static auto
+ValidateNonZero(const char *flagname, const Number value)  //
+    -> bool
 {
   if (value != 0) {
     return true;
@@ -65,8 +72,9 @@ ValidateNonZero(const char *flagname, const Number value)
   return false;
 }
 
-static bool
-ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &seed)
+static auto
+ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &seed)  //
+    -> bool
 {
   if (seed.empty()) {
     return true;
@@ -123,8 +131,9 @@ DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency"
  * Utility functions
  *####################################################################################*/
 
-static bool
-ValidateWorkload(const std::string &workload)
+static auto
+ValidateWorkload(const std::string &workload)  //
+    -> bool
 {
   if (workload.empty()) {
     std::cout << "NOTE: A workload file is not specified." << std::endl;
@@ -187,6 +196,9 @@ main(int argc, char *argv[])  //
   if (FLAGS_bz) RunBenchmark<BzTree_t>("BzTree", workload);
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if (FLAGS_open_bw) RunBenchmark<OpenBw_t>("OpenBw-Tree", workload);
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if (FLAGS_mass) RunBenchmark<Mass_t>("Masstree", workload);
 #endif
   return 0;
 }
