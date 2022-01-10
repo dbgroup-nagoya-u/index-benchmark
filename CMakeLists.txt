@@ -112,6 +112,9 @@ target_compile_options(index_bench PRIVATE
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
 )
+target_include_directories(index_bench PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/external"
+)
 target_link_libraries(index_bench PRIVATE
   gflags
   nlohmann_json::nlohmann_json
@@ -142,7 +145,7 @@ if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
   )
   target_compile_definitions(index_bench PRIVATE
     INDEX_BENCH_BUILD_OPEN_BWTREE
-    BWTREE_NODEBUG
+    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:BWTREE_NODEBUG>
   )
   target_link_libraries(index_bench PRIVATE
     atomic

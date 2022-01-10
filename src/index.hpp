@@ -38,10 +38,31 @@ class Index
    *##################################################################################*/
 
   Index(  //
+      const size_t worker_num,
       const size_t init_thread_num,
       const size_t init_insert_num)
   {
-    index_.ConstructIndex(init_thread_num, init_insert_num);
+    index_ = std::make_unique<Implementation>(worker_num + init_thread_num);
+
+    // lambda function to insert key-value pairs in a certain thread
+    auto f = [&](const size_t begin, const size_t end) {
+      index_->SetUp();
+      for (size_t i = begin; i < end; ++i) {
+        index_->Write(i, i);
+      }
+      index_->TearDown();
+    };
+
+    // insert initial key-value pairs in multi-threads
+    std::vector<std::thread> threads;
+    size_t begin = 0;
+    for (size_t i = 0; i < init_thread_num; ++i) {
+      size_t n = (init_insert_num + i) / init_thread_num;
+      size_t end = begin + n;
+      threads.emplace_back(f, begin, end);
+      begin = end;
+    }
+    for (auto &&t : threads) t.join();
   }
 
   /*####################################################################################
@@ -55,27 +76,39 @@ class Index
    *##################################################################################*/
 
   void
+  SetUpForWorker()
+  {
+    index_->SetUp();
+  }
+
+  void
+  TearDownForWorker()
+  {
+    index_->TearDown();
+  }
+
+  void
   Execute(const Operation &ops)
   {
     switch (ops.type) {
       case kScan:
-        index_.Scan(ops.key, ops.value);
+        index_->Scan(ops.key, ops.value);
         break;
       case kWrite:
-        index_.Write(ops.key, ops.value);
+        index_->Write(ops.key, ops.value);
         break;
       case kInsert:
-        index_.Insert(ops.key, ops.value);
+        index_->Insert(ops.key, ops.value);
         break;
       case kUpdate:
-        index_.Update(ops.key, ops.value);
+        index_->Update(ops.key, ops.value);
         break;
       case kDelete:
-        index_.Delete(ops.key);
+        index_->Delete(ops.key);
         break;
       case kRead:
       default:
-        index_.Read(ops.key);
+        index_->Read(ops.key);
         break;
     }
   }
@@ -86,7 +119,7 @@ class Index
    *##################################################################################*/
 
   /// an actual target implementation
-  Implementation index_{};
+  std::unique_ptr<Implementation> index_{nullptr};
 };
 
 #endif  // INDEX_BENCHMARK_INDEX_HPP

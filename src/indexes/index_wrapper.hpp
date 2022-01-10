@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef INDEX_BENCHMARK_INDEXES_INDEX_WRAPPER_HPP
+#define INDEX_BENCHMARK_INDEXES_INDEX_WRAPPER_HPP
 
-#include <atomic>
-#include <random>
-#include <thread>
 #include <utility>
-#include <vector>
 
 #include "../common.hpp"
 
@@ -38,7 +35,7 @@ class IndexWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  IndexWrapper() = default;
+  explicit IndexWrapper([[maybe_unused]] const size_t worker_num) {}
 
   ~IndexWrapper() = default;
 
@@ -47,27 +44,13 @@ class IndexWrapper
    *##################################################################################*/
 
   void
-  ConstructIndex(  //
-      const size_t thread_num,
-      const size_t insert_num)
+  SetUp()
   {
-    // lambda function to insert key-value pairs in a certain thread
-    auto f = [&](const size_t begin, const size_t end) {
-      for (size_t i = begin; i < end; ++i) {
-        this->Write(i, i);
-      }
-    };
+  }
 
-    // insert initial key-value pairs in multi-threads
-    std::vector<std::thread> threads;
-    size_t begin = 0;
-    for (size_t i = 0; i < thread_num; ++i) {
-      size_t n = (insert_num + i) / thread_num;
-      size_t end = begin + n;
-      threads.emplace_back(f, begin, end);
-      begin = end;
-    }
-    for (auto &&t : threads) t.join();
+  void
+  TearDown()
+  {
   }
 
   /*####################################################################################
@@ -131,3 +114,5 @@ class IndexWrapper
 
   Index_t index_{kGCInterval, kGCThreadNum};
 };
+
+#endif  // INDEX_BENCHMARK_INDEXES_INDEX_WRAPPER_HPP

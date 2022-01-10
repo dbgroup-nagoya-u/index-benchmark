@@ -34,6 +34,11 @@
 using BwTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bw_tree::BwTree>;
 using BzTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bztree::BzTree>;
 
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+#include "indexes/open_bw_tree_wrapper.hpp"
+using OpenBw_t = OpenBwTreeWrapper<Key, Value>;
+#endif
+
 /*######################################################################################
  * CLI validators
  *####################################################################################*/
@@ -76,23 +81,6 @@ ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &see
   return true;
 }
 
-static bool
-ValidateWorkload([[maybe_unused]] const char *flagname, const std::string &workload)
-{
-  if (workload.empty()) {
-    std::cout << "A workload file is not specified." << std::endl;
-    return false;
-  }
-
-  const auto abs_path = std::filesystem::absolute(workload);
-  if (!std::filesystem::exists(abs_path)) {
-    std::cout << "The specified file does not exist." << std::endl;
-    return false;
-  }
-
-  return true;
-}
-
 /*######################################################################################
  * CLI arguments
  *####################################################################################*/
@@ -111,7 +99,6 @@ DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
-DEFINE_validator(workload, &ValidateWorkload);
 DEFINE_bool(bw, true, "Use Bw-tree as a benchmark target");
 DEFINE_bool(bz, true, "Use BzTree as a benchmark target");
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
@@ -136,18 +123,36 @@ DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency"
  * Utility functions
  *####################################################################################*/
 
+static bool
+ValidateWorkload(const std::string &workload)
+{
+  if (workload.empty()) {
+    std::cout << "NOTE: A workload file is not specified." << std::endl;
+    std::cout << "NOTE: Use a read-only workload." << std::endl << std::endl;
+    return false;
+  }
+
+  const auto abs_path = std::filesystem::absolute(workload);
+  if (!std::filesystem::exists(abs_path)) {
+    std::cout << "NOTE: The specified file does not exist." << std::endl;
+    std::cout << "NOTE: Use a read-only workload." << std::endl << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
 template <class Implementation>
 void
-RunBenchmark(const std::string &target_name)
+RunBenchmark(  //
+    const std::string &target_name,
+    const Workload &workload)
 {
   using Index_t = Index<Implementation>;
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation, OperationEngine>;
 
   // create a target index
-  Index_t index{FLAGS_num_init_thread, FLAGS_num_init_insert};
-
-  // load a target workload from a JSON file
-  auto &&workload = Workload::CreateWorkloadFromJson(FLAGS_workload);
+  Index_t index{FLAGS_num_thread, FLAGS_num_init_thread, FLAGS_num_init_insert};
 
   // create an operation engine
   OperationEngine ops_engine{workload, FLAGS_num_key, FLAGS_skew_parameter};
@@ -171,9 +176,17 @@ main(int argc, char *argv[])  //
   gflags::SetUsageMessage("measures throughput/latency for thread-safe index implementations.");
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  // run benchmark for each implementaton
-  if (FLAGS_bw) RunBenchmark<BwTree_t>("Bw-tree");
-  if (FLAGS_bz) RunBenchmark<BzTree_t>("BzTree");
+  // load a target workload from a JSON file
+  std::string workload_json{FLAGS_workload};
+  auto &&workload = (ValidateWorkload(workload_json))
+                        ? Workload::CreateWorkloadFromJson(FLAGS_workload)
+                        : Workload{};
 
+  // run benchmark for each implementaton
+  if (FLAGS_bw) RunBenchmark<BwTree_t>("Bw-tree", workload);
+  if (FLAGS_bz) RunBenchmark<BzTree_t>("BzTree", workload);
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+  if (FLAGS_open_bw) RunBenchmark<OpenBw_t>("OpenBw-Tree", workload);
+#endif
   return 0;
 }
