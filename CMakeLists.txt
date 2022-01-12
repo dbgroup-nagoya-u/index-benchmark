@@ -14,7 +14,7 @@ project(
 )
 
 # define source directories
-set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
 set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
 
@@ -32,6 +32,7 @@ option(INDEX_BENCH_OVERRIDE_JEMALLOC "Override entire memory allocation with jem
 #--------------------------------------------------------------------------------------#
 # Build option for target indexes
 #--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_PTREE "Build PTree as a benchmarking target" OFF)
@@ -100,7 +101,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 
 # build executable
 add_executable(index_bench
-  "${INDEX_BENCH_SOURCE_DIR}/index_bench.cpp"
+  "${INDEX_BENCH_SOURCE_DIR}/src/index_bench.cpp"
 )
 target_compile_features(index_bench PRIVATE
   "cxx_std_17"
@@ -122,6 +123,9 @@ target_link_libraries(index_bench PRIVATE
   cpp_bench::cpp_bench
   bw_tree::bw_tree
   bztree::bztree
+)
+target_compile_definitions(index_bench PRIVATE
+  $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
 )
 
 if(${INDEX_BENCH_OVERRIDE_JEMALLOC})

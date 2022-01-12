@@ -18,6 +18,7 @@
 #define INDEX_BENCHMARK_INDEXES_OPEN_BW_TREE_HPP
 
 #include <atomic>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -90,15 +91,13 @@ class OpenBwTreeWrapper
 
   auto
   Read(const Key &key)  //
-      -> std::pair<int64_t, Value>
+      -> std::optional<Value>
   {
     std::vector<Value> read_results;
     open_bw_.GetValue(key, read_results);
 
-    if (read_results.empty()) {
-      return {1, Value{}};
-    }
-    return {0, read_results[0]};
+    if (read_results.empty()) return std::nullopt;
+    return read_results[0];
   }
 
   void

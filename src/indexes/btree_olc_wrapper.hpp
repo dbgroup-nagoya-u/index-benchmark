@@ -14,30 +14,32 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_INDEXES_INDEX_WRAPPER_HPP
-#define INDEX_BENCHMARK_INDEXES_INDEX_WRAPPER_HPP
+#ifndef INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP
+#define INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP
 
+#include <optional>
 #include <utility>
 
 #include "../common.hpp"
+#include "open_bwtree/BTreeOLC/BTreeOLC.h"
 
-template <class Key, class Value, template <class K, class V> class Index>
-class IndexWrapper
+template <class Key, class Value>
+class BTreeOLCWrapper
 {
   /*####################################################################################
    * Type aliases
    *##################################################################################*/
 
-  using Index_t = Index<Key, Value>;
+  using BTreeOLC_t = btreeolc::BTree<Key, Value>;
 
  public:
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
 
-  explicit IndexWrapper([[maybe_unused]] const size_t worker_num) {}
+  explicit BTreeOLCWrapper([[maybe_unused]] const size_t worker_num) {}
 
-  ~IndexWrapper() = default;
+  ~BTreeOLCWrapper() = default;
 
   /*####################################################################################
    * Public utility functions
@@ -61,21 +63,19 @@ class IndexWrapper
   Read(const Key &key)  //
       -> std::optional<Value>
   {
-    return index_.Read(key);
+    Value value{};
+    if (index_.lookup(key, value)) return value;
+    return std::nullopt;
   }
 
   void
   Scan(  //
-      const Key &begin_key,
-      const Key &scan_range)
+      [[maybe_unused]] const Key &begin_key,
+      [[maybe_unused]] const Key &scan_range)
   {
-    const auto &begin_k = std::make_pair(begin_key, kClosed);
-    const auto &end_k = std::make_pair(begin_key + scan_range, kClosed);
-
-    Value sum = 0;
-    for (auto &&iter = index_.Scan(begin_k, end_k); iter.HasNext(); ++iter) {
-      sum += iter.GetPayload();
-    }
+    // this operation is not implemented
+    assert(false);
+    return;
   }
 
   auto
@@ -83,29 +83,36 @@ class IndexWrapper
       const Key &key,
       const Value &value)
   {
-    return index_.Write(key, value);
+    index_.insert(key, value);
+    return 0;
   }
 
   auto
   Insert(  //
-      const Key &key,
-      const Value &value)
+      [[maybe_unused]] const Key &key,
+      [[maybe_unused]] const Value &value)
   {
-    return index_.Insert(key, value);
+    // this operation is not implemented
+    assert(false);
+    return 1;
   }
 
   auto
   Update(  //
-      const Key &key,
-      const Value &value)
+      [[maybe_unused]] const Key &key,
+      [[maybe_unused]] const Value &value)
   {
-    return index_.Update(key, value);
+    // this operation is not implemented
+    assert(false);
+    return 1;
   }
 
   auto
-  Delete(const Key &key)
+  Delete([[maybe_unused]] const Key &key)
   {
-    return index_.Delete(key);
+    // this operation is not implemented
+    assert(false);
+    return 1;
   }
 
  private:
@@ -113,7 +120,7 @@ class IndexWrapper
    * Internal member variables
    *##################################################################################*/
 
-  Index_t index_{kGCInterval, kGCThreadNum};
+  BTreeOLC_t index_{};
 };
 
-#endif  // INDEX_BENCHMARK_INDEXES_INDEX_WRAPPER_HPP
+#endif  // INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP

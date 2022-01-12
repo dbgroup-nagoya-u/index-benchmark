@@ -34,6 +34,11 @@
 using BwTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bw_tree::BwTree>;
 using BzTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bztree::BzTree>;
 
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+#include "indexes/btree_olc_wrapper.hpp"
+using BTreeOLC_t = BTreeOLCWrapper<Key, Value>;
+#endif
+
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 #include "indexes/open_bw_tree_wrapper.hpp"
 using OpenBw_t = OpenBwTreeWrapper<Key, Value>;
@@ -109,6 +114,11 @@ DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
 DEFINE_bool(bw, true, "Use Bw-tree as a benchmark target");
 DEFINE_bool(bz, true, "Use BzTree as a benchmark target");
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+DEFINE_bool(b_olc, true, "Use OLC based B-tree as a benchmark target");
+#else
+DEFINE_bool(b_olc, false, "OLC based B-tree is not built as a benchmark target.");
+#endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 DEFINE_bool(open_bw, true, "Use Open-BwTree as a benchmark target");
 #else
@@ -194,6 +204,9 @@ main(int argc, char *argv[])  //
   // run benchmark for each implementaton
   if (FLAGS_bw) RunBenchmark<BwTree_t>("Bw-tree", workload);
   if (FLAGS_bz) RunBenchmark<BzTree_t>("BzTree", workload);
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+  if (FLAGS_b_olc) RunBenchmark<BTreeOLC_t>("B-tree based on OLC", workload);
+#endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if (FLAGS_open_bw) RunBenchmark<OpenBw_t>("OpenBw-Tree", workload);
 #endif

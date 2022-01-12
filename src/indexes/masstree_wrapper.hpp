@@ -18,6 +18,7 @@
 #define INDEX_BENCHMARK_INDEXES_MASSTREE_WRAPPER_HPP
 
 #include <atomic>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -114,15 +115,16 @@ class MasstreeWrapper
 
   auto
   Read(const Key key)  //
-      -> std::pair<int64_t, Value>
+      -> std::optional<Value>
   {
     auto &&str_key = quick_istr{key}.string();
 
     Str_t payload{};
     auto found_key = masstree_.run_get1(table_.table(), str_key, 0, payload, *mass_thread_info_);
-
     RunGC();
-    return {!found_key, payload.to_i()};
+
+    if (found_key) return payload.to_i();
+    return std::nullopt;
   }
 
   void
