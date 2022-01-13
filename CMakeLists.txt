@@ -140,6 +140,17 @@ if(${INDEX_BENCH_OVERRIDE_JEMALLOC})
   )
 endif()
 
+if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
+  find_package(mimalloc 1.7 REQUIRED)
+
+  target_link_libraries(index_bench PRIVATE
+    mimalloc-static
+  )
+  target_compile_definitions(index_bench PRIVATE
+    INDEX_BENCH_OVERRIDE_MIMALLOC
+  )
+endif()
+
 #--------------------------------------------------------------------------------------#
 # Build OpenBw-Tree for benchmarking
 #--------------------------------------------------------------------------------------#

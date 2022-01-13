@@ -23,6 +23,8 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
     ./configure --prefix=/usr/local --with-version=VERSION
     ```
 
+- `INDEX_BENCH_OVERRIDE_MIMALLOC`: override entire memory allocation with mimalloc if `ON` (default: `OFF`).
+
 #### Optional Benchmarking Targets
 
 - `INDEX_BENCH_BUILD_OPEN_BWTREE`: build a benchmarker with OpenBw-Tree if `ON` (default: `OFF`).
