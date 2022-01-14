@@ -33,22 +33,22 @@
 #include "bw_tree/bw_tree.hpp"
 #include "bztree/bztree.hpp"
 
-using BwTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bw_tree::BwTree>;
-using BzTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bztree::BzTree>;
+using BwTree_t = IndexWrapper<Key, InPlaceValue, ::dbgroup::index::bw_tree::BwTree>;
+using BzTree_t = IndexWrapper<Key, InPlaceValue, ::dbgroup::index::bztree::BzTree>;
 
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
 #include "indexes/btree_olc_wrapper.hpp"
-using BTreeOLC_t = BTreeOLCWrapper<Key, Value>;
+using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceValue>;
 #endif
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 #include "indexes/open_bw_tree_wrapper.hpp"
-using OpenBwTree_t = OpenBwTreeWrapper<Key, Value>;
+using OpenBwTree_t = OpenBwTreeWrapper<Key, InPlaceValue>;
 #endif
 
 #ifdef INDEX_BENCH_BUILD_MASSTREE
 #include "indexes/masstree_wrapper.hpp"
-using Masstree_t = MasstreeWrapper<Key, Value>;
+using Masstree_t = MasstreeWrapper<Key, InPlaceValue>;
 #endif
 
 template <class Index>
@@ -69,7 +69,7 @@ class IndexWrapperFixture : public ::testing::Test
 
   struct Operation {
     Key key;
-    Value payload;
+    InPlaceValue payload;
   };
 
   /*################################################################################################

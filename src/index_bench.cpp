@@ -31,22 +31,22 @@
 #include "bw_tree/bw_tree.hpp"
 #include "bztree/bztree.hpp"
 
-using BwTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bw_tree::BwTree>;
-using BzTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bztree::BzTree>;
+using BwTree_t = IndexWrapper<Key, InPlaceValue, ::dbgroup::index::bw_tree::BwTree>;
+using BzTree_t = IndexWrapper<Key, InPlaceValue, ::dbgroup::index::bztree::BzTree>;
 
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
 #include "indexes/btree_olc_wrapper.hpp"
-using BTreeOLC_t = BTreeOLCWrapper<Key, Value>;
+using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceValue>;
 #endif
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 #include "indexes/open_bw_tree_wrapper.hpp"
-using OpenBw_t = OpenBwTreeWrapper<Key, Value>;
+using OpenBw_t = OpenBwTreeWrapper<Key, InPlaceValue>;
 #endif
 
 #ifdef INDEX_BENCH_BUILD_MASSTREE
 #include "indexes/masstree_wrapper.hpp"
-using Mass_t = MasstreeWrapper<Key, Value>;
+using Mass_t = MasstreeWrapper<Key, InPlaceValue>;
 #endif
 
 /*######################################################################################
@@ -161,20 +161,22 @@ ValidateWorkload(const std::string &workload)  //
   return true;
 }
 
-template <class Implementation>
+template <class Key, class Value, class Implementation>
 void
 RunBenchmark(  //
     const std::string &target_name,
     const Workload &workload)
 {
-  using Index_t = Index<Implementation>;
-  using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation, OperationEngine>;
+  using Operation_t = Operation<Key, Value>;
+  using OperationEngine_t = OperationEngine<Key, Value>;
+  using Index_t = Index<Key, Value, Implementation>;
+  using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation_t, OperationEngine_t>;
 
   // create a target index
   Index_t index{FLAGS_num_thread, FLAGS_num_init_thread, FLAGS_num_init_insert};
 
   // create an operation engine
-  OperationEngine ops_engine{workload, FLAGS_num_key, FLAGS_skew_parameter};
+  OperationEngine_t ops_engine{workload, FLAGS_num_key, FLAGS_skew_parameter};
   auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
   // run benchmark
@@ -202,16 +204,16 @@ main(int argc, char *argv[])  //
                         : Workload{};
 
   // run benchmark for each implementaton
-  if (FLAGS_bw) RunBenchmark<BwTree_t>("Bw-tree", workload);
-  if (FLAGS_bz) RunBenchmark<BzTree_t>("BzTree", workload);
+  if (FLAGS_bw) RunBenchmark<Key, InPlaceValue, BwTree_t>("Bw-tree", workload);
+  if (FLAGS_bz) RunBenchmark<Key, InPlaceValue, BzTree_t>("BzTree", workload);
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) RunBenchmark<BTreeOLC_t>("B-tree based on OLC", workload);
+  if (FLAGS_b_olc) RunBenchmark<Key, InPlaceValue, BTreeOLC_t>("B-tree based on OLC", workload);
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) RunBenchmark<OpenBw_t>("OpenBw-Tree", workload);
+  if (FLAGS_open_bw) RunBenchmark<Key, InPlaceValue, OpenBw_t>("OpenBw-Tree", workload);
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) RunBenchmark<Mass_t>("Masstree", workload);
+  if (FLAGS_mass) RunBenchmark<Key, InPlaceValue, Mass_t>("Masstree", workload);
 #endif
   return 0;
 }

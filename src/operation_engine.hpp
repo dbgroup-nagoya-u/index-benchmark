@@ -28,6 +28,7 @@
  * @brief A class to represent index read/write operations.
  *
  */
+template <class Key, class Value>
 class OperationEngine
 {
   /*####################################################################################
@@ -35,6 +36,7 @@ class OperationEngine
    *##################################################################################*/
 
   using ZipfGenerator = ::dbgroup::random::zipf::ZipfGenerator;
+  using Operation_t = Operation<Key, Value>;
 
  public:
   /*####################################################################################
@@ -69,12 +71,12 @@ class OperationEngine
   Generate(  //
       const size_t n,
       const size_t random_seed)  //
-      -> std::vector<Operation>
+      -> std::vector<Operation_t>
   {
     std::mt19937_64 rand_engine{random_seed};
 
     // generate an operation-queue for benchmarking
-    std::vector<Operation> operations;
+    std::vector<Operation_t> operations;
     operations.reserve(n);
     for (size_t i = 0; i < n; ++i) {
       auto key = zipf_engine_(rand_engine);

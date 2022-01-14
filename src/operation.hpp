@@ -23,6 +23,7 @@
  * @brief A class to represent index read/write operations.
  *
  */
+template <class Key, class Value>
 struct Operation {
  public:
   /*####################################################################################

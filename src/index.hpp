@@ -29,9 +29,15 @@
  *
  * @tparam Implementation A certain implementation of thread-safe indexes.
  */
-template <class Implementation>
+template <class Key, class Value, class Implementation>
 class Index
 {
+  /*####################################################################################
+   * Type aliases
+   *##################################################################################*/
+
+  using Operation_t = Operation<Key, Value>;
+
  public:
   /*####################################################################################
    * Public constructors and assignment operators
@@ -88,7 +94,7 @@ class Index
   }
 
   void
-  Execute(const Operation &ops)
+  Execute(const Operation_t &ops)
   {
     switch (ops.type) {
       case kScan:
