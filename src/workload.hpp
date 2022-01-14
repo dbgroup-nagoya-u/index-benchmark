@@ -18,6 +18,7 @@
 #define INDEX_BENCHMARK_WORKLOAD_HPP
 
 #include <fstream>
+#include <iostream>
 #include <string>
 
 #include "common.hpp"
@@ -43,9 +44,23 @@ struct Workload {
     workload_in >> workload_json;
     workload_json = workload_json["operation_ratio"];
 
-    return Workload{workload_json["read"],   workload_json["scan"],  //
-                    workload_json["write"],  workload_json["insert"],
-                    workload_json["update"], workload_json["delete"]};
+    size_t read = workload_json["read"];
+    size_t scan = workload_json["scan"];
+    scan += read;
+    size_t write = workload_json["write"];
+    write += scan;
+    size_t insert = workload_json["insert"];
+    insert += write;
+    size_t update = workload_json["update"];
+    update += insert;
+    size_t del = workload_json["delete"];
+    del += update;
+
+    if (del != 100UL) {
+      std::cout << "WARN: The sum of the ratios of a workload is a hundred." << std::endl;
+    }
+
+    return Workload{read, scan, write, insert, update, del};
   }
 
   /*####################################################################################
