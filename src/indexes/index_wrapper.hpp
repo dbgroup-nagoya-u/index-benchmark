@@ -67,14 +67,14 @@ class IndexWrapper
   void
   Scan(  //
       const Key &begin_key,
-      const Key &scan_range)
+      const size_t scan_range)
   {
     const auto &begin_k = std::make_pair(begin_key, kClosed);
     const auto &end_k = std::make_pair(begin_key + scan_range, kClosed);
 
-    Value sum = 0;
+    size_t sum{0};
     for (auto &&iter = index_.Scan(begin_k, end_k); iter.HasNext(); ++iter) {
-      sum += iter.GetPayload();
+      sum += iter.GetPayload().GetValue();
     }
   }
 

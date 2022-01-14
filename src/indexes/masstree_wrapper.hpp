@@ -114,23 +114,22 @@ class MasstreeWrapper
    *##################################################################################*/
 
   auto
-  Read(const Key key)  //
+  Read(const Key &key)  //
       -> std::optional<Value>
   {
-    auto &&str_key = quick_istr{key}.string();
-
-    Str_t payload{};
-    auto found_key = masstree_.run_get1(table_.table(), str_key, 0, payload, *mass_thread_info_);
+    Value payload{};
+    auto *str_val = reinterpret_cast<Str_t *>(&payload);
+    auto found = index_.run_get1(table_.table(), ToStr(key), 0, *str_val, *mass_thread_info_);
     RunGC();
 
-    if (found_key) return payload.to_i();
+    if (found) return payload;
     return std::nullopt;
   }
 
   void
   Scan(  //
-      [[maybe_unused]] const Key begin_key,
-      [[maybe_unused]] const Key scan_range)
+      [[maybe_unused]] const Key &begin_key,
+      [[maybe_unused]] const size_t scan_range)
   {
     // this operation is not implemented
     assert(false);
@@ -138,15 +137,12 @@ class MasstreeWrapper
 
   auto
   Write(  //
-      const Key key,
-      const Value value)  //
+      const Key &key,
+      const Value &value)  //
       -> int64_t
   {
-    // unique quick_istr converters are required for each key/value
-    quick_istr key_conv{key}, val_conv{value};
-
     // run replace procedure as write (upsert)
-    masstree_.run_replace(table_.table(), key_conv.string(), val_conv.string(), *mass_thread_info_);
+    index_.run_replace(table_.table(), ToStr(key), ToStr(value), *mass_thread_info_);
 
     RunGC();
     return 0;
@@ -154,8 +150,8 @@ class MasstreeWrapper
 
   auto
   Insert(  //
-      [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)  //
+      [[maybe_unused]] const Key &key,
+      [[maybe_unused]] const Value &value)  //
       -> int64_t
   {
     // this operation is not implemented
@@ -165,8 +161,8 @@ class MasstreeWrapper
 
   auto
   Update(  //
-      [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)  //
+      [[maybe_unused]] const Key &key,
+      [[maybe_unused]] const Value &value)  //
       -> int64_t
   {
     // this operation is not implemented
@@ -175,11 +171,10 @@ class MasstreeWrapper
   }
 
   auto
-  Delete(const Key key)  //
+  Delete(const Key &key)  //
       -> int64_t
   {
-    const auto str_key = quick_istr{key}.string();
-    auto deleted = masstree_.run_remove(table_.table(), str_key, *mass_thread_info_);
+    auto deleted = index_.run_remove(table_.table(), ToStr(key), *mass_thread_info_);
 
     RunGC();
     return !deleted;
@@ -195,6 +190,14 @@ class MasstreeWrapper
   /*####################################################################################
    * Internal utility functions
    *##################################################################################*/
+
+  template <class T>
+  static constexpr auto
+  ToStr(const T &data)  //
+      -> Str_t
+  {
+    return Str_t{reinterpret_cast<const char *>(&data), sizeof(T)};
+  }
 
   void
   SetGlobalEpoch(const mrcu_epoch_type e)
@@ -233,7 +236,7 @@ class MasstreeWrapper
   /// a counter for controling GC
   static thread_local inline size_t ops_counter_ = 0;
 
-  query<row_type> masstree_{};
+  query<row_type> index_{};
 
   Table_t table_{};
 };

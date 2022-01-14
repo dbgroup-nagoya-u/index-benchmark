@@ -21,14 +21,15 @@
 #include <cstddef>
 #include <cstdint>
 
-using Key = uint64_t;
-using InPlaceValue = uint64_t;
+/*######################################################################################
+ * Global enum and constants
+ *####################################################################################*/
 
 /**
  * @brief A list of index read/write operations.
  *
  */
-enum IndexOperation
+enum class IndexOperation : uint32_t
 {
   kRead,
   kScan,
@@ -43,5 +44,199 @@ constexpr size_t kGCInterval = 100000;
 constexpr size_t kGCThreadNum = 8;
 
 constexpr bool kClosed = true;
+
+/*######################################################################################
+ * Key/Value definitions
+ *####################################################################################*/
+
+class Key
+{
+ public:
+  /*####################################################################################
+   * Public constructors and assignment operators
+   *##################################################################################*/
+
+  constexpr Key() : key_{} {}
+
+  constexpr explicit Key(const size_t key) : key_{key} {}
+
+  constexpr Key(const Key &) = default;
+  constexpr Key(Key &&) noexcept = default;
+  constexpr auto operator=(const Key &) -> Key & = default;
+  constexpr auto operator=(Key &&) -> Key & = default;
+
+  /*####################################################################################
+   * Public destructors
+   *##################################################################################*/
+
+  ~Key() = default;
+
+  /*####################################################################################
+   * Public utilities
+   *##################################################################################*/
+
+  constexpr auto
+  operator<(const Key &obj) const  //
+      -> bool
+  {
+    return key_ < obj.key_;
+  }
+
+  constexpr auto
+  operator>(const Key &obj) const  //
+      -> bool
+  {
+    return key_ > obj.key_;
+  }
+
+  constexpr auto
+  operator==(const Key &obj) const  //
+      -> bool
+  {
+    return key_ == obj.key_;
+  }
+
+  constexpr auto
+  operator+(const size_t val) const  //
+      -> Key
+  {
+    auto obj = *this;
+    obj.key_ += val;
+    return obj;
+  }
+
+  constexpr auto
+  GetValue() const  //
+      -> size_t
+  {
+    return key_;
+  }
+
+ private:
+  /*####################################################################################
+   * Internal member variables
+   *##################################################################################*/
+
+  size_t key_{};
+};
+
+class InPlaceVal
+{
+ public:
+  /*####################################################################################
+   * Public constructors and assignment operators
+   *##################################################################################*/
+
+  constexpr InPlaceVal() : value_{}, control_bits_{0} {}
+
+  constexpr explicit InPlaceVal(const size_t val) : value_{val}, control_bits_{0} {}
+
+  constexpr InPlaceVal(const InPlaceVal &) = default;
+  constexpr InPlaceVal(InPlaceVal &&) noexcept = default;
+  constexpr auto operator=(const InPlaceVal &) -> InPlaceVal & = default;
+  constexpr auto operator=(InPlaceVal &&) -> InPlaceVal & = default;
+
+  /*####################################################################################
+   * Public destructors
+   *##################################################################################*/
+
+  ~InPlaceVal() = default;
+
+  /*####################################################################################
+   * Public utilities
+   *##################################################################################*/
+
+  constexpr auto
+  GetValue() const  //
+      -> size_t
+  {
+    return value_;
+  }
+
+ private:
+  /*####################################################################################
+   * Internal member variables
+   *##################################################################################*/
+
+  size_t value_ : 61;
+
+  size_t control_bits_ : 3;
+};
+
+class AppendVal
+{
+ public:
+  /*####################################################################################
+   * Public constructors and assignment operators
+   *##################################################################################*/
+
+  constexpr AppendVal() : value_{}, control_bits_{0} {}
+
+  constexpr explicit AppendVal(const size_t val) : value_{val}, control_bits_{0} {}
+
+  constexpr AppendVal(const AppendVal &) = default;
+  constexpr AppendVal(AppendVal &&) noexcept = default;
+  constexpr auto operator=(const AppendVal &) -> AppendVal & = default;
+  constexpr auto operator=(AppendVal &&) -> AppendVal & = default;
+
+  /*####################################################################################
+   * Public destructors
+   *##################################################################################*/
+
+  ~AppendVal() = default;
+
+  /*####################################################################################
+   * Public utilities
+   *##################################################################################*/
+
+  constexpr auto
+  GetValue() const  //
+      -> size_t
+  {
+    return value_;
+  }
+
+ private:
+  /*####################################################################################
+   * Internal member variables
+   *##################################################################################*/
+
+  size_t value_ : 61;
+
+  size_t control_bits_ : 3;
+};
+
+namespace std
+{
+template <>
+struct hash<Key> {
+  auto
+  operator()(const Key &key) const  //
+      -> size_t
+  {
+    return std::hash<size_t>{}(key.GetValue());
+  }
+};
+
+template <>
+struct hash<InPlaceVal> {
+  auto
+  operator()(const InPlaceVal &key) const  //
+      -> size_t
+  {
+    return std::hash<size_t>{}(key.GetValue());
+  }
+};
+
+template <>
+struct hash<AppendVal> {
+  auto
+  operator()(const AppendVal &key) const  //
+      -> size_t
+  {
+    return std::hash<size_t>{}(key.GetValue());
+  }
+};
+}  // namespace std
 
 #endif  // INDEX_BENCHMARK_COMMON_HPP

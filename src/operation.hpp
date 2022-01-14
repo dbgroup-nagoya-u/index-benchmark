@@ -32,9 +32,9 @@ struct Operation {
 
   Operation(  //
       IndexOperation t,
-      Key k,
-      Value v)
-      : type{t}, key{std::move(k)}, value{std::move(v)}
+      uint32_t k,
+      uint32_t v)
+      : type{t}, key{k}, value{v}
   {
   }
 
@@ -43,13 +43,13 @@ struct Operation {
    *##################################################################################*/
 
   /// a read/write operation to perform
-  IndexOperation type{kRead};
+  IndexOperation type{IndexOperation::kRead};
 
   /// a target key of this operation
-  Key key{};
+  uint32_t key{};
 
   /// a target data of this operation
-  Value value{};
+  uint32_t value{};
 };
 
 #endif  // INDEX_BENCHMARK_OPERATION_HPP

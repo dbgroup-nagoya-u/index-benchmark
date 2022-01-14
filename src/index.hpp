@@ -54,7 +54,7 @@ class Index
     auto f = [&](const size_t begin, const size_t end) {
       index_->SetUp();
       for (size_t i = begin; i < end; ++i) {
-        index_->Write(i, i);
+        index_->Write(Key{i}, Value{i});
       }
       index_->TearDown();
     };
@@ -97,24 +97,24 @@ class Index
   Execute(const Operation_t &ops)
   {
     switch (ops.type) {
-      case kScan:
-        index_->Scan(ops.key, ops.value);
+      case IndexOperation::kScan:
+        index_->Scan(Key{ops.key}, Value{ops.value}.GetValue());
         break;
-      case kWrite:
-        index_->Write(ops.key, ops.value);
+      case IndexOperation::kWrite:
+        index_->Write(Key{ops.key}, Value{ops.value});
         break;
-      case kInsert:
-        index_->Insert(ops.key, ops.value);
+      case IndexOperation::kInsert:
+        index_->Insert(Key{ops.key}, Value{ops.value});
         break;
-      case kUpdate:
-        index_->Update(ops.key, ops.value);
+      case IndexOperation::kUpdate:
+        index_->Update(Key{ops.key}, Value{ops.value});
         break;
-      case kDelete:
-        index_->Delete(ops.key);
+      case IndexOperation::kDelete:
+        index_->Delete(Key{ops.key});
         break;
-      case kRead:
+      case IndexOperation::kRead:
       default:
-        index_->Read(ops.key);
+        index_->Read(Key{ops.key});
         break;
     }
   }

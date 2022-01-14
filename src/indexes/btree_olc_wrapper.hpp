@@ -71,7 +71,7 @@ class BTreeOLCWrapper
   void
   Scan(  //
       [[maybe_unused]] const Key &begin_key,
-      [[maybe_unused]] const Key &scan_range)
+      [[maybe_unused]] const size_t scan_range)
   {
     // this operation is not implemented
     assert(false);

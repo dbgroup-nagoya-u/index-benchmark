@@ -31,22 +31,35 @@
 #include "bw_tree/bw_tree.hpp"
 #include "bztree/bztree.hpp"
 
-using BwTree_t = IndexWrapper<Key, InPlaceValue, ::dbgroup::index::bw_tree::BwTree>;
-using BzTree_t = IndexWrapper<Key, InPlaceValue, ::dbgroup::index::bztree::BzTree>;
+namespace dbgroup::atomic::mwcas
+{
+template <>
+constexpr auto
+CanMwCAS<InPlaceVal>()  //
+    -> bool
+{
+  return true;
+}
+
+}  // namespace dbgroup::atomic::mwcas
+
+using BwTree_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTree>;
+using BzTreeInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
+using BzTreeAppend_t = IndexWrapper<Key, AppendVal, ::dbgroup::index::bztree::BzTree>;
 
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
 #include "indexes/btree_olc_wrapper.hpp"
-using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceValue>;
+using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceVal>;
 #endif
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 #include "indexes/open_bw_tree_wrapper.hpp"
-using OpenBw_t = OpenBwTreeWrapper<Key, InPlaceValue>;
+using OpenBw_t = OpenBwTreeWrapper<Key, InPlaceVal>;
 #endif
 
 #ifdef INDEX_BENCH_BUILD_MASSTREE
 #include "indexes/masstree_wrapper.hpp"
-using Mass_t = MasstreeWrapper<Key, InPlaceValue>;
+using Mass_t = MasstreeWrapper<Key, InPlaceVal>;
 #endif
 
 /*######################################################################################
@@ -113,7 +126,8 @@ DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
 DEFINE_bool(bw, true, "Use Bw-tree as a benchmark target");
-DEFINE_bool(bz, true, "Use BzTree as a benchmark target");
+DEFINE_bool(bz_in_place, true, "Use BzTree with in-place based update as a benchmark target");
+DEFINE_bool(bz_append, true, "Use BzTree with append based update as a benchmark target");
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
 DEFINE_bool(b_olc, true, "Use OLC based B-tree as a benchmark target");
 #else
@@ -204,16 +218,29 @@ main(int argc, char *argv[])  //
                         : Workload{};
 
   // run benchmark for each implementaton
-  if (FLAGS_bw) RunBenchmark<Key, InPlaceValue, BwTree_t>("Bw-tree", workload);
-  if (FLAGS_bz) RunBenchmark<Key, InPlaceValue, BzTree_t>("BzTree", workload);
+  if (FLAGS_bw) {
+    RunBenchmark<Key, InPlaceVal, BwTree_t>("Bw-tree", workload);
+  }
+  if (FLAGS_bz_in_place) {
+    RunBenchmark<Key, InPlaceVal, BzTreeInPlace_t>("BzTree in-place mode", workload);
+  }
+  if (FLAGS_bz_append) {
+    RunBenchmark<Key, AppendVal, BzTreeAppend_t>("BzTree append mode", workload);
+  }
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) RunBenchmark<Key, InPlaceValue, BTreeOLC_t>("B-tree based on OLC", workload);
+  if (FLAGS_b_olc) {
+    RunBenchmark<Key, InPlaceVal, BTreeOLC_t>("B-tree based on OLC", workload);
+  }
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) RunBenchmark<Key, InPlaceValue, OpenBw_t>("OpenBw-Tree", workload);
+  if (FLAGS_open_bw) {
+    RunBenchmark<Key, InPlaceVal, OpenBw_t>("OpenBw-Tree", workload);
+  }
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) RunBenchmark<Key, InPlaceValue, Mass_t>("Masstree", workload);
+  if (FLAGS_mass) {
+    RunBenchmark<Key, InPlaceVal, Mass_t>("Masstree", workload);
+  }
 #endif
   return 0;
 }

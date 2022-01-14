@@ -103,17 +103,17 @@ class OpenBwTreeWrapper
   void
   Scan(  //
       const Key &begin_key,
-      const Key &scan_range)
+      const size_t scan_range)
   {
-    const auto end_key = begin_key + scan_range;
-    Value sum = 0;
+    const auto &&end_key = begin_key + scan_range;
+    size_t sum{0};
 
     ForwardIterator tree_iterator{&open_bw_, begin_key};
     for (; !tree_iterator.IsEnd(); ++tree_iterator) {
       auto &&[key, value] = *tree_iterator;
       if (key > end_key) break;
 
-      sum += value;
+      sum += value.GetValue();
     }
   }
 
@@ -152,7 +152,7 @@ class OpenBwTreeWrapper
       -> int64_t
   {
     // a delete operation in Open-Bw-tree requrires a key-value pair
-    return !open_bw_.Delete(key, key);
+    return !open_bw_.Delete(key, Value{key.GetValue()});
   }
 
  private:
