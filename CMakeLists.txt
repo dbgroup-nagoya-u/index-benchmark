@@ -146,9 +146,6 @@ if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
   target_link_libraries(index_bench PRIVATE
     mimalloc-static
   )
-  target_compile_definitions(index_bench PRIVATE
-    INDEX_BENCH_OVERRIDE_MIMALLOC
-  )
 endif()
 
 #--------------------------------------------------------------------------------------#

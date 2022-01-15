@@ -115,26 +115,26 @@ DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
-DEFINE_bool(bw, true, "Use Bw-tree as a benchmark target");
-DEFINE_bool(bz_in_place, true, "Use BzTree with in-place based update as a benchmark target");
-DEFINE_bool(bz_append, true, "Use BzTree with append based update as a benchmark target");
+DEFINE_bool(bw, false, "Use Bw-tree as a benchmark target");
+DEFINE_bool(bz_in_place, false, "Use BzTree with in-place based update as a benchmark target");
+DEFINE_bool(bz_append, false, "Use BzTree with append based update as a benchmark target");
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-DEFINE_bool(b_olc, true, "Use OLC based B-tree as a benchmark target");
+DEFINE_bool(b_olc, false, "Use OLC based B-tree as a benchmark target");
 #else
 DEFINE_bool(b_olc, false, "OLC based B-tree is not built as a benchmark target.");
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-DEFINE_bool(open_bw, true, "Use Open-BwTree as a benchmark target");
+DEFINE_bool(open_bw, false, "Use Open-BwTree as a benchmark target");
 #else
 DEFINE_bool(open_bw, false, "OpenBw-Tree is not built as a benchmark target.");
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-DEFINE_bool(mass, true, "Use Masstree as a benchmark target");
+DEFINE_bool(mass, false, "Use Masstree as a benchmark target");
 #else
 DEFINE_bool(mass, false, "Massree is not built as a benchmark target. ");
 #endif
 #ifdef INDEX_BENCH_BUILD_PTREE
-DEFINE_bool(p, true, "Use PTree as a benchmark target");
+DEFINE_bool(p, false, "Use PTree as a benchmark target");
 #else
 DEFINE_bool(p, false, "PTree is not built as a benchmark target.");
 #endif
@@ -205,6 +205,12 @@ ForwardKeyForBench()
 #ifdef INDEX_BENCH_BUILD_MASSTREE
   using Mass_t = MasstreeWrapper<Key, InPlaceVal>;
 #endif
+
+  if (!FLAGS_bw && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_b_olc && !FLAGS_open_bw
+      && !FLAGS_mass && !FLAGS_p) {
+    std::cout << "NOTE: benchmark targets are not specified." << std::endl;
+    return;
+  }
 
   // load a target workload from a JSON file
   std::string workload_json{FLAGS_workload};
