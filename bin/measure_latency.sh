@@ -7,19 +7,21 @@ set -ue
 
 BENCH_BIN=""
 WORKLOAD=""
+CONFIG_ENV=""
 NUMA_NODES=""
 WORKSPACE_DIR=$(cd $(dirname ${BASH_SOURCE:-${0}})/.. && pwd)
 
 usage() {
   cat 1>&2 << EOS
 Usage:
-  ${BASH_SOURCE:-${0}} <bench_bin> <workload_json> 1> results.csv 2> error.log
+  ${BASH_SOURCE:-${0}} <bench_bin> <config> <workload_json> 1> results.csv 2> error.log
 Description:
-  Run benchmark to measure latency. All the benchmark results are output in CSV
-  format. Note that all the benchmark settings are set by "config/bench.env".
+  Run benchmark to measure percentile latency. All the benchmark results are output in
+  CSV format.
 Arguments:
-  <bench_bin>: A path to the binary file for benchmarking.
-  <workload_json>: A path to the workload JSON file.
+  <bench_bin>: A path to a binary file for benchmarking.
+  <config>: A path to a configuration file for benchmarking.
+  <workload_json>: A path to a workload JSON file.
 Options:
   -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
   -h: Show this messsage and exit.
@@ -48,42 +50,74 @@ shift $((${OPTIND} - 1))
 # Parse arguments
 ########################################################################################
 
-if [ ${#} != 2 ]; then
+if [ ${#} != 3 ]; then
   usage
 fi
 
 BENCH_BIN=${1}
-WORKLOAD=${2}
+CONFIG_ENV=${2}
+WORKLOAD=${3}
 if [ -n "${NUMA_NODES}" ]; then
   BENCH_BIN="numactl -N ${NUMA_NODES} -m ${NUMA_NODES} ${BENCH_BIN}"
+fi
+
+if [ ! -f "${BENCH_BIN}" ]; then
+  echo "There is no specified benchmark binary."
+  exit 1
+fi
+if [ ! -f "${CONFIG_ENV}" ]; then
+  echo "There is no specified configuration file."
+  exit 1
+fi
+if [ ! -f "${WORKLOAD}" ]; then
+  echo "There is no specified workload JSON."
+  exit 1
 fi
 
 ########################################################################################
 # Run benchmark
 ########################################################################################
 
-source ${WORKSPACE_DIR}/config/bench.env
+source "${CONFIG_ENV}"
+
+TMP_OUT="/tmp/index-benchmark-tmp-output.csv"
 
 for IMPL in ${IMPL_CANDIDATES}; do
   if [ ${IMPL} == 0 ]; then
-    IMPL_ARGS="--bz=t --open-bw=f --mass=f --p=f"
+    IMPL_ARGS="--bw=t"
   elif [ ${IMPL} == 1 ]; then
-    IMPL_ARGS="--bz=f --open-bw=t --mass=f --p=f"
+    IMPL_ARGS="--bz-in-place=t"
   elif [ ${IMPL} == 2 ]; then
-    IMPL_ARGS="--bz=f --open-bw=f --mass=t --p=f"
+    IMPL_ARGS="--bz-append=t"
+  elif [ ${IMPL} == 100 ]; then
+    IMPL_ARGS="--b-olc=t"
+  elif [ ${IMPL} == 101 ]; then
+    IMPL_ARGS="--open-bw=t"
+  elif [ ${IMPL} == 102 ]; then
+    IMPL_ARGS="--mass=t"
   else
     continue
   fi
-  for SKEW_PARAMETER in ${SKEW_CANDIDATES}; do
-    for THREAD_NUM in ${THREAD_CANDIDATES}; do
-      for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
-        echo -n "${SKEW_PARAMETER},${IMPL},${THREAD_NUM},"
-        ${BENCH_BIN} ${IMPL_ARGS} \
-          --csv --throughput=f --workload "${WORKLOAD}" \
-          --num-exec ${OPERATION_COUNT} --num-key ${TOTAL_KEY_NUM} \
-          --num-init-insert ${INIT_INSERT_NUM} --num-init-thread ${INIT_THREAD_NUM} \
-          --skew-parameter ${SKEW_PARAMETER} --num-thread ${THREAD_NUM}
-        echo ""
+
+  for KEY_SIZE in ${KEY_CANDIDATES}; do
+    for SKEW_PARAMETER in ${SKEW_CANDIDATES}; do
+      for THREAD_NUM in ${THREAD_CANDIDATES}; do
+        for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
+          rm -f "${TMP_OUT}"
+          ${BENCH_BIN} ${IMPL_ARGS} \
+            --csv \
+            --throughput=f \
+            --workload "${WORKLOAD}" \
+            --key-size ${KEY_SIZE} \
+            --num-key ${TOTAL_KEY_NUM} \
+            --skew-parameter ${SKEW_PARAMETER} \
+            --num-init-insert ${INIT_INSERT_NUM} \
+            --num-init-thread ${INIT_THREAD_NUM} \
+            --num-exec ${OPERATION_COUNT} \
+            --num-thread ${THREAD_NUM} \
+            >> "${TMP_OUT}"
+          sed "s/^/${IMPL},${KEY_SIZE},${SKEW_PARAMETER},${THREAD_NUM},/g" "${TMP_OUT}"
+        done
       done
     done
   done

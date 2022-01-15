@@ -14,9 +14,15 @@ project(
 )
 
 # define source directories
-set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
 set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
+
+#--------------------------------------------------------------------------------------#
+# Use gflags to manage CLI options
+#--------------------------------------------------------------------------------------#
+
+find_package(gflags REQUIRED)
 
 #--------------------------------------------------------------------------------------#
 # Build option for efficient memory allocators
@@ -26,9 +32,15 @@ option(INDEX_BENCH_OVERRIDE_JEMALLOC "Override entire memory allocation with jem
 #--------------------------------------------------------------------------------------#
 # Build option for target indexes
 #--------------------------------------------------------------------------------------#
+option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_PTREE "Build PTree as a benchmarking target" OFF)
+
+#--------------------------------------------------------------------------------------#
+# Configure Bw-tree
+#--------------------------------------------------------------------------------------#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bw-tree")
 
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
@@ -67,15 +79,6 @@ if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h
 endif()
 
 #--------------------------------------------------------------------------------------#
-# Configure gflags
-#--------------------------------------------------------------------------------------#
-
-# prevent building unit tests
-set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/gflags")
-
-#--------------------------------------------------------------------------------------#
 # Configure nlohmann_json
 #--------------------------------------------------------------------------------------#
 
@@ -88,43 +91,60 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
 
 #--------------------------------------------------------------------------------------#
+# Configure benchmarker
+#--------------------------------------------------------------------------------------#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
+
+#--------------------------------------------------------------------------------------#
 # Build Benchmark
 #--------------------------------------------------------------------------------------#
 
 # build executable
-add_executable(
-  index_bench
-  "${INDEX_BENCH_SOURCE_DIR}/index_bench.cpp"
+add_executable(index_bench
+  "${INDEX_BENCH_SOURCE_DIR}/src/index_bench.cpp"
 )
-target_compile_features(index_bench PRIVATE "cxx_std_17")
-target_compile_options(
-  index_bench PRIVATE
+target_compile_features(index_bench PRIVATE
+  "cxx_std_17"
+)
+target_compile_options(index_bench PRIVATE
   -Wall
   -Wextra
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
 )
-target_link_libraries(
-  index_bench PRIVATE
-  pthread
+target_include_directories(index_bench PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/external"
+)
+target_link_libraries(index_bench PRIVATE
   gflags
   nlohmann_json::nlohmann_json
-  cpp_utility
-  bztree
+  cpp_utility::cpp_utility
+  cpp_bench::cpp_bench
+  bw_tree::bw_tree
+  bztree::bztree
+)
+target_compile_definitions(index_bench PRIVATE
+  $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
 )
 
 if(${INDEX_BENCH_OVERRIDE_JEMALLOC})
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET jemalloc)
 
-  target_include_directories(
-    index_bench PRIVATE
+  target_include_directories(index_bench PRIVATE
     ${JEMALLOC_INCLUDE_DIRS}
   )
-  target_link_libraries(
-    index_bench PRIVATE
+  target_link_libraries(index_bench PRIVATE
     PkgConfig::JEMALLOC
+  )
+endif()
+
+if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
+  find_package(mimalloc 1.7 REQUIRED)
+
+  target_link_libraries(index_bench PRIVATE
+    mimalloc-static
   )
 endif()
 
@@ -132,17 +152,14 @@ endif()
 # Build OpenBw-Tree for benchmarking
 #--------------------------------------------------------------------------------------#
 if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
-  target_compile_options(
-    index_bench PRIVATE
+  target_compile_options(index_bench PRIVATE
     -mcx16
   )
-  target_compile_definitions(
-    index_bench PRIVATE
+  target_compile_definitions(index_bench PRIVATE
     INDEX_BENCH_BUILD_OPEN_BWTREE
-    BWTREE_NODEBUG
+    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:BWTREE_NODEBUG>
   )
-  target_link_libraries(
-    index_bench PRIVATE
+  target_link_libraries(index_bench PRIVATE
     atomic
   )
 endif()
@@ -151,12 +168,10 @@ endif()
 # Build Masstree for benchmarking
 #--------------------------------------------------------------------------------------#
 if(${INDEX_BENCH_BUILD_MASSTREE})
-  target_compile_definitions(
-    index_bench PRIVATE
+  target_compile_definitions(index_bench PRIVATE
     INDEX_BENCH_BUILD_MASSTREE
   )
-  target_link_libraries(
-    index_bench PRIVATE
+  target_link_libraries(index_bench PRIVATE
     ${MASSTREE_SOURCE_DIR}/misc.o
     ${MASSTREE_SOURCE_DIR}/checkpoint.o
     ${MASSTREE_SOURCE_DIR}/query_masstree.o
@@ -173,16 +188,13 @@ endif()
 # Build PTree for benchmarking
 #--------------------------------------------------------------------------------------#
 if(${INDEX_BENCH_BUILD_PTREE})
-  target_compile_options(
-    index_bench PRIVATE
+  target_compile_options(index_bench PRIVATE
     -mcx16
   )
-  target_include_directories(
-    index_bench PRIVATE
+  target_include_directories(index_bench PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/
   )
-  target_compile_definitions(
-    index_bench PRIVATE
+  target_compile_definitions(index_bench PRIVATE
     INDEX_BENCH_BUILD_PTREE
     HOMEGROWN
   )

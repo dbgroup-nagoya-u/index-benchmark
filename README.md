@@ -1,6 +1,6 @@
 # Index Benchmark
 
-![Unit Tests](https://github.com/dbgroup-nagoya-u/index-benchmark/workflows/Unit%20Tests/badge.svg?branch=main)
+[![Ubuntu-20.04](https://github.com/dbgroup-nagoya-u/index-benchmark/actions/workflows/unit_tests.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/index-benchmark/actions/workflows/unit_tests.yaml)
 
 ## Build
 
@@ -22,6 +22,8 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
     ```bash
     ./configure --prefix=/usr/local --with-version=VERSION
     ```
+
+- `INDEX_BENCH_OVERRIDE_MIMALLOC`: override entire memory allocation with mimalloc if `ON` (default: `OFF`).
 
 #### Optional Benchmarking Targets
 

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef INDEX_BENCHMARK_OPERATION_HPP
+#define INDEX_BENCHMARK_OPERATION_HPP
 
 #include "common.hpp"
 
@@ -22,18 +23,33 @@
  * @brief A class to represent index read/write operations.
  *
  */
+template <class Key, class Value>
 struct Operation {
  public:
-  /*################################################################################################
+  /*####################################################################################
+   * Public constructors and assignment operators
+   *##################################################################################*/
+
+  Operation(  //
+      IndexOperation t,
+      uint32_t k,
+      uint32_t v)
+      : type{t}, key{k}, value{v}
+  {
+  }
+
+  /*####################################################################################
    * Public member variables
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /// a read/write operation to perform
-  const IndexOperation type;
+  IndexOperation type{IndexOperation::kRead};
 
   /// a target key of this operation
-  const Key key;
+  uint32_t key{};
 
   /// a target data of this operation
-  const Value value;
+  uint32_t value{};
 };
+
+#endif  // INDEX_BENCHMARK_OPERATION_HPP

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef INDEX_BENCHMARK_WORKLOAD_HPP
+#define INDEX_BENCHMARK_WORKLOAD_HPP
 
 #include <fstream>
+#include <iostream>
 #include <string>
 
 #include "common.hpp"
@@ -28,28 +30,13 @@
  */
 struct Workload {
  public:
-  /*################################################################################################
-   * Internal member variables
-   *##############################################################################################*/
-
-  const size_t read_ratio;
-
-  const size_t scan_ratio;
-
-  const size_t write_ratio;
-
-  const size_t insert_ratio;
-
-  const size_t update_ratio;
-
-  const size_t delete_ratio;
-
-  /*################################################################################################
+  /*####################################################################################
    * Public builders
-   *##############################################################################################*/
+   *##################################################################################*/
 
-  static Workload
-  CreateWorkloadFromJson(const std::string &filename)
+  static auto
+  CreateWorkloadFromJson(const std::string &filename)  //
+      -> Workload
   {
     std::ifstream workload_in{filename};
 
@@ -57,7 +44,40 @@ struct Workload {
     workload_in >> workload_json;
     workload_json = workload_json["operation_ratio"];
 
-    return Workload{workload_json["read"],   workload_json["scan"],   workload_json["write"],
-                    workload_json["insert"], workload_json["update"], workload_json["delete"]};
+    size_t read = workload_json["read"];
+    size_t scan = workload_json["scan"];
+    scan += read;
+    size_t write = workload_json["write"];
+    write += scan;
+    size_t insert = workload_json["insert"];
+    insert += write;
+    size_t update = workload_json["update"];
+    update += insert;
+    size_t del = workload_json["delete"];
+    del += update;
+
+    if (del != 100UL) {
+      std::cout << "WARN: The sum of the ratios of a workload is a hundred." << std::endl;
+    }
+
+    return Workload{read, scan, write, insert, update, del};
   }
+
+  /*####################################################################################
+   * Public member variables
+   *##################################################################################*/
+
+  size_t read_ratio{100};
+
+  size_t scan_ratio{0};
+
+  size_t write_ratio{0};
+
+  size_t insert_ratio{0};
+
+  size_t update_ratio{0};
+
+  size_t delete_ratio{0};
 };
+
+#endif  // INDEX_BENCHMARK_WORKLOAD_HPP

@@ -23,23 +23,32 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "index_wrapper.hpp"
+#include "index.hpp"
+#include "indexes/index_wrapper.hpp"
 
 /*##################################################################################################
  * Target index implementations
  *################################################################################################*/
 
+#include "bw_tree/bw_tree.hpp"
 #include "bztree/bztree.hpp"
-using BzTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bztree::BzTree>;
+
+using BwTree_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTree>;
+using BzTreeInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
+
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+#include "indexes/btree_olc_wrapper.hpp"
+using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceVal>;
+#endif
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-#include "open_bwtree_wrapper.hpp"
-using OpenBwTree_t = OpenBwTreeWrapper<Key, Value>;
+#include "indexes/open_bw_tree_wrapper.hpp"
+using OpenBwTree_t = OpenBwTreeWrapper<Key, InPlaceVal>;
 #endif
 
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-#include "masstree_wrapper.hpp"
-using Masstree_t = MasstreeWrapper<Key, Value>;
+#include "indexes/masstree_wrapper.hpp"
+using Masstree_t = MasstreeWrapper<Key, InPlaceVal>;
 #endif
 
 template <class Index>
@@ -60,7 +69,7 @@ class IndexWrapperFixture : public ::testing::Test
 
   struct Operation {
     Key key;
-    Value payload;
+    InPlaceVal payload;
   };
 
   /*################################################################################################
@@ -100,7 +109,7 @@ class IndexWrapperFixture : public ::testing::Test
   void
   SetUp() override
   {
-    index = std::make_unique<Index>();
+    index = std::make_unique<Index>(kThreadNum);
   }
 
   void
@@ -143,9 +152,9 @@ class IndexWrapperFixture : public ::testing::Test
       case kDelete:
         break;
       case kUpdate:
-        return Operation{rand_val, rand_val + 1};
+        return Operation{Key{rand_val}, InPlaceVal{rand_val + 1}};
     }
-    return Operation{rand_val, rand_val};
+    return Operation{Key{rand_val}, InPlaceVal{rand_val}};
   }
 
   void
@@ -153,16 +162,7 @@ class IndexWrapperFixture : public ::testing::Test
       const WriteType w_type,
       const size_t rand_seed)
   {
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      index->RegisterThread();
-    }
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-    if constexpr (std::is_same_v<Index, Masstree_t>) {
-      index->RegisterThread();
-    }
-#endif
+    index->SetUp();
 
     std::vector<Operation> operations;
     std::vector<Key> written_keys;
@@ -194,23 +194,12 @@ class IndexWrapperFixture : public ::testing::Test
       VerifyRead(w_type, key);
     }
 
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      index->UnregisterThread();
-    }
-#endif
+    index->TearDown();
   }
 
   void
   RunOverMultiThread(const WriteType w_type)
   {
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      index->ReserveThreads(kThreadNum);
-      open_bw_thread_counter.store(0);
-    }
-#endif
-
     std::vector<std::thread> threads;
 
     {  // create a lock to prevent workers from executing
@@ -241,20 +230,13 @@ class IndexWrapperFixture : public ::testing::Test
       const WriteType w_type,
       const Key key)
   {
-    const auto [rc, actual] = index->Read(key);
+    const auto &actual = index->Read(key);
 
     switch (w_type) {
       case kWrite:
-      case kInsert:
-        EXPECT_EQ(0, rc);
-        EXPECT_EQ(key, actual);
-        break;
-      case kUpdate:
-        EXPECT_EQ(0, rc);
-        EXPECT_EQ(key + 1, actual);
-        break;
-      case kDelete:
-        EXPECT_NE(0, rc);
+      default:
+        ASSERT_TRUE(actual);
+        EXPECT_EQ(key.GetValue(), actual->GetValue());
         break;
     }
   }
@@ -264,16 +246,18 @@ class IndexWrapperFixture : public ::testing::Test
  * Preparation for typed testing
  *################################################################################################*/
 
-using Indexes = ::testing::Types<BzTree_t
+using Indexes = ::testing::Types<  //
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+    BTreeOLC_t,
+#endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-                                 ,
-                                 OpenBwTree_t
+    OpenBwTree_t,
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-                                 ,
-                                 Masstree_t
+    Masstree_t,
 #endif
-                                 >;
+    BwTree_t,
+    BzTreeInPlace_t>;
 TYPED_TEST_CASE(IndexWrapperFixture, Indexes);
 
 /*##################################################################################################
@@ -283,38 +267,4 @@ TYPED_TEST_CASE(IndexWrapperFixture, Indexes);
 TYPED_TEST(IndexWrapperFixture, Write_MultiThreads_ReadWrittenPayloads)
 {
   TestFixture::RunOverMultiThread(TestFixture::WriteType::kWrite);
-}
-
-TYPED_TEST(IndexWrapperFixture, Insert_MultiThreads_ReadInsertedPayloads)
-{
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
-    return;
-  }
-#endif
-
-  TestFixture::RunOverMultiThread(TestFixture::WriteType::kInsert);
-}
-
-TYPED_TEST(IndexWrapperFixture, Update_MultiThreads_ReadUpdatedPayloads)
-{
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if constexpr (std::is_same_v<TypeParam, OpenBwTree_t>) {
-    return;
-  }
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
-    return;
-  }
-#endif
-
-  TestFixture::RunOverMultiThread(TestFixture::WriteType::kWrite);
-  TestFixture::RunOverMultiThread(TestFixture::WriteType::kUpdate);
-}
-
-TYPED_TEST(IndexWrapperFixture, Delete_MultiThreads_ReadFailWithDeletedKeys)
-{
-  TestFixture::RunOverMultiThread(TestFixture::WriteType::kWrite);
-  TestFixture::RunOverMultiThread(TestFixture::WriteType::kDelete);
 }

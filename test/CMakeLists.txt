@@ -32,42 +32,38 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
 
 # define function to add unit tests in the same format
 function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
-  add_executable(
-    ${INDEX_BENCH_TEST_TARGET}
+  add_executable(${INDEX_BENCH_TEST_TARGET}
     "${CMAKE_CURRENT_SOURCE_DIR}/${INDEX_BENCH_TEST_TARGET}.cpp"
   )
-  target_compile_features(
-    ${INDEX_BENCH_TEST_TARGET} PRIVATE
+  target_compile_features(${INDEX_BENCH_TEST_TARGET} PRIVATE
     "cxx_std_17"
   )
-  target_compile_options(
-    ${INDEX_BENCH_TEST_TARGET} PRIVATE
+  target_compile_options(${INDEX_BENCH_TEST_TARGET} PRIVATE
     -Wall
     -Wextra
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
   )
-  target_compile_definitions(
-    ${INDEX_BENCH_TEST_TARGET} PRIVATE
+  target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
     INDEX_BENCH_MAX_FIELD_NUM=${INDEX_BENCH_MAX_FIELD_NUM}
+    $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
   )
-  target_include_directories(
-    ${INDEX_BENCH_TEST_TARGET} PRIVATE
-    "${INDEX_BENCH_SOURCE_DIR}"
+  target_include_directories(${INDEX_BENCH_TEST_TARGET} PRIVATE
+    "${INDEX_BENCH_SOURCE_DIR}/src"
+    "${INDEX_BENCH_SOURCE_DIR}/external"
   )
-  target_link_libraries(
-    ${INDEX_BENCH_TEST_TARGET} PRIVATE
+  target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
     gflags
     nlohmann_json::nlohmann_json
     cpp_utility
-    bztree
+    bw_tree::bw_tree
+    bztree::bztree
     gtest_main
   )
 
   if(DEFINED INDEX_BENCH_TEST_THREAD_NUM)
-    target_compile_definitions(
-      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+    target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_TEST_THREAD_NUM=${INDEX_BENCH_TEST_THREAD_NUM}
     )
   endif()
@@ -76,17 +72,14 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   # Build OpenBw-Tree for benchmarking
   #--------------------------------------------------------------------------------------#
   if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
-    target_compile_options(
-      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+    target_compile_options(${INDEX_BENCH_TEST_TARGET} PRIVATE
       -mcx16
     )
-    target_compile_definitions(
-      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+    target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_BUILD_OPEN_BWTREE
-      BWTREE_NODEBUG
+      $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:BWTREE_NODEBUG>
     )
-    target_link_libraries(
-      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+    target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
       atomic
     )
   endif()
@@ -95,14 +88,12 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   # Build Masstree for benchmarking
   #--------------------------------------------------------------------------------------#
   if(${INDEX_BENCH_BUILD_MASSTREE})
-    target_compile_definitions(
-      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+    target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_BUILD_MASSTREE
     )
     if(${INDEX_BENCH_TEST_TARGET} STREQUAL "index_wrapper_test"
        OR ${INDEX_BENCH_TEST_TARGET} STREQUAL "index_wrapper_multi_thread_test")
-      target_link_libraries(
-        ${INDEX_BENCH_TEST_TARGET} PRIVATE
+      target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
         ${MASSTREE_SOURCE_DIR}/misc.o
         ${MASSTREE_SOURCE_DIR}/checkpoint.o
         ${MASSTREE_SOURCE_DIR}/query_masstree.o
@@ -120,12 +111,10 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   # Build PTree for benchmarking
   #--------------------------------------------------------------------------------------#
   if(${INDEX_BENCH_BUILD_PTREE})
-    target_compile_options(
-      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+    target_compile_options(${INDEX_BENCH_TEST_TARGET} PRIVATE
       -mcx16
     )
-    target_compile_definitions(
-      ${INDEX_BENCH_TEST_TARGET} PRIVATE
+    target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
       INDEX_BENCH_BUILD_PTREE
       HOMEGROWN
     )
@@ -135,7 +124,6 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
 endfunction()
 
 # add unit tests to build targets
-ADD_INDEX_BENCH_TEST("operation_generator_test")
-ADD_INDEX_BENCH_TEST("index_wrapper_test")
-ADD_INDEX_BENCH_TEST("index_wrapper_multi_thread_test")
-ADD_INDEX_BENCH_TEST("worker_test")
+# ADD_INDEX_BENCH_TEST("operation_generator_test")
+# ADD_INDEX_BENCH_TEST("index_wrapper_test")
+# ADD_INDEX_BENCH_TEST("index_wrapper_multi_thread_test")
