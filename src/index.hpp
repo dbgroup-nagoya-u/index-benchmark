@@ -53,7 +53,7 @@ class Index
     // lambda function to insert key-value pairs in a certain thread
     auto f = [&](const size_t begin, const size_t end) {
       index_->SetUp();
-      for (size_t i = begin; i < end; ++i) {
+      for (uint32_t i = begin; i < end; ++i) {
         index_->Write(Key{i}, Value{i});
       }
       index_->TearDown();

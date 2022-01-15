@@ -30,6 +30,15 @@
 
 #include "bw_tree/bw_tree.hpp"
 #include "bztree/bztree.hpp"
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+#include "indexes/btree_olc_wrapper.hpp"
+#endif
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+#include "indexes/open_bw_tree_wrapper.hpp"
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+#include "indexes/masstree_wrapper.hpp"
+#endif
 
 namespace dbgroup::atomic::mwcas
 {
@@ -40,27 +49,7 @@ CanMwCAS<InPlaceVal>()  //
 {
   return true;
 }
-
 }  // namespace dbgroup::atomic::mwcas
-
-using BwTree_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTree>;
-using BzTreeInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
-using BzTreeAppend_t = IndexWrapper<Key, AppendVal, ::dbgroup::index::bztree::BzTree>;
-
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
-#include "indexes/btree_olc_wrapper.hpp"
-using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceVal>;
-#endif
-
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-#include "indexes/open_bw_tree_wrapper.hpp"
-using OpenBw_t = OpenBwTreeWrapper<Key, InPlaceVal>;
-#endif
-
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-#include "indexes/masstree_wrapper.hpp"
-using Mass_t = MasstreeWrapper<Key, InPlaceVal>;
-#endif
 
 /*######################################################################################
  * CLI validators
@@ -113,13 +102,14 @@ ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &see
 
 DEFINE_uint64(num_exec, 10000, "The total number of operations for benchmarking");
 DEFINE_validator(num_exec, &ValidateNonZero);
-DEFINE_uint64(num_thread, 1, "The number of worker threads");
-DEFINE_validator(num_thread, &ValidateNonZero);
-DEFINE_uint64(num_init_thread, 1, "The number of worker threads for initialization");
-DEFINE_validator(num_init_thread, &ValidateNonZero);
 DEFINE_uint64(num_key, 10000, "The total number of keys");
 DEFINE_validator(num_key, &ValidateNonZero);
+DEFINE_uint64(num_thread, 1, "The number of worker threads");
+DEFINE_validator(num_thread, &ValidateNonZero);
 DEFINE_uint64(num_init_insert, 10000, "The number of insert operations for initialization");
+DEFINE_uint64(num_init_thread, 1, "The number of worker threads for initialization");
+DEFINE_validator(num_init_thread, &ValidateNonZero);
+DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
 DEFINE_double(skew_parameter, 0, "A skew parameter (based on Zipf's law)");
 DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
@@ -160,15 +150,15 @@ ValidateWorkload(const std::string &workload)  //
     -> bool
 {
   if (workload.empty()) {
-    std::cout << "NOTE: A workload file is not specified." << std::endl;
-    std::cout << "NOTE: Use a read-only workload." << std::endl << std::endl;
+    std::cout << "NOTE: a workload file is not specified." << std::endl;
+    std::cout << "NOTE: use a read-only workload." << std::endl << std::endl;
     return false;
   }
 
   const auto abs_path = std::filesystem::absolute(workload);
   if (!std::filesystem::exists(abs_path)) {
-    std::cout << "NOTE: The specified file does not exist." << std::endl;
-    std::cout << "NOTE: Use a read-only workload." << std::endl << std::endl;
+    std::cout << "NOTE: the specified file does not exist." << std::endl;
+    std::cout << "NOTE: use a read-only workload." << std::endl << std::endl;
     return false;
   }
 
@@ -199,17 +189,22 @@ RunBenchmark(  //
   bench.Run();
 }
 
-/*######################################################################################
- * Main function
- *####################################################################################*/
-
-auto
-main(int argc, char *argv[])  //
-    -> int
+template <class Key>
+void
+ForwardKeyForBench()
 {
-  // parse command line options
-  gflags::SetUsageMessage("measures throughput/latency for thread-safe index implementations.");
-  gflags::ParseCommandLineFlags(&argc, &argv, false);
+  using BwTree_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTree>;
+  using BzTreeInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
+  using BzTreeAppend_t = IndexWrapper<Key, AppendVal, ::dbgroup::index::bztree::BzTree>;
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+  using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceVal>;
+#endif
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+  using OpenBw_t = OpenBwTreeWrapper<Key, InPlaceVal>;
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  using Mass_t = MasstreeWrapper<Key, InPlaceVal>;
+#endif
 
   // load a target workload from a JSON file
   std::string workload_json{FLAGS_workload};
@@ -242,5 +237,42 @@ main(int argc, char *argv[])  //
     RunBenchmark<Key, InPlaceVal, Mass_t>("Masstree", workload);
   }
 #endif
+}
+
+/*######################################################################################
+ * Main function
+ *####################################################################################*/
+
+auto
+main(int argc, char *argv[])  //
+    -> int
+{
+  // parse command line options
+  gflags::SetUsageMessage("measures throughput/latency for thread-safe index implementations.");
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
+
+  switch (FLAGS_key_size) {
+    case k8:
+      ForwardKeyForBench<Key8>();
+      break;
+    case k16:
+      ForwardKeyForBench<Key16>();
+      break;
+    case k32:
+      ForwardKeyForBench<Key32>();
+      break;
+    case k64:
+      ForwardKeyForBench<Key64>();
+      break;
+    case k128:
+      ForwardKeyForBench<Key128>();
+      break;
+    default:
+      std::cout << "WARN: the input key size is invalid." << std::endl;
+      std::cout << "WARN: use 8byte keys." << std::endl;
+      ForwardKeyForBench<Key8>();
+      break;
+  }
+
   return 0;
 }
