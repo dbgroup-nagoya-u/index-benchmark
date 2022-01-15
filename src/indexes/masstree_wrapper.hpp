@@ -82,12 +82,12 @@ class MasstreeWrapper
   MasstreeWrapper([[maybe_unused]] const size_t worker_num)
   {
     // assume that a main thread construct this instance
-    mass_thread_info_ = threadinfo::make(threadinfo::TI_MAIN, -1);
-    table_.initialize(*mass_thread_info_);
-    mass_thread_info_->rcu_start();
+    thread_info_ = threadinfo::make(threadinfo::TI_MAIN, -1);
+    table_.initialize(*thread_info_);
+    thread_info_->rcu_start();
   }
 
-  ~MasstreeWrapper() { mass_thread_info_->rcu_stop(); }
+  ~MasstreeWrapper() { thread_info_->rcu_stop(); }
 
   /*####################################################################################
    * Public utility functions
@@ -96,17 +96,17 @@ class MasstreeWrapper
   void
   SetUp()
   {
-    mass_thread_id_ = mass_thread_counter_.fetch_add(1);
-    mass_thread_info_ = threadinfo::make(threadinfo::TI_PROCESS, mass_thread_id_);
-    mass_thread_info_->rcu_start();
+    thread_id_ = thread_counter_.fetch_add(1);
+    thread_info_ = threadinfo::make(threadinfo::TI_PROCESS, thread_id_);
+    thread_info_->rcu_start();
 
-    RunGC();
+    TryRCUQuiesce();
   }
 
   void
   TearDown()
   {
-    mass_thread_info_->rcu_stop();
+    thread_info_->rcu_stop();
   }
 
   /*####################################################################################
@@ -117,12 +117,12 @@ class MasstreeWrapper
   Read(const Key &key)  //
       -> std::optional<Value>
   {
-    Value payload{};
-    auto *str_val = reinterpret_cast<Str_t *>(&payload);
-    auto found = index_.run_get1(table_.table(), ToStr(key), 0, *str_val, *mass_thread_info_);
-    RunGC();
+    Value value{};
+    auto &&str_val = ToStr(value);
+    auto found = index_.run_get1(table_.table(), ToStr(key), 0, str_val, *thread_info_);
+    TryRCUQuiesce();
 
-    if (found) return payload;
+    if (found) return value;
     return std::nullopt;
   }
 
@@ -142,9 +142,9 @@ class MasstreeWrapper
       -> int64_t
   {
     // run replace procedure as write (upsert)
-    index_.run_replace(table_.table(), ToStr(key), ToStr(value), *mass_thread_info_);
+    index_.run_replace(table_.table(), ToStr(key), ToStr(value), *thread_info_);
+    TryRCUQuiesce();
 
-    RunGC();
     return 0;
   }
 
@@ -174,9 +174,9 @@ class MasstreeWrapper
   Delete(const Key &key)  //
       -> int64_t
   {
-    auto deleted = index_.run_remove(table_.table(), ToStr(key), *mass_thread_info_);
+    auto deleted = index_.run_remove(table_.table(), ToStr(key), *thread_info_);
+    TryRCUQuiesce();
 
-    RunGC();
     return !deleted;
   }
 
@@ -202,21 +202,24 @@ class MasstreeWrapper
   void
   SetGlobalEpoch(const mrcu_epoch_type e)
   {
-    global_epoch_lock.lock();
-    if (mrcu_signed_epoch_type(e - globalepoch) > 0) {
-      globalepoch = e;
-      active_epoch = threadinfo::min_active_epoch();
+    if (global_epoch_lock.try_lock()) {
+      if (mrcu_signed_epoch_type(e - globalepoch) > 0) {
+        globalepoch = e;
+        active_epoch = threadinfo::min_active_epoch();
+      }
+      global_epoch_lock.unlock();
     }
-    global_epoch_lock.unlock();
   }
 
   void
-  RunGC()
+  TryRCUQuiesce()
   {
-    if ((ops_counter_++ & kGCThresholdMask) == 0) {
+    if ((++ops_counter_ & kGCThresholdMask) == 0) {
       const auto e = timestamp() >> 16;
-      if (e != globalepoch) SetGlobalEpoch(e);
-      mass_thread_info_->rcu_quiesce();
+      if (e != globalepoch) {
+        SetGlobalEpoch(e);
+      }
+      thread_info_->rcu_quiesce();
     }
   }
 
@@ -225,13 +228,13 @@ class MasstreeWrapper
    *##################################################################################*/
 
   /// an atomic counter to count the number of worker threads
-  static inline std::atomic_size_t mass_thread_counter_ = 0;
+  static inline std::atomic_size_t thread_counter_ = 0;
 
   /// information of each worker thread
-  static thread_local inline threadinfo *mass_thread_info_ = nullptr;
+  static thread_local inline threadinfo *thread_info_ = nullptr;
 
   /// a thread id for each worker thread
-  static thread_local inline size_t mass_thread_id_ = 0;
+  static thread_local inline size_t thread_id_ = 0;
 
   /// a counter for controling GC
   static thread_local inline size_t ops_counter_ = 0;
