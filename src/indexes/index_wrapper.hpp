@@ -21,14 +21,14 @@
 
 #include "../common.hpp"
 
-template <class Key, class Value, template <class K, class V> class Index>
+template <class Key, class Payload, template <class K, class V> class Index>
 class IndexWrapper
 {
   /*####################################################################################
    * Type aliases
    *##################################################################################*/
 
-  using Index_t = Index<Key, Value>;
+  using Index_t = Index<Key, Payload>;
 
  public:
   /*####################################################################################
@@ -59,7 +59,7 @@ class IndexWrapper
 
   auto
   Read(const Key &key)  //
-      -> std::optional<Value>
+      -> std::optional<Payload>
   {
     return index_.Read(key);
   }
@@ -81,7 +81,7 @@ class IndexWrapper
   auto
   Write(  //
       const Key &key,
-      const Value &value)
+      const Payload &value)
   {
     return index_.Write(key, value);
   }
@@ -89,7 +89,7 @@ class IndexWrapper
   auto
   Insert(  //
       const Key &key,
-      const Value &value)
+      const Payload &value)
   {
     return index_.Insert(key, value);
   }
@@ -97,7 +97,7 @@ class IndexWrapper
   auto
   Update(  //
       const Key &key,
-      const Value &value)
+      const Payload &value)
   {
     return index_.Update(key, value);
   }

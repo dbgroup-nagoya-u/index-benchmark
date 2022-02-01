@@ -28,7 +28,7 @@
  * @brief A class to represent index read/write operations.
  *
  */
-template <class Key, class Value>
+template <class Key, class Payload>
 class OperationEngine
 {
   /*####################################################################################
@@ -36,7 +36,7 @@ class OperationEngine
    *##################################################################################*/
 
   using ZipfGenerator = ::dbgroup::random::zipf::ZipfGenerator;
-  using Operation_t = Operation<Key, Value>;
+  using Operation_t = Operation<Key, Payload>;
 
  public:
   /*####################################################################################

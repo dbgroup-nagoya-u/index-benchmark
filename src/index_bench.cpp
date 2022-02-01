@@ -165,15 +165,15 @@ ValidateWorkload(const std::string &workload)  //
   return true;
 }
 
-template <class Key, class Value, class Implementation>
+template <class Key, class Payload, class Implementation>
 void
 RunBenchmark(  //
     const std::string &target_name,
     const Workload &workload)
 {
-  using Operation_t = Operation<Key, Value>;
-  using OperationEngine_t = OperationEngine<Key, Value>;
-  using Index_t = Index<Key, Value, Implementation>;
+  using Operation_t = Operation<Key, Payload>;
+  using OperationEngine_t = OperationEngine<Key, Payload>;
+  using Index_t = Index<Key, Payload, Implementation>;
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation_t, OperationEngine_t>;
 
   // create a target index

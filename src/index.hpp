@@ -29,14 +29,14 @@
  *
  * @tparam Implementation A certain implementation of thread-safe indexes.
  */
-template <class Key, class Value, class Implementation>
+template <class Key, class Payload, class Implementation>
 class Index
 {
   /*####################################################################################
    * Type aliases
    *##################################################################################*/
 
-  using Operation_t = Operation<Key, Value>;
+  using Operation_t = Operation<Key, Payload>;
 
  public:
   /*####################################################################################
@@ -54,7 +54,7 @@ class Index
     auto f = [&](const size_t begin, const size_t end) {
       index_->SetUp();
       for (uint32_t i = begin; i < end; ++i) {
-        index_->Write(Key{i}, Value{i});
+        index_->Write(Key{i}, Payload{i});
       }
       index_->TearDown();
     };
@@ -98,23 +98,23 @@ class Index
   {
     switch (ops.type) {
       case IndexOperation::kScan:
-        index_->Scan(Key{ops.key}, Value{ops.value}.GetValue());
+        index_->Scan(ops.GetKey(), ops.GetPayload().GetValue());
         break;
       case IndexOperation::kWrite:
-        index_->Write(Key{ops.key}, Value{ops.value});
+        index_->Write(ops.GetKey(), ops.GetPayload());
         break;
       case IndexOperation::kInsert:
-        index_->Insert(Key{ops.key}, Value{ops.value});
+        index_->Insert(ops.GetKey(), ops.GetPayload());
         break;
       case IndexOperation::kUpdate:
-        index_->Update(Key{ops.key}, Value{ops.value});
+        index_->Update(ops.GetKey(), ops.GetPayload());
         break;
       case IndexOperation::kDelete:
-        index_->Delete(Key{ops.key});
+        index_->Delete(ops.GetKey());
         break;
       case IndexOperation::kRead:
       default:
-        index_->Read(Key{ops.key});
+        index_->Read(ops.GetKey());
         break;
     }
   }

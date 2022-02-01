@@ -26,25 +26,25 @@
 #include "../external/PAM/c++/pbbslib/utilities.h"
 #include "common.hpp"
 
-template <class Key, class Value>
+template <class Key, class Payload>
 struct ptree_entry {
   using key_t = Key;
-  using val_t = Value;
+  using val_t = Payload;
   static_assert(!std::is_pointer<Key>::value);
   static_assert(std::is_scalar<Key>::value);
 
   static bool
-  comp(const Key& a, const Key& b)
+  comp(const Key &a, const Key &b)
   {
     return a < b;
   }
 };
 
-template <class Key, class Value>
+template <class Key, class Payload>
 class PTreeWrapper
 {
-  using ptree_entry_t = ptree_entry<Key, Value>;
-  using PTree_t = pam_map<ptree_entry<Key, Value>>;
+  using ptree_entry_t = ptree_entry<Key, Payload>;
+  using PTree_t = pam_map<ptree_entry<Key, Payload>>;
 
  private:
   /*####################################################################################
@@ -79,10 +79,10 @@ class PTreeWrapper
    * Public read/write APIs
    *##################################################################################*/
 
-  std::pair<int64_t, Value>
+  std::pair<int64_t, Payload>
   Read(const Key key)
   {
-    constexpr Value kDefaultVal = std::numeric_limits<Value>::max();
+    constexpr Payload kDefaultVal = std::numeric_limits<Payload>::max();
 
     const auto read_val = ptree_.find(key, kDefaultVal);
     if (read_val == kDefaultVal) {
@@ -104,7 +104,7 @@ class PTreeWrapper
   int64_t
   Write(  //
       const Key key,
-      const Value value)
+      const Payload value)
   {
     // ptree_->insert means "upsert"
     ptree_.insert(std::make_pair(key, value));
@@ -115,7 +115,7 @@ class PTreeWrapper
   int64_t
   Insert(  //
       [[maybe_unused]] const Key key,
-      [[maybe_unused]] const Value value)
+      [[maybe_unused]] const Payload value)
   {
     // this operation is not implemented
     assert(false);
@@ -125,10 +125,10 @@ class PTreeWrapper
   int64_t
   Update(  //
       const Key key,
-      const Value value)
+      const Payload value)
   {
     // define function for updating value
-    auto f = [&](std::pair<Key, Value>) { return value; };
+    auto f = [&](std::pair<Key, Payload>) { return value; };
     // do nothing if key does not exist
     ptree_.update(key, f);
 

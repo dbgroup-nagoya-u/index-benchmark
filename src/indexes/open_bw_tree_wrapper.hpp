@@ -46,14 +46,14 @@ std::atomic<size_t> BwTreeBase::total_thread_num = 1;
  * Class definition
  *####################################################################################*/
 
-template <class Key, class Value>
+template <class Key, class Payload>
 class OpenBwTreeWrapper
 {
   /*####################################################################################
    * Type aliases
    *##################################################################################*/
 
-  using BwTree_t = wangziqi2013::bwtree::BwTree<Key, Value>;
+  using BwTree_t = wangziqi2013::bwtree::BwTree<Key, Payload>;
   using ForwardIterator = typename BwTree_t::ForwardIterator;
 
  public:
@@ -91,9 +91,9 @@ class OpenBwTreeWrapper
 
   auto
   Read(const Key &key)  //
-      -> std::optional<Value>
+      -> std::optional<Payload>
   {
-    std::vector<Value> read_results;
+    std::vector<Payload> read_results;
     open_bw_.GetValue(key, read_results);
 
     if (read_results.empty()) return std::nullopt;
@@ -120,7 +120,7 @@ class OpenBwTreeWrapper
   auto
   Write(  //
       const Key &key,
-      const Value &value)  //
+      const Payload &value)  //
       -> int64_t
   {
     open_bw_.Upsert(key, value);
@@ -130,7 +130,7 @@ class OpenBwTreeWrapper
   auto
   Insert(  //
       const Key &key,
-      const Value &value)  //
+      const Payload &value)  //
       -> int64_t
   {
     return !open_bw_.Insert(key, value);
@@ -139,7 +139,7 @@ class OpenBwTreeWrapper
   auto
   Update(  //
       [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Value &value)  //
+      [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
     // this operation is not implemented
@@ -152,7 +152,7 @@ class OpenBwTreeWrapper
       -> int64_t
   {
     // a delete operation in Open-Bw-tree requrires a key-value pair
-    return !open_bw_.Delete(key, Value{key.GetValue()});
+    return !open_bw_.Delete(key, Payload{key.GetValue()});
   }
 
  private:
