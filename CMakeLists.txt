@@ -28,6 +28,20 @@ find_package(gflags REQUIRED)
 # Build option for efficient memory allocators
 #--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_OVERRIDE_JEMALLOC "Override entire memory allocation with jemalloc" OFF)
+option(INDEX_BENCH_OVERRIDE_MIMALLOC "Override entire memory allocation with mimalloc" OFF)
+
+if(${INDEX_BENCH_OVERRIDE_JEMALLOC} AND ${INDEX_BENCH_OVERRIDE_MIMALLOC})
+  message(FATAL_ERROR "The benchmarks cannot use multiple memory allocators.")
+endif()
+
+if(${INDEX_BENCH_OVERRIDE_JEMALLOC})
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET jemalloc)
+endif()
+
+if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
+  find_package(mimalloc 1.7 REQUIRED)
+endif()
 
 #--------------------------------------------------------------------------------------#
 # Build option for target indexes
@@ -78,6 +92,18 @@ if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h
   endif()
 endif()
 
+set(INDEX_BENCH_MASSTREE_LIBS
+  "${MASSTREE_SOURCE_DIR}/misc.o"
+  "${MASSTREE_SOURCE_DIR}/checkpoint.o"
+  "${MASSTREE_SOURCE_DIR}/query_masstree.o"
+  "${MASSTREE_SOURCE_DIR}/value_string.o"
+  "${MASSTREE_SOURCE_DIR}/value_array.o"
+  "${MASSTREE_SOURCE_DIR}/value_versioned_array.o"
+  "${MASSTREE_SOURCE_DIR}/string_slice.o"
+  "${MASSTREE_SOURCE_DIR}/kvio.o"
+  "${MASSTREE_SOURCE_DIR}/libjson.a"
+)
+
 #--------------------------------------------------------------------------------------#
 # Configure nlohmann_json
 #--------------------------------------------------------------------------------------#
@@ -99,106 +125,58 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 # Build Benchmark
 #--------------------------------------------------------------------------------------#
 
-# build executable
-add_executable(index_bench
-  "${INDEX_BENCH_SOURCE_DIR}/src/index_bench.cpp"
-)
-target_compile_features(index_bench PRIVATE
-  "cxx_std_17"
-)
-target_compile_options(index_bench PRIVATE
-  -Wall
-  -Wextra
-  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
-  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
-  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
-)
-target_include_directories(index_bench PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/external"
-)
-target_link_libraries(index_bench PRIVATE
-  gflags
-  nlohmann_json::nlohmann_json
-  cpp_utility::cpp_utility
-  cpp_bench::cpp_bench
-  bw_tree::bw_tree
-  bztree::bztree
-)
-target_compile_definitions(index_bench PRIVATE
-  $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
-)
+# define function to add unit tests in the same format
+function(ADD_BENCHMARK BENCHMARK_TARGET)
+  add_executable(${BENCHMARK_TARGET}
+    "${INDEX_BENCH_SOURCE_DIR}/src/${BENCHMARK_TARGET}.cpp"
+  )
+  target_compile_features(${BENCHMARK_TARGET} PRIVATE
+    "cxx_std_17"
+  )
+  target_compile_options(${BENCHMARK_TARGET} PRIVATE
+    -Wall
+    -Wextra
+    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
+    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
+    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
+    $<$<OR:$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>,$<BOOL:${INDEX_BENCH_BUILD_PTREE}>>:-mcx16>
+  )
+  target_include_directories(${BENCHMARK_TARGET} PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/external"
+    $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:${JEMALLOC_INCLUDE_DIRS}>
+    $<$<BOOL:${INDEX_BENCH_BUILD_PTREE}>:${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/>
+  )
+  target_link_libraries(${BENCHMARK_TARGET} PRIVATE
+    gflags
+    nlohmann_json::nlohmann_json
+    cpp_utility::cpp_utility
+    cpp_bench::cpp_bench
+    bw_tree::bw_tree
+    bztree::bztree
+    $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:PkgConfig::JEMALLOC>
+    $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
+  )
+  target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
+    $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
+    $<$<AND:$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>,$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">>:BWTREE_NODEBUG>
+    $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_PTREE}>:INDEX_BENCH_BUILD_PTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_PTREE}>:HOMEGROWN>
+  )
 
-if(${INDEX_BENCH_OVERRIDE_JEMALLOC})
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET jemalloc)
+  if(${INDEX_BENCH_BUILD_MASSTREE})
+    target_link_libraries(${BENCHMARK_TARGET} PRIVATE
+      ${INDEX_BENCH_MASSTREE_LIBS}
+    )
+  endif()
+endfunction()
 
-  target_include_directories(index_bench PRIVATE
-    ${JEMALLOC_INCLUDE_DIRS}
-  )
-  target_link_libraries(index_bench PRIVATE
-    PkgConfig::JEMALLOC
-  )
-endif()
-
-if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
-  find_package(mimalloc 1.7 REQUIRED)
-
-  target_link_libraries(index_bench PRIVATE
-    mimalloc-static
-  )
-endif()
-
-#--------------------------------------------------------------------------------------#
-# Build OpenBw-Tree for benchmarking
-#--------------------------------------------------------------------------------------#
-if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
-  target_compile_options(index_bench PRIVATE
-    -mcx16
-  )
-  target_compile_definitions(index_bench PRIVATE
-    INDEX_BENCH_BUILD_OPEN_BWTREE
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:BWTREE_NODEBUG>
-  )
-  target_link_libraries(index_bench PRIVATE
-    atomic
-  )
-endif()
-
-#--------------------------------------------------------------------------------------#
-# Build Masstree for benchmarking
-#--------------------------------------------------------------------------------------#
-if(${INDEX_BENCH_BUILD_MASSTREE})
-  target_compile_definitions(index_bench PRIVATE
-    INDEX_BENCH_BUILD_MASSTREE
-  )
-  target_link_libraries(index_bench PRIVATE
-    ${MASSTREE_SOURCE_DIR}/misc.o
-    ${MASSTREE_SOURCE_DIR}/checkpoint.o
-    ${MASSTREE_SOURCE_DIR}/query_masstree.o
-    ${MASSTREE_SOURCE_DIR}/value_string.o
-    ${MASSTREE_SOURCE_DIR}/value_array.o
-    ${MASSTREE_SOURCE_DIR}/value_versioned_array.o
-    ${MASSTREE_SOURCE_DIR}/string_slice.o
-    ${MASSTREE_SOURCE_DIR}/kvio.o
-    ${MASSTREE_SOURCE_DIR}/libjson.a
-  )
-endif()
-
-#--------------------------------------------------------------------------------------#
-# Build PTree for benchmarking
-#--------------------------------------------------------------------------------------#
-if(${INDEX_BENCH_BUILD_PTREE})
-  target_compile_options(index_bench PRIVATE
-    -mcx16
-  )
-  target_include_directories(index_bench PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/
-  )
-  target_compile_definitions(index_bench PRIVATE
-    INDEX_BENCH_BUILD_PTREE
-    HOMEGROWN
-  )
-endif()
+# add executables
+ADD_BENCHMARK("index_bench")
+ADD_BENCHMARK("bulkload_bench")
 
 #--------------------------------------------------------------------------------------#
 # Build unit tests if required
