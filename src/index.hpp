@@ -136,7 +136,32 @@ class Index
       const size_t thread_num,
       const bool use_bulkload)
   {
-    index_->Bulkload(entries, thread_num, use_bulkload);
+    // if the target index has a bulkload function, use it
+    if (use_bulkload && index_->Bulkload(entries, thread_num)) return;
+
+    // otherwise, construct an index with one-by-one writing
+    auto f = [&](ConstIter_t iter, const ConstIter_t &end_it) {
+      // lambda function to insert key-value pairs in a certain thread
+      index_->SetUp();
+      for (; iter != end_it; ++iter) {
+        index_->Write(iter->GetKey(), iter->GetPayload());
+      }
+      index_->TearDown();
+    };
+
+    // insert initial key-value pairs in multi-threads
+    const auto size = entries.size();
+    std::vector<std::thread> threads;
+    auto &&begin = entries.cbegin();
+    for (size_t i = 0; i < thread_num; ++i) {
+      size_t n = (size + i) / thread_num;
+      const auto &end = std::next(begin, n);
+      threads.emplace_back(f, begin, end);
+      begin = end;
+    }
+    for (auto &&t : threads) {
+      t.join();
+    }
   }
 
   void

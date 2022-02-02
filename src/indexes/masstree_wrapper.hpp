@@ -73,6 +73,8 @@ class MasstreeWrapper
 
   using Table_t = Masstree::default_table;
   using Str_t = lcdf::Str;
+  using Entry_t = Entry<Key, Payload>;
+  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
 
  public:
   /*####################################################################################
@@ -107,6 +109,15 @@ class MasstreeWrapper
   TearDown()
   {
     thread_info_->rcu_stop();
+  }
+
+  constexpr auto
+  Bulkload(  //
+      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const size_t thread_num)  //
+      -> bool
+  {
+    return false;
   }
 
   /*####################################################################################

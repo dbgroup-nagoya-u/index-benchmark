@@ -31,6 +31,8 @@ class BTreeOLCWrapper
    *##################################################################################*/
 
   using BTreeOLC_t = btreeolc::BTree<Key, Payload>;
+  using Entry_t = Entry<Key, Payload>;
+  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
 
  public:
   /*####################################################################################
@@ -45,14 +47,23 @@ class BTreeOLCWrapper
    * Public utility functions
    *##################################################################################*/
 
-  void
+  constexpr void
   SetUp()
   {
   }
 
-  void
+  constexpr void
   TearDown()
   {
+  }
+
+  constexpr auto
+  Bulkload(  //
+      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const size_t thread_num)  //
+      -> bool
+  {
+    return false;
   }
 
   /*####################################################################################

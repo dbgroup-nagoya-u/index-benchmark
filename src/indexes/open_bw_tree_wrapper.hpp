@@ -55,16 +55,15 @@ class OpenBwTreeWrapper
 
   using BwTree_t = wangziqi2013::bwtree::BwTree<Key, Payload>;
   using ForwardIterator = typename BwTree_t::ForwardIterator;
+  using Entry_t = Entry<Key, Payload>;
+  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
 
  public:
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
 
-  explicit OpenBwTreeWrapper(const size_t worker_num)
-  {
-    open_bw_.UpdateThreadLocal(worker_num + 1);
-  }
+  explicit OpenBwTreeWrapper(const size_t worker_num) { index_.UpdateThreadLocal(worker_num + 1); }
 
   ~OpenBwTreeWrapper() = default;
 
@@ -76,13 +75,22 @@ class OpenBwTreeWrapper
   SetUp()
   {
     open_bw_thread_id_ = open_bw_thread_counter_.fetch_add(1);
-    open_bw_.AssignGCID(open_bw_thread_id_);
+    index_.AssignGCID(open_bw_thread_id_);
   }
 
   void
   TearDown()
   {
-    open_bw_.UnregisterThread(open_bw_thread_id_);
+    index_.UnregisterThread(open_bw_thread_id_);
+  }
+
+  constexpr auto
+  Bulkload(  //
+      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const size_t thread_num)  //
+      -> bool
+  {
+    return false;
   }
 
   /*####################################################################################
@@ -94,7 +102,7 @@ class OpenBwTreeWrapper
       -> std::optional<Payload>
   {
     std::vector<Payload> read_results;
-    open_bw_.GetValue(key, read_results);
+    index_.GetValue(key, read_results);
 
     if (read_results.empty()) return std::nullopt;
     return read_results[0];
@@ -108,7 +116,7 @@ class OpenBwTreeWrapper
     const auto &&end_key = begin_key + scan_range;
     size_t sum{0};
 
-    ForwardIterator tree_iterator{&open_bw_, begin_key};
+    ForwardIterator tree_iterator{&index_, begin_key};
     for (; !tree_iterator.IsEnd(); ++tree_iterator) {
       auto &&[key, value] = *tree_iterator;
       if (key > end_key) break;
@@ -123,7 +131,7 @@ class OpenBwTreeWrapper
       const Payload &value)  //
       -> int64_t
   {
-    open_bw_.Upsert(key, value);
+    index_.Upsert(key, value);
     return 0;
   }
 
@@ -133,7 +141,7 @@ class OpenBwTreeWrapper
       const Payload &value)  //
       -> int64_t
   {
-    return !open_bw_.Insert(key, value);
+    return !index_.Insert(key, value);
   }
 
   auto
@@ -152,7 +160,7 @@ class OpenBwTreeWrapper
       -> int64_t
   {
     // a delete operation in Open-Bw-tree requrires a key-value pair
-    return !open_bw_.Delete(key, Payload{key.GetValue()});
+    return !index_.Delete(key, Payload{key.GetValue()});
   }
 
  private:
@@ -166,7 +174,7 @@ class OpenBwTreeWrapper
   /// a thread id for each worker thread
   static thread_local inline size_t open_bw_thread_id_ = 0;
 
-  BwTree_t open_bw_{};
+  BwTree_t index_{};
 };
 
 #endif  // INDEX_BENCHMARK_INDEXES_OPEN_BW_TREE_HPP

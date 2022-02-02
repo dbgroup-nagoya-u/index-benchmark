@@ -49,7 +49,7 @@ DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency"
 
 template <class Key, class Payload, class Implementation>
 void
-RunBenchmark(  //
+Run(  //
     const std::string &target_name,
     const Workload &workload)
 {
@@ -58,8 +58,13 @@ RunBenchmark(  //
   using Index_t = Index<Key, Payload, Implementation>;
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation_t, OperationEngine_t>;
 
+  const size_t init_size = FLAGS_num_init_insert;
+  const size_t init_thread = FLAGS_num_init_thread;
+
   // create a target index
-  Index_t index{FLAGS_num_thread, FLAGS_num_init_thread, FLAGS_num_init_insert};
+  Index_t index{FLAGS_num_thread + init_thread};
+  const auto &entries = PrepareBulkLoadEntries<Key, Payload>(init_size, init_thread);
+  index.Construct(entries, init_thread, kUseBulkload);
 
   // create an operation engine
   OperationEngine_t ops_engine{workload, FLAGS_num_key, FLAGS_skew_parameter};
@@ -76,8 +81,8 @@ void
 ForwardKeyForBench()
 {
   using BwTree_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTree>;
-  using BzTreeInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
-  using BzTreeAppend_t = IndexWrapper<Key, AppendVal, ::dbgroup::index::bztree::BzTree>;
+  using BzInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
+  using BzAppend_t = IndexWrapper<Key, AppendVal, ::dbgroup::index::bztree::BzTree>;
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
   using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceVal>;
 #endif
@@ -101,29 +106,17 @@ ForwardKeyForBench()
                         : Workload{};
 
   // run benchmark for each implementaton
-  if (FLAGS_bw) {
-    RunBenchmark<Key, InPlaceVal, BwTree_t>("Bw-tree", workload);
-  }
-  if (FLAGS_bz_in_place) {
-    RunBenchmark<Key, InPlaceVal, BzTreeInPlace_t>("BzTree in-place mode", workload);
-  }
-  if (FLAGS_bz_append) {
-    RunBenchmark<Key, AppendVal, BzTreeAppend_t>("BzTree append mode", workload);
-  }
+  if (FLAGS_bw) Run<Key, InPlaceVal, BwTree_t>("Bw-tree", workload);
+  if (FLAGS_bz_in_place) Run<Key, InPlaceVal, BzInPlace_t>("BzTree in-place mode", workload);
+  if (FLAGS_bz_append) Run<Key, AppendVal, BzAppend_t>("BzTree append mode", workload);
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) {
-    RunBenchmark<Key, InPlaceVal, BTreeOLC_t>("B-tree based on OLC", workload);
-  }
+  if (FLAGS_b_olc) Run<Key, InPlaceVal, BTreeOLC_t>("B-tree based on OLC", workload);
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) {
-    RunBenchmark<Key, InPlaceVal, OpenBw_t>("OpenBw-Tree", workload);
-  }
+  if (FLAGS_open_bw) Run<Key, InPlaceVal, OpenBw_t>("OpenBw-Tree", workload);
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) {
-    RunBenchmark<Key, InPlaceVal, Mass_t>("Masstree", workload);
-  }
+  if (FLAGS_mass) Run<Key, InPlaceVal, Mass_t>("Masstree", workload);
 #endif
 }
 

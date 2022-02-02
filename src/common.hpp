@@ -63,6 +63,8 @@ constexpr size_t kGCThreadNum = 8;
 
 constexpr bool kClosed = true;
 
+constexpr bool kUseBulkload = true;
+
 /*######################################################################################
  * Global utilities
  *####################################################################################*/
@@ -157,15 +159,16 @@ PrepareBulkLoadEntries(  //
 {
   using Entry_t = Entry<Key, Payload>;
 
+  std::vector<Entry_t> entries{size};
+
   // a lambda function for creating bulkload entries
   auto f = [&](const size_t begin_pos, const size_t end_pos) {
-    for (size_t i = begin_pos; i < end_pos; ++i) {
+    for (uint32_t i = begin_pos; i < end_pos; ++i) {
       entries.at(i) = Entry_t{i, i};
     }
   };
 
   // prepare bulkload entries
-  std::vector<Entry_t> entries{size};
   std::vector<std::thread> threads;
   size_t begin_pos = 0;
   for (size_t i = 0; i < thread_num; ++i) {
