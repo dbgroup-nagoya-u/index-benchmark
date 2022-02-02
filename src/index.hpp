@@ -17,12 +17,70 @@
 #ifndef INDEX_BENCHMARK_INDEX_HPP
 #define INDEX_BENCHMARK_INDEX_HPP
 
+#include <gflags/gflags.h>
+
 #include <memory>
 #include <thread>
 #include <vector>
 
 #include "common.hpp"
+#include "indexes/index_wrapper.hpp"
 #include "operation.hpp"
+
+/*######################################################################################
+ * Target indexes and its pre-definitions
+ *####################################################################################*/
+
+#include "bw_tree/bw_tree.hpp"
+#include "bztree/bztree.hpp"
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+#include "indexes/btree_olc_wrapper.hpp"
+#endif
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+#include "indexes/open_bw_tree_wrapper.hpp"
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+#include "indexes/masstree_wrapper.hpp"
+#endif
+
+namespace dbgroup::atomic::mwcas
+{
+template <>
+constexpr auto
+CanMwCAS<InPlaceVal>()  //
+    -> bool
+{
+  return true;
+}
+}  // namespace dbgroup::atomic::mwcas
+
+DEFINE_bool(bw, false, "Use Bw-tree as a benchmark target");
+DEFINE_bool(bz_in_place, false, "Use BzTree with in-place based update as a benchmark target");
+DEFINE_bool(bz_append, false, "Use BzTree with append based update as a benchmark target");
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+DEFINE_bool(b_olc, false, "Use OLC based B-tree as a benchmark target");
+#else
+DEFINE_bool(b_olc, false, "OLC based B-tree is not built as a benchmark target.");
+#endif
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+DEFINE_bool(open_bw, false, "Use Open-BwTree as a benchmark target");
+#else
+DEFINE_bool(open_bw, false, "OpenBw-Tree is not built as a benchmark target.");
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+DEFINE_bool(mass, false, "Use Masstree as a benchmark target");
+#else
+DEFINE_bool(mass, false, "Massree is not built as a benchmark target. ");
+#endif
+#ifdef INDEX_BENCH_BUILD_PTREE
+DEFINE_bool(p, false, "Use PTree as a benchmark target");
+#else
+DEFINE_bool(p, false, "PTree is not built as a benchmark target.");
+#endif
+
+/*######################################################################################
+ * Class definition
+ *####################################################################################*/
 
 /**
  * @brief A class for dealing with target indexes.
@@ -37,38 +95,17 @@ class Index
    *##################################################################################*/
 
   using Operation_t = Operation<Key, Payload>;
+  using Entry_t = Entry<Key, Payload>;
+  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
 
  public:
   /*####################################################################################
    * Public constructors and assignment operators
    *##################################################################################*/
 
-  Index(  //
-      const size_t worker_num,
-      const size_t init_thread_num,
-      const size_t init_insert_num)
+  Index(const size_t total_thread_num)
   {
-    index_ = std::make_unique<Implementation>(worker_num + init_thread_num);
-
-    // lambda function to insert key-value pairs in a certain thread
-    auto f = [&](const size_t begin, const size_t end) {
-      index_->SetUp();
-      for (uint32_t i = begin; i < end; ++i) {
-        index_->Write(Key{i}, Payload{i});
-      }
-      index_->TearDown();
-    };
-
-    // insert initial key-value pairs in multi-threads
-    std::vector<std::thread> threads;
-    size_t begin = 0;
-    for (size_t i = 0; i < init_thread_num; ++i) {
-      size_t n = (init_insert_num + i) / init_thread_num;
-      size_t end = begin + n;
-      threads.emplace_back(f, begin, end);
-      begin = end;
-    }
-    for (auto &&t : threads) t.join();
+    index_ = std::make_unique<Implementation>(total_thread_num);
   }
 
   /*####################################################################################
@@ -91,6 +128,15 @@ class Index
   TearDownForWorker()
   {
     index_->TearDown();
+  }
+
+  void
+  Construct(  //
+      const std::vector<Entry_t> &entries,
+      const size_t thread_num,
+      const bool use_bulkload)
+  {
+    index_->Bulkload(entries, thread_num, use_bulkload);
   }
 
   void

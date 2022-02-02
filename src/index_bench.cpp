@@ -16,88 +16,13 @@
 
 #include <gflags/gflags.h>
 
-#include <filesystem>
-#include <string>
-
 #include "benchmark/benchmarker.hpp"
+#include "cla_validator.hpp"
 #include "index.hpp"
-#include "indexes/index_wrapper.hpp"
 #include "operation_engine.hpp"
 
 /*######################################################################################
- * Target indexes
- *####################################################################################*/
-
-#include "bw_tree/bw_tree.hpp"
-#include "bztree/bztree.hpp"
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
-#include "indexes/btree_olc_wrapper.hpp"
-#endif
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-#include "indexes/open_bw_tree_wrapper.hpp"
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-#include "indexes/masstree_wrapper.hpp"
-#endif
-
-namespace dbgroup::atomic::mwcas
-{
-template <>
-constexpr auto
-CanMwCAS<InPlaceVal>()  //
-    -> bool
-{
-  return true;
-}
-}  // namespace dbgroup::atomic::mwcas
-
-/*######################################################################################
- * CLI validators
- *####################################################################################*/
-
-template <class Number>
-static auto
-ValidatePositiveVal(const char *flagname, const Number value)  //
-    -> bool
-{
-  if (value >= 0) {
-    return true;
-  }
-  std::cout << "A value must be positive for " << flagname << std::endl;
-  return false;
-}
-
-template <class Number>
-static auto
-ValidateNonZero(const char *flagname, const Number value)  //
-    -> bool
-{
-  if (value != 0) {
-    return true;
-  }
-  std::cout << "A value must be not zero for " << flagname << std::endl;
-  return false;
-}
-
-static auto
-ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &seed)  //
-    -> bool
-{
-  if (seed.empty()) {
-    return true;
-  }
-
-  for (size_t i = 0; i < seed.size(); ++i) {
-    if (!std::isdigit(seed[i])) {
-      std::cout << "A random seed must be unsigned integer type" << std::endl;
-      return false;
-    }
-  }
-  return true;
-}
-
-/*######################################################################################
- * CLI arguments
+ * Command line arguments
  *####################################################################################*/
 
 DEFINE_uint64(num_exec, 10000, "The total number of operations for benchmarking");
@@ -115,55 +40,12 @@ DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
-DEFINE_bool(bw, false, "Use Bw-tree as a benchmark target");
-DEFINE_bool(bz_in_place, false, "Use BzTree with in-place based update as a benchmark target");
-DEFINE_bool(bz_append, false, "Use BzTree with append based update as a benchmark target");
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
-DEFINE_bool(b_olc, false, "Use OLC based B-tree as a benchmark target");
-#else
-DEFINE_bool(b_olc, false, "OLC based B-tree is not built as a benchmark target.");
-#endif
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-DEFINE_bool(open_bw, false, "Use Open-BwTree as a benchmark target");
-#else
-DEFINE_bool(open_bw, false, "OpenBw-Tree is not built as a benchmark target.");
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-DEFINE_bool(mass, false, "Use Masstree as a benchmark target");
-#else
-DEFINE_bool(mass, false, "Massree is not built as a benchmark target. ");
-#endif
-#ifdef INDEX_BENCH_BUILD_PTREE
-DEFINE_bool(p, false, "Use PTree as a benchmark target");
-#else
-DEFINE_bool(p, false, "PTree is not built as a benchmark target.");
-#endif
 DEFINE_bool(csv, false, "Output benchmark results as CSV format");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency");
 
 /*######################################################################################
  * Utility functions
  *####################################################################################*/
-
-static auto
-ValidateWorkload(const std::string &workload)  //
-    -> bool
-{
-  if (workload.empty()) {
-    std::cout << "NOTE: a workload file is not specified." << std::endl;
-    std::cout << "NOTE: use a read-only workload." << std::endl << std::endl;
-    return false;
-  }
-
-  const auto abs_path = std::filesystem::absolute(workload);
-  if (!std::filesystem::exists(abs_path)) {
-    std::cout << "NOTE: the specified file does not exist." << std::endl;
-    std::cout << "NOTE: use a read-only workload." << std::endl << std::endl;
-    return false;
-  }
-
-  return true;
-}
 
 template <class Key, class Payload, class Implementation>
 void
