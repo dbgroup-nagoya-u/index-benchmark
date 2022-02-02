@@ -24,6 +24,8 @@ set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
 
 find_package(gflags REQUIRED)
 
+find_package(TBB REQUIRED)
+
 #--------------------------------------------------------------------------------------#
 # Build option for efficient memory allocators
 #--------------------------------------------------------------------------------------#
@@ -148,6 +150,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
   )
   target_link_libraries(${BENCHMARK_TARGET} PRIVATE
     gflags
+    TBB::tbb
     nlohmann_json::nlohmann_json
     cpp_utility::cpp_utility
     cpp_bench::cpp_bench
