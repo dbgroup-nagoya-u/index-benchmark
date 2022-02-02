@@ -26,7 +26,7 @@ jobs:
     - name: Create Build Environment
       shell: bash
       run: |
-        sudo apt-get install -y libgflags-dev
+        sudo apt-get install -y libgflags-dev libtbb-dev
         cmake -E make_directory ${{github.workspace}}/build
 
     - name: Configure CMake
