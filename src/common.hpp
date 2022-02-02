@@ -20,6 +20,11 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <thread>
+#include <vector>
+
+#include "key.hpp"
+#include "value.hpp"
 
 /*######################################################################################
  * Global enum and constants
@@ -58,283 +63,68 @@ constexpr size_t kGCThreadNum = 8;
 
 constexpr bool kClosed = true;
 
-constexpr size_t kArrNum = 32;
-
-constexpr size_t kOneBit = 1;
-
 /*######################################################################################
  * Global utilities
  *####################################################################################*/
 
-constexpr void
-ExtendToKey16(  //
-    uint32_t val,
-    uint64_t arr[2])
-{
-  for (int64_t i = 1; i >= 0; --i) {
-    arr[i] |= (val & kOneBit);
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 4UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 8UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 12UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 16UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 20UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 24UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 28UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 32UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 36UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 40UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 44UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 48UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 52UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 56UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 60UL;
-    val >>= 1UL;
-  }
-}
-
-constexpr void
-ExtendToKey32(  //
-    uint32_t val,
-    uint64_t arr[4])
-{
-  for (int64_t i = 3; i >= 0; --i) {
-    arr[i] |= (val & kOneBit);
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 8UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 16UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 24UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 32UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 40UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 48UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 56UL;
-    val >>= 1UL;
-  }
-}
-
-constexpr void
-ExtendToKey64(  //
-    uint32_t val,
-    uint64_t arr[8])
-{
-  for (int64_t i = 7; i >= 0; --i) {
-    arr[i] |= (val & kOneBit);
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 16UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 32UL;
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 48UL;
-    val >>= 1UL;
-  }
-}
-
-constexpr void
-ExtendToKey128(  //
-    uint32_t val,
-    uint64_t arr[16])
-{
-  for (int64_t i = 15; i >= 0; --i) {
-    arr[i] |= (val & kOneBit);
-    val >>= 1UL;
-    arr[i] |= (val & kOneBit) << 32UL;
-    val >>= 1UL;
-  }
-}
-
-constexpr auto
-CompressKey16(const uint64_t arr[2])  //
-    -> uint64_t
-{
-  uint64_t val = 0;
-
-  for (size_t i = 0; i < 4; ++i) {
-    val |= (arr[i] >> 60UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 56UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 52UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 48UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 44UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 40UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 36UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 32UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 28UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 24UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 20UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 16UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 12UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 8UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 4UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] & kOneBit);
-    val <<= 1UL;
-  }
-
-  return val;
-}
-
-constexpr auto
-CompressKey32(const uint64_t arr[4])  //
-    -> uint64_t
-{
-  uint64_t val = 0;
-
-  for (size_t i = 0; i < 4; ++i) {
-    val |= (arr[i] >> 56UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 48UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 40UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 32UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 24UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 16UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 8UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] & kOneBit);
-    val <<= 1UL;
-  }
-
-  return val;
-}
-
-constexpr auto
-CompressKey64(const uint64_t arr[8])  //
-    -> uint64_t
-{
-  uint64_t val = 0;
-
-  for (size_t i = 0; i < 8; ++i) {
-    val |= (arr[i] >> 48UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 32UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] >> 16UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] & kOneBit);
-    val <<= 1UL;
-  }
-
-  return val;
-}
-
-constexpr auto
-CompressKey128(const uint64_t arr[16])  //
-    -> uint64_t
-{
-  uint64_t val = 0;
-
-  for (size_t i = 0; i < 16; ++i) {
-    val |= (arr[i] >> 32UL) & kOneBit;
-    val <<= 1UL;
-    val |= (arr[i] & kOneBit);
-    val <<= 1UL;
-  }
-
-  return val;
-}
-
-/*######################################################################################
- * Key/Value definitions
- *####################################################################################*/
-
-class Key8
-{
+/**
+ * @brief A class to represent bulkload entries.
+ *
+ */
+template <class Key, class Payload>
+struct Entry {
  public:
   /*####################################################################################
    * Public constructors and assignment operators
    *##################################################################################*/
 
-  constexpr Key8() = default;
+  constexpr Entry() = default;
 
-  constexpr explicit Key8(const uint32_t key) : key_{key} {}
+  constexpr Entry(  //
+      uint32_t k,
+      uint32_t v)
+      : key_{k}, payload_{v}
+  {
+  }
 
-  constexpr Key8(const Key8 &) = default;
-  constexpr Key8(Key8 &&) noexcept = default;
-  constexpr auto operator=(const Key8 &) -> Key8 & = default;
-  constexpr auto operator=(Key8 &&) -> Key8 & = default;
+  constexpr Entry(const Entry &obj) = default;
+  constexpr Entry(Entry &&obj) = default;
+
+  constexpr auto operator=(const Entry &obj) -> Entry & = default;
+  constexpr auto operator=(Entry &&obj) -> Entry & = default;
+
+  ~Entry() = default;
 
   /*####################################################################################
-   * Public destructors
+   * Public getters
    *##################################################################################*/
 
-  ~Key8() = default;
-
-  /*####################################################################################
-   * Public utilities
-   *##################################################################################*/
-
-  constexpr auto
-  operator<(const Key8 &obj) const  //
-      -> bool
+  [[nodiscard]] constexpr auto
+  GetKey() const  //
+      -> Key
   {
-    return key_ < obj.key_;
+    return Key{key_};
   }
 
-  constexpr auto
-  operator>(const Key8 &obj) const  //
-      -> bool
+  [[nodiscard]] constexpr auto
+  GetPayload() const  //
+      -> Payload
   {
-    return key_ > obj.key_;
+    return Payload{payload_};
   }
 
-  constexpr auto
-  operator==(const Key8 &obj) const  //
-      -> bool
-  {
-    return key_ == obj.key_;
-  }
-
-  constexpr auto
-  operator+(const size_t val) const  //
-      -> Key8
-  {
-    auto obj = *this;
-    obj.key_ += val;
-    return obj;
-  }
-
-  constexpr auto
-  GetValue() const  //
+  [[nodiscard]] constexpr auto
+  GetKeyLength() const  //
       -> size_t
   {
-    return key_;
+    return sizeof(Key);
+  }
+
+  [[nodiscard]] constexpr auto
+  GetPayloadLength() const  //
+      -> size_t
+  {
+    return sizeof(Payload);
   }
 
  private:
@@ -342,478 +132,53 @@ class Key8
    * Internal member variables
    *##################################################################################*/
 
-  size_t key_{};
+  /// a target key of this operation
+  uint32_t key_{};
+
+  /// a target data of this operation
+  uint32_t payload_{};
 };
 
-class Key16
+/**
+ * @brief Create key/value entries for bulkloading.
+ *
+ * @tparam Key
+ * @tparam Payload
+ * @param size
+ * @param thread_num
+ * @return std::vector<Entry<Key, Payload>>
+ */
+template <class Key, class Payload>
+auto
+PrepareBulkLoadEntries(  //
+    const size_t size,
+    const size_t thread_num)  //
+    -> std::vector<Entry<Key, Payload>>
 {
- public:
-  /*####################################################################################
-   * Public constructors and assignment operators
-   *##################################################################################*/
+  using Entry_t = Entry<Key, Payload>;
 
-  constexpr Key16() = default;
-
-  constexpr explicit Key16(const uint32_t key) { ExtendToKey16(key, key_); }
-
-  constexpr Key16(const Key16 &) = default;
-  constexpr Key16(Key16 &&) noexcept = default;
-  constexpr auto operator=(const Key16 &) -> Key16 & = default;
-  constexpr auto operator=(Key16 &&) -> Key16 & = default;
-
-  /*####################################################################################
-   * Public destructors
-   *##################################################################################*/
-
-  ~Key16() = default;
-
-  /*####################################################################################
-   * Public utilities
-   *##################################################################################*/
-
-  constexpr auto
-  operator<(const Key16 &obj) const  //
-      -> bool
-  {
-    return key_[0] < obj.key_[0]  //
-           || (key_[0] <= obj.key_[0] && key_[1] < obj.key_[1]);
-  }
-
-  constexpr auto
-  operator>(const Key16 &obj) const  //
-      -> bool
-  {
-    return key_[0] > obj.key_[0]  //
-           || (key_[0] >= obj.key_[0] && key_[1] > obj.key_[1]);
-  }
-
-  constexpr auto
-  operator==(const Key16 &obj) const  //
-      -> bool
-  {
-    return key_[0] == obj.key_[0]  //
-           && key_[1] == obj.key_[1];
-  }
-
-  constexpr auto
-  operator+(const size_t val) const  //
-      -> Key16
-  {
-    return Key16{static_cast<uint32_t>(CompressKey16(key_) + val)};
-  }
-
-  constexpr auto
-  GetValue() const  //
-      -> size_t
-  {
-    return CompressKey16(key_);
-  }
-
- private:
-  /*####################################################################################
-   * Internal member variables
-   *##################################################################################*/
-
-  size_t key_[2] = {0, 0};
-};
-
-class Key32
-{
- public:
-  /*####################################################################################
-   * Public constructors and assignment operators
-   *##################################################################################*/
-
-  constexpr Key32() = default;
-
-  constexpr explicit Key32(const uint32_t key) { ExtendToKey32(key, key_); }
-
-  constexpr Key32(const Key32 &) = default;
-  constexpr Key32(Key32 &&) noexcept = default;
-  constexpr auto operator=(const Key32 &) -> Key32 & = default;
-  constexpr auto operator=(Key32 &&) -> Key32 & = default;
-
-  /*####################################################################################
-   * Public destructors
-   *##################################################################################*/
-
-  ~Key32() = default;
-
-  /*####################################################################################
-   * Public utilities
-   *##################################################################################*/
-
-  constexpr auto
-  operator<(const Key32 &obj) const  //
-      -> bool
-  {
-    for (size_t i = 0; i < 4; ++i) {
-      if (key_[i] < obj.key_[i]) return true;
-      if (key_[i] > obj.key_[i]) return false;
+  // a lambda function for creating bulkload entries
+  auto f = [&](const size_t begin_pos, const size_t end_pos) {
+    for (size_t i = begin_pos; i < end_pos; ++i) {
+      entries.at(i) = Entry_t{i, i};
     }
-    return false;
+  };
+
+  // prepare bulkload entries
+  std::vector<Entry_t> entries{size};
+  std::vector<std::thread> threads;
+  size_t begin_pos = 0;
+  for (size_t i = 0; i < thread_num; ++i) {
+    const size_t exec_num = (size + i) / thread_num;
+    const size_t end_pos = begin_pos + exec_num;
+    threads.emplace_back(f, begin_pos, end_pos);
+    begin_pos = end_pos;
+  }
+  for (auto &&thread : threads) {
+    thread.join();
   }
 
-  constexpr auto
-  operator>(const Key32 &obj) const  //
-      -> bool
-  {
-    for (size_t i = 0; i < 4; ++i) {
-      if (key_[i] > obj.key_[i]) return true;
-      if (key_[i] < obj.key_[i]) return false;
-    }
-    return false;
-  }
-
-  constexpr auto
-  operator==(const Key32 &obj) const  //
-      -> bool
-  {
-    for (size_t i = 0; i < 4; ++i) {
-      if (key_[i] != obj.key_[i]) return false;
-    }
-    return true;
-  }
-
-  constexpr auto
-  operator+(const size_t val) const  //
-      -> Key32
-  {
-    return Key32{static_cast<uint32_t>(CompressKey32(key_) + val)};
-  }
-
-  constexpr auto
-  GetValue() const  //
-      -> size_t
-  {
-    return CompressKey32(key_);
-  }
-
- private:
-  /*####################################################################################
-   * Internal member variables
-   *##################################################################################*/
-
-  size_t key_[4] = {0, 0, 0, 0};
-};
-
-class Key64
-{
- public:
-  /*####################################################################################
-   * Public constructors and assignment operators
-   *##################################################################################*/
-
-  constexpr Key64() = default;
-
-  constexpr explicit Key64(const uint32_t key) { ExtendToKey64(key, key_); }
-
-  constexpr Key64(const Key64 &) = default;
-  constexpr Key64(Key64 &&) noexcept = default;
-  constexpr auto operator=(const Key64 &) -> Key64 & = default;
-  constexpr auto operator=(Key64 &&) -> Key64 & = default;
-
-  /*####################################################################################
-   * Public destructors
-   *##################################################################################*/
-
-  ~Key64() = default;
-
-  /*####################################################################################
-   * Public utilities
-   *##################################################################################*/
-
-  constexpr auto
-  operator<(const Key64 &obj) const  //
-      -> bool
-  {
-    for (size_t i = 0; i < 8; ++i) {
-      if (key_[i] < obj.key_[i]) return true;
-      if (key_[i] > obj.key_[i]) return false;
-    }
-    return false;
-  }
-
-  constexpr auto
-  operator>(const Key64 &obj) const  //
-      -> bool
-  {
-    for (size_t i = 0; i < 8; ++i) {
-      if (key_[i] > obj.key_[i]) return true;
-      if (key_[i] < obj.key_[i]) return false;
-    }
-    return false;
-  }
-
-  constexpr auto
-  operator==(const Key64 &obj) const  //
-      -> bool
-  {
-    for (size_t i = 0; i < 8; ++i) {
-      if (key_[i] != obj.key_[i]) return false;
-    }
-    return true;
-  }
-
-  constexpr auto
-  operator+(const size_t val) const  //
-      -> Key64
-  {
-    return Key64{static_cast<uint32_t>(CompressKey64(key_) + val)};
-  }
-
-  constexpr auto
-  GetValue() const  //
-      -> size_t
-  {
-    return CompressKey64(key_);
-  }
-
- private:
-  /*####################################################################################
-   * Internal member variables
-   *##################################################################################*/
-
-  size_t key_[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-};
-
-class Key128
-{
- public:
-  /*####################################################################################
-   * Public constructors and assignment operators
-   *##################################################################################*/
-
-  constexpr Key128() = default;
-
-  constexpr explicit Key128(const uint32_t key) { ExtendToKey128(key, key_); }
-
-  constexpr Key128(const Key128 &) = default;
-  constexpr Key128(Key128 &&) noexcept = default;
-  constexpr auto operator=(const Key128 &) -> Key128 & = default;
-  constexpr auto operator=(Key128 &&) -> Key128 & = default;
-
-  /*####################################################################################
-   * Public destructors
-   *##################################################################################*/
-
-  ~Key128() = default;
-
-  /*####################################################################################
-   * Public utilities
-   *##################################################################################*/
-
-  constexpr auto
-  operator<(const Key128 &obj) const  //
-      -> bool
-  {
-    for (size_t i = 0; i < 16; ++i) {
-      if (key_[i] < obj.key_[i]) return true;
-      if (key_[i] > obj.key_[i]) return false;
-    }
-    return false;
-  }
-
-  constexpr auto
-  operator>(const Key128 &obj) const  //
-      -> bool
-  {
-    for (size_t i = 0; i < 16; ++i) {
-      if (key_[i] > obj.key_[i]) return true;
-      if (key_[i] < obj.key_[i]) return false;
-    }
-    return false;
-  }
-
-  constexpr auto
-  operator==(const Key128 &obj) const  //
-      -> bool
-  {
-    for (size_t i = 0; i < 16; ++i) {
-      if (key_[i] != obj.key_[i]) return false;
-    }
-    return true;
-  }
-
-  constexpr auto
-  operator+(const size_t val) const  //
-      -> Key128
-  {
-    return Key128{static_cast<uint32_t>(CompressKey128(key_) + val)};
-  }
-
-  constexpr auto
-  GetValue() const  //
-      -> size_t
-  {
-    return CompressKey128(key_);
-  }
-
- private:
-  /*####################################################################################
-   * Internal member variables
-   *##################################################################################*/
-
-  size_t key_[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-};
-
-class InPlaceVal
-{
- public:
-  /*####################################################################################
-   * Public constructors and assignment operators
-   *##################################################################################*/
-
-  constexpr InPlaceVal() : value_{}, control_bits_{0} {}
-
-  constexpr explicit InPlaceVal(const size_t val) : value_{val}, control_bits_{0} {}
-
-  constexpr InPlaceVal(const InPlaceVal &) = default;
-  constexpr InPlaceVal(InPlaceVal &&) noexcept = default;
-  constexpr auto operator=(const InPlaceVal &) -> InPlaceVal & = default;
-  constexpr auto operator=(InPlaceVal &&) -> InPlaceVal & = default;
-
-  /*####################################################################################
-   * Public destructors
-   *##################################################################################*/
-
-  ~InPlaceVal() = default;
-
-  /*####################################################################################
-   * Public utilities
-   *##################################################################################*/
-
-  constexpr auto
-  GetValue() const  //
-      -> size_t
-  {
-    return value_;
-  }
-
- private:
-  /*####################################################################################
-   * Internal member variables
-   *##################################################################################*/
-
-  size_t value_ : 61;
-
-  size_t control_bits_ : 3;
-};
-
-class AppendVal
-{
- public:
-  /*####################################################################################
-   * Public constructors and assignment operators
-   *##################################################################################*/
-
-  constexpr AppendVal() : value_{}, control_bits_{0} {}
-
-  constexpr explicit AppendVal(const size_t val) : value_{val}, control_bits_{0} {}
-
-  constexpr AppendVal(const AppendVal &) = default;
-  constexpr AppendVal(AppendVal &&) noexcept = default;
-  constexpr auto operator=(const AppendVal &) -> AppendVal & = default;
-  constexpr auto operator=(AppendVal &&) -> AppendVal & = default;
-
-  /*####################################################################################
-   * Public destructors
-   *##################################################################################*/
-
-  ~AppendVal() = default;
-
-  /*####################################################################################
-   * Public utilities
-   *##################################################################################*/
-
-  constexpr auto
-  GetValue() const  //
-      -> size_t
-  {
-    return value_;
-  }
-
- private:
-  /*####################################################################################
-   * Internal member variables
-   *##################################################################################*/
-
-  size_t value_ : 61;
-
-  size_t control_bits_ : 3;
-};
-
-namespace std
-{
-template <>
-struct hash<Key8> {
-  auto
-  operator()(const Key8 &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<Key16> {
-  auto
-  operator()(const Key16 &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<Key32> {
-  auto
-  operator()(const Key32 &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<Key64> {
-  auto
-  operator()(const Key64 &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<Key128> {
-  auto
-  operator()(const Key128 &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<InPlaceVal> {
-  auto
-  operator()(const InPlaceVal &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<AppendVal> {
-  auto
-  operator()(const AppendVal &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-}  // namespace std
+  return entries;
+}
 
 #endif  // INDEX_BENCHMARK_COMMON_HPP
