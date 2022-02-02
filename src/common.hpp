@@ -165,7 +165,8 @@ template <class Key, class Payload>
 auto
 PrepareBulkLoadEntries(  //
     const size_t size,
-    const size_t thread_num)  //
+    const size_t thread_num,
+    const int64_t seed = -1)  //
     -> std::vector<Entry<Key, Payload>>
 {
   using Entry_t = Entry<Key, Payload>;
@@ -173,9 +174,19 @@ PrepareBulkLoadEntries(  //
   std::vector<Entry_t> entries{size};
 
   // a lambda function for creating bulkload entries
-  auto f = [&](const size_t begin_pos, const size_t end_pos) {
-    for (uint32_t i = begin_pos; i < end_pos; ++i) {
-      entries.at(i) = Entry_t{i, i};
+  auto f = [&](const size_t begin_pos, const size_t n, const size_t thread_id) {
+    const size_t end_pos = begin_pos + n;
+    if (seed < 0) {
+      for (uint32_t i = begin_pos; i < end_pos; ++i) {
+        entries.at(i) = Entry_t{i, i};
+      }
+    } else {
+      for (uint32_t i = begin_pos, k = thread_id; i < end_pos; ++i, k += thread_num) {
+        entries.at(i) = Entry_t{k, k};
+      }
+      auto &&begin_it = std::next(entries.begin(), begin_pos);
+      auto &&end_it = std::next(begin_it, n);
+      std::shuffle(begin_it, end_it, std::mt19937_64{static_cast<size_t>(seed)});
     }
   };
 
@@ -183,10 +194,9 @@ PrepareBulkLoadEntries(  //
   std::vector<std::thread> threads;
   size_t begin_pos = 0;
   for (size_t i = 0; i < thread_num; ++i) {
-    const size_t exec_num = (size + i) / thread_num;
-    const size_t end_pos = begin_pos + exec_num;
-    threads.emplace_back(f, begin_pos, end_pos);
-    begin_pos = end_pos;
+    const size_t n = (size + ((thread_num - 1) - i)) / thread_num;
+    threads.emplace_back(f, begin_pos, n, i);
+    begin_pos += n;
   }
   for (auto &&thread : threads) {
     thread.join();
