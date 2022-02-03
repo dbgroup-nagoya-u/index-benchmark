@@ -130,7 +130,8 @@ CompressKey16(const uint64_t arr[2])  //
 {
   uint64_t val = 0;
 
-  for (size_t i = 0; i < 4; ++i) {
+  for (size_t i = 0; i < 2; ++i) {
+    val <<= 1UL;
     val |= (arr[i] >> 60UL) & kOneBit;
     val <<= 1UL;
     val |= (arr[i] >> 56UL) & kOneBit;
@@ -162,7 +163,6 @@ CompressKey16(const uint64_t arr[2])  //
     val |= (arr[i] >> 4UL) & kOneBit;
     val <<= 1UL;
     val |= (arr[i] & kOneBit);
-    val <<= 1UL;
   }
 
   return val;
@@ -175,6 +175,7 @@ CompressKey32(const uint64_t arr[4])  //
   uint64_t val = 0;
 
   for (size_t i = 0; i < 4; ++i) {
+    val <<= 1UL;
     val |= (arr[i] >> 56UL) & kOneBit;
     val <<= 1UL;
     val |= (arr[i] >> 48UL) & kOneBit;
@@ -190,7 +191,6 @@ CompressKey32(const uint64_t arr[4])  //
     val |= (arr[i] >> 8UL) & kOneBit;
     val <<= 1UL;
     val |= (arr[i] & kOneBit);
-    val <<= 1UL;
   }
 
   return val;
@@ -203,6 +203,7 @@ CompressKey64(const uint64_t arr[8])  //
   uint64_t val = 0;
 
   for (size_t i = 0; i < 8; ++i) {
+    val <<= 1UL;
     val |= (arr[i] >> 48UL) & kOneBit;
     val <<= 1UL;
     val |= (arr[i] >> 32UL) & kOneBit;
@@ -210,7 +211,6 @@ CompressKey64(const uint64_t arr[8])  //
     val |= (arr[i] >> 16UL) & kOneBit;
     val <<= 1UL;
     val |= (arr[i] & kOneBit);
-    val <<= 1UL;
   }
 
   return val;
@@ -223,10 +223,10 @@ CompressKey128(const uint64_t arr[16])  //
   uint64_t val = 0;
 
   for (size_t i = 0; i < 16; ++i) {
+    val <<= 1UL;
     val |= (arr[i] >> 32UL) & kOneBit;
     val <<= 1UL;
     val |= (arr[i] & kOneBit);
-    val <<= 1UL;
   }
 
   return val;

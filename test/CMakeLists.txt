@@ -44,86 +44,48 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
-  )
-  target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
-    INDEX_BENCH_MAX_FIELD_NUM=${INDEX_BENCH_MAX_FIELD_NUM}
-    $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
+    $<$<OR:$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>,$<BOOL:${INDEX_BENCH_BUILD_PTREE}>>:-mcx16>
   )
   target_include_directories(${INDEX_BENCH_TEST_TARGET} PRIVATE
     "${INDEX_BENCH_SOURCE_DIR}/src"
     "${INDEX_BENCH_SOURCE_DIR}/external"
+    $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:${JEMALLOC_INCLUDE_DIRS}>
+    $<$<BOOL:${INDEX_BENCH_BUILD_PTREE}>:${INDEX_BENCH_SOURCE_DIR}/external/PAM/c++/>
   )
   target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
+    gtest_main
     gflags
+    TBB::tbb
     nlohmann_json::nlohmann_json
-    cpp_utility
+    cpp_utility::cpp_utility
+    cpp_bench::cpp_bench
     bw_tree::bw_tree
     bztree::bztree
-    gtest_main
+    $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:PkgConfig::JEMALLOC>
+    $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
+  )
+  target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
+    $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
+    $<$<AND:$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>,$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">>:BWTREE_NODEBUG>
+    $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_PTREE}>:INDEX_BENCH_BUILD_PTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_PTREE}>:HOMEGROWN>
   )
 
-  if(DEFINED INDEX_BENCH_TEST_THREAD_NUM)
-    target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
-      INDEX_BENCH_TEST_THREAD_NUM=${INDEX_BENCH_TEST_THREAD_NUM}
-    )
-  endif()
-
-  #--------------------------------------------------------------------------------------#
-  # Build OpenBw-Tree for benchmarking
-  #--------------------------------------------------------------------------------------#
-  if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
-    target_compile_options(${INDEX_BENCH_TEST_TARGET} PRIVATE
-      -mcx16
-    )
-    target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
-      INDEX_BENCH_BUILD_OPEN_BWTREE
-      $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:BWTREE_NODEBUG>
-    )
-    target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
-      atomic
-    )
-  endif()
-
-  #--------------------------------------------------------------------------------------#
-  # Build Masstree for benchmarking
-  #--------------------------------------------------------------------------------------#
   if(${INDEX_BENCH_BUILD_MASSTREE})
-    target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
-      INDEX_BENCH_BUILD_MASSTREE
-    )
-    if(${INDEX_BENCH_TEST_TARGET} STREQUAL "index_wrapper_test"
-       OR ${INDEX_BENCH_TEST_TARGET} STREQUAL "index_wrapper_multi_thread_test")
-      target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
-        ${MASSTREE_SOURCE_DIR}/misc.o
-        ${MASSTREE_SOURCE_DIR}/checkpoint.o
-        ${MASSTREE_SOURCE_DIR}/query_masstree.o
-        ${MASSTREE_SOURCE_DIR}/value_string.o
-        ${MASSTREE_SOURCE_DIR}/value_array.o
-        ${MASSTREE_SOURCE_DIR}/value_versioned_array.o
-        ${MASSTREE_SOURCE_DIR}/string_slice.o
-        ${MASSTREE_SOURCE_DIR}/kvio.o
-        ${MASSTREE_SOURCE_DIR}/libjson.a
-      )
-    endif()
-  endif()
-
-  #--------------------------------------------------------------------------------------#
-  # Build PTree for benchmarking
-  #--------------------------------------------------------------------------------------#
-  if(${INDEX_BENCH_BUILD_PTREE})
-    target_compile_options(${INDEX_BENCH_TEST_TARGET} PRIVATE
-      -mcx16
-    )
-    target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
-      INDEX_BENCH_BUILD_PTREE
-      HOMEGROWN
-    )
+    # target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
+    #   ${INDEX_BENCH_MASSTREE_LIBS}
+    # )
   endif()
 
   add_test(NAME ${INDEX_BENCH_TEST_TARGET} COMMAND $<TARGET_FILE:${INDEX_BENCH_TEST_TARGET}>)
 endfunction()
 
 # add unit tests to build targets
+ADD_INDEX_BENCH_TEST("key_test")
 # ADD_INDEX_BENCH_TEST("operation_generator_test")
 # ADD_INDEX_BENCH_TEST("index_wrapper_test")
 # ADD_INDEX_BENCH_TEST("index_wrapper_multi_thread_test")
