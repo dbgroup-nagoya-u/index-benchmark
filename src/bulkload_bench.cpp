@@ -15,11 +15,16 @@
  */
 
 #include <gflags/gflags.h>
+#include <tbb/parallel_sort.h>
+#include <tbb/task_arena.h>
+#include <tbb/task_group.h>
 
-#include "benchmark/benchmarker.hpp"
+#include <algorithm>
+#include <random>
+
+#include "benchmark/component/stopwatch.hpp"
 #include "cla_validator.hpp"
 #include "index.hpp"
-#include "operation_engine.hpp"
 
 /*######################################################################################
  * Command line arguments
@@ -27,53 +32,101 @@
 
 DEFINE_uint64(num_exec, 10000, "The total number of operations for benchmarking");
 DEFINE_validator(num_exec, &ValidateNonZero);
-DEFINE_uint64(num_key, 10000, "The total number of keys");
-DEFINE_validator(num_key, &ValidateNonZero);
 DEFINE_uint64(num_thread, 1, "The number of worker threads");
 DEFINE_validator(num_thread, &ValidateNonZero);
-DEFINE_uint64(num_init_insert, 10000, "The number of insert operations for initialization");
-DEFINE_uint64(num_init_thread, 1, "The number of worker threads for initialization");
-DEFINE_validator(num_init_thread, &ValidateNonZero);
 DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
-DEFINE_double(skew_parameter, 0, "A skew parameter (based on Zipf's law)");
-DEFINE_validator(skew_parameter, &ValidatePositiveVal);
+DEFINE_bool(use_bulkload, true, "Use bulkload functions if possible");
+DEFINE_bool(use_shuffled_entries, false, "Use shuffled key/value entries if true");
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
-DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
 DEFINE_bool(csv, false, "Output benchmark results as CSV format");
-DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency");
 
 /*######################################################################################
  * Utility functions
  *####################################################################################*/
 
+/**
+ * @brief Log a message to stdout if the output mode is `text`.
+ *
+ * @param message an output message
+ */
+void
+Log(const std::string &message)
+{
+  if (!FLAGS_csv) {
+    std::cout << message << std::endl;
+  }
+}
+
 template <class Key, class Payload, class Implementation>
 void
-Run(  //
-    const std::string &target_name,
-    const Workload &workload)
+Run(const std::string &target_name)
 {
-  using Operation_t = Operation<Key, Payload>;
-  using OperationEngine_t = OperationEngine<Key, Payload>;
   using Index_t = Index<Key, Payload, Implementation>;
-  using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation_t, OperationEngine_t>;
+  using Entry_t = Entry<Key, Payload>;
 
-  const size_t init_size = FLAGS_num_init_insert;
-  const size_t init_thread = FLAGS_num_init_thread;
+  Log("*** START " + target_name + " ***");
 
-  // create a target index
-  Index_t index{FLAGS_num_thread + init_thread};
-  const auto &entries = PrepareBulkLoadEntries<Key, Payload>(init_size, init_thread);
-  index.Construct(entries, init_thread, kUseBulkload);
+  const size_t total_exec_num = FLAGS_num_exec;
+  const size_t thread_num = FLAGS_num_thread;
+  ::dbgroup::benchmark::component::StopWatch timer{};
 
-  // create an operation engine
-  OperationEngine_t ops_engine{workload, FLAGS_num_key, FLAGS_skew_parameter};
-  auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
+  // create a container of bulkload entries
+  Log("...Prepare bulkload entries for benchmarking.");
+  std::vector<Entry_t> entries;
+
+  // shuffle entries if needed
+  if (FLAGS_use_shuffled_entries) {
+    const auto seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
+    entries = PrepareBulkLoadEntries<Key, Payload>(total_exec_num, thread_num, seed);
+  } else {
+    entries = PrepareBulkLoadEntries<Key, Payload>(total_exec_num, thread_num);
+  }
+
+  // sorting if needed
+  size_t sort_time = 0;
+  if (FLAGS_use_bulkload && FLAGS_use_shuffled_entries) {
+    Log("...Sorting bulkload entries.");
+
+    // use Intel TBB library for parallel sorting
+    ::tbb::task_arena tbb_arena{static_cast<int>(thread_num)};
+    ::tbb::task_group tbb_group{};
+
+    timer.Start();
+    tbb_arena.execute([&] {         //
+      tbb_group.run_and_wait([&] {  //
+        ::tbb::parallel_sort(entries.begin(), entries.end());
+      });
+    });
+    timer.Stop();
+
+    sort_time = timer.GetNanoDuration();
+  } else {
+    Log("...Skip sorting bulkload entries.");
+  }
 
   // run benchmark
-  Bench_t bench{index,       ops_engine,       FLAGS_num_exec, FLAGS_num_thread,
-                random_seed, FLAGS_throughput, FLAGS_csv,      target_name};
-  bench.Run();
+  Log("...Construct a target index.");
+  Index_t index{thread_num};
+  timer.Start();
+  index.Construct(entries, thread_num, FLAGS_use_bulkload);
+  timer.Stop();
+
+  // output execution time for sorting bulkload entries
+  const auto construction_time = timer.GetNanoDuration();
+  const auto throughput = total_exec_num / ((sort_time + construction_time) / 1e9);
+  if (FLAGS_csv) {
+    std::cout << sort_time / 1e6 << ","          //
+              << construction_time / 1e6 << ","  //
+              << throughput << std::endl;
+  } else {
+    std::cout << "Sorting time [ms]: " << sort_time / 1e6 << std::endl
+              << "Construction time [ms]: " << construction_time / 1e6 << std::endl
+              << "Throughput [Ops/s]: " << throughput << std::endl;
+  }
+
+  Log("...Finish running.");
+  Log("*** FINISH ***\n");
 }
 
 template <class Key>
@@ -99,24 +152,18 @@ ForwardKeyForBench()
     return;
   }
 
-  // load a target workload from a JSON file
-  std::string workload_json{FLAGS_workload};
-  auto &&workload = (ValidateWorkload(workload_json))
-                        ? Workload::CreateWorkloadFromJson(FLAGS_workload)
-                        : Workload{};
-
   // run benchmark for each implementaton
-  if (FLAGS_bw) Run<Key, InPlaceVal, BwTree_t>("Bw-tree", workload);
-  if (FLAGS_bz_in_place) Run<Key, InPlaceVal, BzInPlace_t>("BzTree in-place mode", workload);
-  if (FLAGS_bz_append) Run<Key, AppendVal, BzAppend_t>("BzTree append mode", workload);
+  if (FLAGS_bw) Run<Key, InPlaceVal, BwTree_t>("Bw-tree");
+  if (FLAGS_bz_in_place) Run<Key, InPlaceVal, BzInPlace_t>("BzTree in-place mode");
+  if (FLAGS_bz_append) Run<Key, AppendVal, BzAppend_t>("BzTree append mode");
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) Run<Key, InPlaceVal, BTreeOLC_t>("B-tree based on OLC", workload);
+  if (FLAGS_b_olc) Run<Key, InPlaceVal, BTreeOLC_t>("B-tree based on OLC");
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) Run<Key, InPlaceVal, OpenBw_t>("OpenBw-Tree", workload);
+  if (FLAGS_open_bw) Run<Key, InPlaceVal, OpenBw_t>("OpenBw-Tree");
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) Run<Key, InPlaceVal, Mass_t>("Masstree", workload);
+  if (FLAGS_mass) Run<Key, InPlaceVal, Mass_t>("Masstree");
 #endif
 }
 
@@ -129,7 +176,7 @@ main(int argc, char *argv[])  //
     -> int
 {
   // parse command line options
-  gflags::SetUsageMessage("measures throughput/latency for thread-safe index implementations.");
+  gflags::SetUsageMessage("measures throughput of bulkload for thread-safe index implementations.");
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   switch (FLAGS_key_size) {
@@ -149,9 +196,7 @@ main(int argc, char *argv[])  //
       ForwardKeyForBench<Key128>();
       break;
     default:
-      std::cout << "WARN: the input key size is invalid." << std::endl;
-      std::cout << "WARN: use 8byte keys." << std::endl;
-      ForwardKeyForBench<Key8>();
+      std::cout << "NOTE: the input key size " << FLAGS_key_size << " is invalid." << std::endl;
       break;
   }
 

@@ -64,7 +64,7 @@ kvtimestamp_t initial_timestamp;
  * Class definition
  *####################################################################################*/
 
-template <class Key, class Value>
+template <class Key, class Payload>
 class MasstreeWrapper
 {
   /*####################################################################################
@@ -73,6 +73,8 @@ class MasstreeWrapper
 
   using Table_t = Masstree::default_table;
   using Str_t = lcdf::Str;
+  using Entry_t = Entry<Key, Payload>;
+  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
 
  public:
   /*####################################################################################
@@ -109,15 +111,24 @@ class MasstreeWrapper
     thread_info_->rcu_stop();
   }
 
+  constexpr auto
+  Bulkload(  //
+      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const size_t thread_num)  //
+      -> bool
+  {
+    return false;
+  }
+
   /*####################################################################################
    * Public read/write APIs
    *##################################################################################*/
 
   auto
   Read(const Key &key)  //
-      -> std::optional<Value>
+      -> std::optional<Payload>
   {
-    Value value{};
+    Payload value{};
     auto &&str_val = ToStr(value);
     auto found = index_.run_get1(table_.table(), ToStr(key), 0, str_val, *thread_info_);
     TryRCUQuiesce();
@@ -138,7 +149,7 @@ class MasstreeWrapper
   auto
   Write(  //
       const Key &key,
-      const Value &value)  //
+      const Payload &value)  //
       -> int64_t
   {
     // run replace procedure as write (upsert)
@@ -151,7 +162,7 @@ class MasstreeWrapper
   auto
   Insert(  //
       [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Value &value)  //
+      [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
     // this operation is not implemented
@@ -162,7 +173,7 @@ class MasstreeWrapper
   auto
   Update(  //
       [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Value &value)  //
+      [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
     // this operation is not implemented

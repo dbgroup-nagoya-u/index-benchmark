@@ -72,6 +72,7 @@
     "libgflags",
     "libjson",
     "libnuma",
+    "libtbb",
     "MIMALLOC",
     "mrcu",
     "mwcas",

@@ -6,5 +6,9 @@
     "insert": 0,
     "update": 0,
     "delete": 0
+  },
+  "scan_range": {
+    "min": 50,
+    "max": 150
   }
 }

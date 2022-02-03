@@ -23,14 +23,16 @@
 #include "../common.hpp"
 #include "open_bwtree/BTreeOLC/BTreeOLC.h"
 
-template <class Key, class Value>
+template <class Key, class Payload>
 class BTreeOLCWrapper
 {
   /*####################################################################################
    * Type aliases
    *##################################################################################*/
 
-  using BTreeOLC_t = btreeolc::BTree<Key, Value>;
+  using BTreeOLC_t = btreeolc::BTree<Key, Payload>;
+  using Entry_t = Entry<Key, Payload>;
+  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
 
  public:
   /*####################################################################################
@@ -45,14 +47,23 @@ class BTreeOLCWrapper
    * Public utility functions
    *##################################################################################*/
 
-  void
+  constexpr void
   SetUp()
   {
   }
 
-  void
+  constexpr void
   TearDown()
   {
+  }
+
+  constexpr auto
+  Bulkload(  //
+      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const size_t thread_num)  //
+      -> bool
+  {
+    return false;
   }
 
   /*####################################################################################
@@ -61,9 +72,9 @@ class BTreeOLCWrapper
 
   auto
   Read(const Key &key)  //
-      -> std::optional<Value>
+      -> std::optional<Payload>
   {
-    Value value{};
+    Payload value{};
     if (index_.lookup(key, value)) return value;
     return std::nullopt;
   }
@@ -81,7 +92,7 @@ class BTreeOLCWrapper
   auto
   Write(  //
       const Key &key,
-      const Value &value)
+      const Payload &value)
   {
     index_.insert(key, value);
     return 0;
@@ -90,7 +101,7 @@ class BTreeOLCWrapper
   auto
   Insert(  //
       [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Value &value)
+      [[maybe_unused]] const Payload &value)
   {
     // this operation is not implemented
     assert(false);
@@ -100,7 +111,7 @@ class BTreeOLCWrapper
   auto
   Update(  //
       [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Value &value)
+      [[maybe_unused]] const Payload &value)
   {
     // this operation is not implemented
     assert(false);

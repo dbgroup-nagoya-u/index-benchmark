@@ -23,7 +23,7 @@
  * @brief A class to represent index read/write operations.
  *
  */
-template <class Key, class Value>
+template <class Key, class Payload>
 struct Operation {
  public:
   /*####################################################################################
@@ -36,6 +36,38 @@ struct Operation {
       uint32_t v)
       : type{t}, key{k}, value{v}
   {
+  }
+
+  /*####################################################################################
+   * Public getters
+   *##################################################################################*/
+
+  [[nodiscard]] constexpr auto
+  GetKey() const  //
+      -> Key
+  {
+    return Key{key};
+  }
+
+  [[nodiscard]] constexpr auto
+  GetPayload() const  //
+      -> Payload
+  {
+    return Payload{value};
+  }
+
+  [[nodiscard]] constexpr auto
+  GetKeyLength() const  //
+      -> size_t
+  {
+    return sizeof(Key);
+  }
+
+  [[nodiscard]] constexpr auto
+  GetPayloadLength() const  //
+      -> size_t
+  {
+    return sizeof(Payload);
   }
 
   /*####################################################################################

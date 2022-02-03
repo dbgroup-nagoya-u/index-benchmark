@@ -7,7 +7,7 @@
 ### Prerequisites
 
 ```bash
-sudo apt update && sudo apt install -y build-essential cmake
+sudo apt update && sudo apt install -y build-essential cmake libgflags-dev libtbb-dev
 cd <path_to_your_workspace>
 git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 ```
@@ -27,6 +27,7 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 
 #### Optional Benchmarking Targets
 
+- `INDEX_BENCH_BUILD_BTREE_OLC`: build a benchmarker with OLC based B+tree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_OPEN_BWTREE`: build a benchmarker with OpenBw-Tree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_MASSTREE`: build a benchmarker with Masstree if `ON` (default: `OFF`).
     - Note: when you turn on both `INDEX_BENCH_BUILD_MASSTREE` and `INDEX_BENCH_BUILD_OPEN_BWTREE`, the performance of Masstree decreases (we do not know what caused it).
@@ -53,6 +54,7 @@ The following command displays available CLI options:
 
 ```bash
 ./index_bench --helpshort
+./bulkload_bench --helpshort
 ```
 
 For example, if you want to measure throughput with 8 threads, execute the following command:
