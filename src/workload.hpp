@@ -40,9 +40,9 @@ struct Workload {
   {
     std::ifstream workload_in{filename};
 
-    ::nlohmann::json workload_json;
-    workload_in >> workload_json;
-    workload_json = workload_json["operation_ratio"];
+    ::nlohmann::json parsed_json;
+    workload_in >> parsed_json;
+    auto &&workload_json = parsed_json["operation_ratio"];
 
     size_t read = workload_json["read"];
     size_t scan = workload_json["scan"];
@@ -57,10 +57,19 @@ struct Workload {
     del += update;
 
     if (del != 100UL) {
-      std::cout << "WARN: The sum of the ratios of a workload is a hundred." << std::endl;
+      std::cout << "WARN: The sum of the ratios of a workload is not a hundred." << std::endl;
     }
 
-    return Workload{read, scan, write, insert, update, del};
+    Workload workload{read, scan, write, insert, update, del};
+
+    if (scan > read) {
+      // a given workload includes range-scan
+      auto &&range_json = parsed_json["scan_range"];
+      workload.scan_min = range_json["min"];
+      workload.scan_max = range_json["max"];
+    }
+
+    return workload;
   }
 
   /*####################################################################################
@@ -78,6 +87,10 @@ struct Workload {
   size_t update_ratio{0};
 
   size_t delete_ratio{0};
+
+  size_t scan_min{50};
+
+  size_t scan_max{150};
 };
 
 #endif  // INDEX_BENCHMARK_WORKLOAD_HPP

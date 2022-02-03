@@ -47,7 +47,9 @@ class OperationEngine
       Workload workload,
       const size_t key_num,
       const double skew_parameter)
-      : workload_{std::move(workload)}, zipf_engine_{key_num, skew_parameter}
+      : workload_{std::move(workload)},
+        zipf_engine_{key_num, skew_parameter},
+        range_generator_{workload_.scan_min, workload_.scan_max}
   {
   }
 
@@ -115,7 +117,7 @@ class OperationEngine
 
   std::uniform_int_distribution<size_t> percent_generator_{0, 99};
 
-  std::uniform_int_distribution<size_t> range_generator_{50, 150};
+  std::uniform_int_distribution<size_t> range_generator_{};
 };
 
 #endif  // INDEX_BENCHMARK_OPERATION_ENGINE_HPP
