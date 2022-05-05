@@ -54,6 +54,22 @@ option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_PTREE "Build PTree as a benchmarking target" OFF)
 
 #--------------------------------------------------------------------------------------#
+# Configurations for target indexes
+#--------------------------------------------------------------------------------------#
+
+set(INDEX_BENCH_PAGE_SIZE "" CACHE STRING "The default page size in bytes.")
+if(NOT "${INDEX_BENCH_PAGE_SIZE}" STREQUAL "")
+  set(BW_TREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
+  set(BZTREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
+endif()
+
+set(INDEX_BENCH_MAX_DELTA_RECORD_NUM "" CACHE STRING "The maximum number of delta records if used.")
+if(NOT "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" STREQUAL "")
+  set(BW_TREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
+  set(BZTREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
+endif()
+
+#--------------------------------------------------------------------------------------#
 # Configure Bw-tree
 #--------------------------------------------------------------------------------------#
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bw-tree")
