@@ -133,7 +133,8 @@ template <class Key>
 void
 ForwardKeyForBench()
 {
-  using BwTree_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTree>;
+  using BwTreeVarLen_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTreeVarLen>;
+  using BwTreeFixLen_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTreeFixLen>;
   using BzInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
   using BzAppend_t = IndexWrapper<Key, AppendVal, ::dbgroup::index::bztree::BzTree>;
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
@@ -146,14 +147,15 @@ ForwardKeyForBench()
   using Mass_t = MasstreeWrapper<Key, InPlaceVal>;
 #endif
 
-  if (!FLAGS_bw && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_b_olc && !FLAGS_open_bw
-      && !FLAGS_mass && !FLAGS_p) {
+  if (!FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_b_olc
+      && !FLAGS_open_bw && !FLAGS_mass && !FLAGS_p) {
     std::cout << "NOTE: benchmark targets are not specified." << std::endl;
     return;
   }
 
   // run benchmark for each implementaton
-  if (FLAGS_bw) Run<Key, InPlaceVal, BwTree_t>("Bw-tree");
+  if (FLAGS_bw) Run<Key, InPlaceVal, BwTreeVarLen_t>("Bw-tree");
+  if (FLAGS_bw_opt) Run<Key, InPlaceVal, BwTreeFixLen_t>("Optimized Bw-tree");
   if (FLAGS_bz_in_place) Run<Key, InPlaceVal, BzInPlace_t>("BzTree in-place mode");
   if (FLAGS_bz_append) Run<Key, AppendVal, BzAppend_t>("BzTree append mode");
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
