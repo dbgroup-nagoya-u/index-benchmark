@@ -19,7 +19,9 @@
 
 #include <optional>
 #include <string>
+#include <tuple>
 #include <utility>
+#include <vector>
 
 #include "common.hpp"
 #include "yakushima/include/kvs.h"
@@ -98,9 +100,17 @@ class YakushimaWrapper
       [[maybe_unused]] const Key &begin_key,
       [[maybe_unused]] const size_t scan_range)
   {
-    // this operation is not implemented
-    assert(false);
-    return;
+    const auto &begin_k = ToStrView(begin_key);
+    const auto &end_k = ToStrView(begin_key + scan_range);
+
+    std::vector<std::tuple<std::string, Payload *, size_t>> tuples{};
+    tuples.reserve(scan_range);
+    ::yakushima::scan(table_name_, begin_k, kInclusive, end_k, kInclusive, tuples);
+
+    size_t sum{0};
+    for (const auto &tuple : tuples) {
+      sum += std::get<1>(tuple)->GetValue();
+    }
   }
 
   auto
@@ -141,6 +151,12 @@ class YakushimaWrapper
   }
 
  private:
+  /*####################################################################################
+   * Internal constants
+   *##################################################################################*/
+
+  static constexpr auto kInclusive = ::yakushima::scan_endpoint::INCLUSIVE;
+
   /*####################################################################################
    * Internal utility functions
    *##################################################################################*/
