@@ -97,8 +97,8 @@ class YakushimaWrapper
 
   void
   Scan(  //
-      [[maybe_unused]] const Key &begin_key,
-      [[maybe_unused]] const size_t scan_range)
+      const Key &begin_key,
+      const size_t scan_range)
   {
     // prepare begin/end keys
     const auto &begin_k = ToStrView(begin_key);
@@ -130,8 +130,8 @@ class YakushimaWrapper
 
   auto
   Insert(  //
-      [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Payload &value)
+      const Key &key,
+      const Payload &value)
   {
     // ues a write API for inserting
     return Write(key, value);
@@ -139,15 +139,15 @@ class YakushimaWrapper
 
   auto
   Update(  //
-      [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Payload &value)
+      const Key &key,
+      const Payload &value)
   {
     // ues a write API for updating
     return Write(key, value);
   }
 
   auto
-  Delete([[maybe_unused]] const Key &key)
+  Delete(const Key &key)
   {
     // delete a tuple by a given key
     const auto rc = ::yakushima::remove(token_, table_name_, ToStrView(key));
