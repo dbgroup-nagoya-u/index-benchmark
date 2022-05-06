@@ -136,9 +136,8 @@ class YakushimaWrapper
   auto
   Delete([[maybe_unused]] const Key &key)
   {
-    // this operation is not implemented
-    assert(false);
-    return 1;
+    const auto rc = ::yakushima::remove(token_, table_name_, ToStrView(key));
+    return (rc == status::OK) ? 0 : 1;
   }
 
  private:
