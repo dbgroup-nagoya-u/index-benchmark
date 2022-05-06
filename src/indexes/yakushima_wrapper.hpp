@@ -182,7 +182,7 @@ class YakushimaWrapper
   inline static const std::string table_name_{"T"};
 
   /// a token for each thread
-  Token token_{};
+  inline static thread_local Token token_{};
 };
 
 #endif  // INDEX_BENCHMARK_INDEXES_YAKUSHIMA_WRAPPER_HPP
