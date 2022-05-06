@@ -100,13 +100,16 @@ class YakushimaWrapper
       [[maybe_unused]] const Key &begin_key,
       [[maybe_unused]] const size_t scan_range)
   {
+    // prepare begin/end keys
     const auto &begin_k = ToStrView(begin_key);
     const auto &end_k = ToStrView(begin_key + scan_range);
 
+    // scan target tuples
     std::vector<std::tuple<std::string, Payload *, size_t>> tuples{};
     tuples.reserve(scan_range);
     ::yakushima::scan(table_name_, begin_k, kInclusive, end_k, kInclusive, tuples);
 
+    // summarize scan results
     size_t sum{0};
     for (const auto &tuple : tuples) {
       sum += std::get<1>(tuple)->GetValue();
@@ -146,7 +149,9 @@ class YakushimaWrapper
   auto
   Delete([[maybe_unused]] const Key &key)
   {
+    // delete a tuple by a given key
     const auto rc = ::yakushima::remove(token_, table_name_, ToStrView(key));
+
     return (rc == status::OK) ? 0 : 1;
   }
 
