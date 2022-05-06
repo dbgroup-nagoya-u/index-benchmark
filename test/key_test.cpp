@@ -22,24 +22,31 @@
 
 #include "gtest/gtest.h"
 
+/*######################################################################################
+ * Classes for templated testing
+ *####################################################################################*/
+
+template <size_t kKeyLen>
+struct Target {
+  inline static constexpr size_t kSize = kKeyLen;
+};
+
+/*######################################################################################
+ * Global constants
+ *####################################################################################*/
+
 constexpr size_t kRepeatNum = 1e6;
 constexpr size_t kRandomSeed = 20;
-constexpr size_t kWordBitNum = 64;
-constexpr size_t kKey16ArrSize = 2;
-constexpr size_t kKey16ShiftSize = 16;
-constexpr size_t kKey16PaddingSize = 4;
-constexpr size_t kKey32ArrSize = 4;
-constexpr size_t kKey32ShiftSize = 8;
-constexpr size_t kKey32PaddingSize = 8;
-constexpr size_t kKey64ArrSize = 8;
-constexpr size_t kKey64ShiftSize = 4;
-constexpr size_t kKey64PaddingSize = 16;
-constexpr size_t kKey128ArrSize = 16;
-constexpr size_t kKey128ShiftSize = 2;
-constexpr size_t kKey128PaddingSize = 32;
 
+/*######################################################################################
+ * Fixture class definition
+ *####################################################################################*/
+
+template <class Target>
 class KeyFixture : public ::testing::Test
 {
+  using Key_t = Key<Target::kSize>;
+
  protected:
   void
   SetUp() override
@@ -49,16 +56,6 @@ class KeyFixture : public ::testing::Test
   void
   TearDown() override
   {
-  }
-
-  void
-  ClearArray(  //
-      uint64_t *arr,
-      size_t size)
-  {
-    for (size_t i = 0; i < size; ++i) {
-      arr[i] = 0UL;
-    }
   }
 
   auto
@@ -76,28 +73,26 @@ class KeyFixture : public ::testing::Test
     return vec;
   }
 
-  template <class Key>
   void
   VerifyGetValue()
   {
     for (size_t i = 0; i < kRepeatNum; ++i) {
       const auto expected_val = uint_dist_(randome_engine_);
-      Key key{expected_val};
+      Key_t key{expected_val};
       EXPECT_EQ(key.GetValue(), expected_val);
     }
   }
 
-  template <class Key>
   void
   VerifyCompareOperators()
   {
     const auto &expected_values = CreateSortedRandomUInt();
 
     auto prev_val = expected_values[0];
-    Key prev_key{prev_val};
+    Key_t prev_key{prev_val};
     for (size_t i = 1; i < expected_values.size(); ++i) {
       auto next_val = expected_values[i];
-      Key next_key{next_val};
+      Key_t next_key{next_val};
 
       if (prev_val == next_val) {
         EXPECT_EQ(prev_key, next_key);
@@ -114,7 +109,6 @@ class KeyFixture : public ::testing::Test
     }
   }
 
-  template <class Key>
   void
   VerifyPlusOperator()
   {
@@ -122,7 +116,7 @@ class KeyFixture : public ::testing::Test
       const auto base_val = uint_dist_(randome_engine_) / 2;
       const auto diff_val = uint_dist_(randome_engine_) / 2;
 
-      Key base_key{base_val};
+      Key_t base_key{base_val};
       const auto &added_key = base_key + diff_val;
 
       EXPECT_EQ(added_key.GetValue(), base_val + diff_val);
@@ -133,97 +127,33 @@ class KeyFixture : public ::testing::Test
   std::uniform_int_distribution<uint32_t> uint_dist_{};
 };
 
-TEST_F(KeyFixture, ExtendToKey16CreateExpectedKeys)
-{
-  uint64_t arr[kKey16ArrSize];
-  ClearArray(arr, kKey16ArrSize);
+/*######################################################################################
+ * Preparation for typed testing
+ *####################################################################################*/
 
-  ExtendToKey16(~0U, arr);
+using TestTargets = ::testing::Types<  //
+    Target<8>,
+    Target<16>,
+    Target<32>,
+    Target<64>,
+    Target<128>>;
+TYPED_TEST_SUITE(KeyFixture, TestTargets);
 
-  uint64_t expected_val = 0;
-  for (size_t shift = 0; shift < kWordBitNum; shift += kKey16PaddingSize) {
-    expected_val |= 1UL << shift;
-  }
+/*######################################################################################
+ * Unit test definitions
+ *####################################################################################*/
 
-  for (size_t i = 0; i < kKey16ArrSize; ++i) {
-    EXPECT_EQ(arr[i], expected_val);
-  }
+TYPED_TEST(KeyFixture, GetValueReturnOriginalUInt)
+{  //
+  TestFixture::VerifyGetValue();
 }
 
-TEST_F(KeyFixture, ExtendToKey32CreateExpectedKeys)
-{
-  uint64_t arr[kKey32ArrSize];
-  ClearArray(arr, kKey32ArrSize);
-
-  ExtendToKey32(~0U, arr);
-
-  uint64_t expected_val = 0;
-  for (size_t shift = 0; shift < kWordBitNum; shift += kKey32PaddingSize) {
-    expected_val |= 1UL << shift;
-  }
-
-  for (size_t i = 0; i < kKey32ArrSize; ++i) {
-    EXPECT_EQ(arr[i], expected_val);
-  }
+TYPED_TEST(KeyFixture, ComparaOperatorsReturnSameResultsWithUInt)
+{  //
+  TestFixture::VerifyCompareOperators();
 }
 
-TEST_F(KeyFixture, ExtendToKey64CreateExpectedKeys)
-{
-  uint64_t arr[kKey64ArrSize];
-  ClearArray(arr, kKey64ArrSize);
-
-  ExtendToKey64(~0U, arr);
-
-  uint64_t expected_val = 0;
-  for (size_t shift = 0; shift < kWordBitNum; shift += kKey64PaddingSize) {
-    expected_val |= 1UL << shift;
-  }
-
-  for (size_t i = 0; i < kKey64ArrSize; ++i) {
-    EXPECT_EQ(arr[i], expected_val);
-  }
-}
-
-TEST_F(KeyFixture, ExtendToKey128CreateExpectedKeys)
-{
-  uint64_t arr[kKey128ArrSize];
-  ClearArray(arr, kKey128ArrSize);
-
-  ExtendToKey128(~0U, arr);
-
-  uint64_t expected_val = 0;
-  for (size_t shift = 0; shift < kWordBitNum; shift += kKey128PaddingSize) {
-    expected_val |= 1UL << shift;
-  }
-
-  for (size_t i = 0; i < kKey128ArrSize; ++i) {
-    EXPECT_EQ(arr[i], expected_val);
-  }
-}
-
-TEST_F(KeyFixture, GetValueReturnOriginalUInt)
-{
-  VerifyGetValue<Key8>();
-  VerifyGetValue<Key16>();
-  VerifyGetValue<Key32>();
-  VerifyGetValue<Key64>();
-  VerifyGetValue<Key128>();
-}
-
-TEST_F(KeyFixture, ComparaOperatorsReturnSameResultsWithUInt)
-{
-  VerifyCompareOperators<Key8>();
-  VerifyCompareOperators<Key16>();
-  VerifyCompareOperators<Key32>();
-  VerifyCompareOperators<Key64>();
-  VerifyCompareOperators<Key128>();
-}
-
-TEST_F(KeyFixture, PlusOperatorsReturnIncrementedKeys)
-{
-  VerifyPlusOperator<Key8>();
-  VerifyPlusOperator<Key16>();
-  VerifyPlusOperator<Key32>();
-  VerifyPlusOperator<Key64>();
-  VerifyPlusOperator<Key128>();
+TYPED_TEST(KeyFixture, PlusOperatorsReturnIncrementedKeys)
+{  //
+  TestFixture::VerifyPlusOperator();
 }

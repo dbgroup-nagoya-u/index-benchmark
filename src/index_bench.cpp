@@ -84,6 +84,9 @@ ForwardKeyForBench()
   using BwTreeFixLen_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTreeFixLen>;
   using BzInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
   using BzAppend_t = IndexWrapper<Key, AppendVal, ::dbgroup::index::bztree::BzTree>;
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+  using Yakushima_t = YakushimaWrapper<Key, InPlaceVal>;
+#endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
   using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceVal>;
 #endif
@@ -94,8 +97,8 @@ ForwardKeyForBench()
   using Mass_t = MasstreeWrapper<Key, InPlaceVal>;
 #endif
 
-  if (!FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_b_olc
-      && !FLAGS_open_bw && !FLAGS_mass && !FLAGS_p) {
+  if (!FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_yakushima
+      && !FLAGS_b_olc && !FLAGS_open_bw && !FLAGS_mass && !FLAGS_p) {
     std::cout << "NOTE: benchmark targets are not specified." << std::endl;
     return;
   }
@@ -111,6 +114,9 @@ ForwardKeyForBench()
   if (FLAGS_bw_opt) Run<Key, InPlaceVal, BwTreeFixLen_t>("Optimized Bw-tree", workload);
   if (FLAGS_bz_in_place) Run<Key, InPlaceVal, BzInPlace_t>("BzTree in-place mode", workload);
   if (FLAGS_bz_append) Run<Key, AppendVal, BzAppend_t>("BzTree append mode", workload);
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+  if (FLAGS_yakushima) Run<Key, InPlaceVal, Yakushima_t>("yakushima", workload);
+#endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if (FLAGS_b_olc) Run<Key, InPlaceVal, BTreeOLC_t>("B-tree based on OLC", workload);
 #endif
@@ -136,24 +142,22 @@ main(int argc, char *argv[])  //
 
   switch (FLAGS_key_size) {
     case k8:
-      ForwardKeyForBench<Key8>();
+      ForwardKeyForBench<Key<8>>();
       break;
     case k16:
-      ForwardKeyForBench<Key16>();
+      ForwardKeyForBench<Key<16>>();
       break;
     case k32:
-      ForwardKeyForBench<Key32>();
+      ForwardKeyForBench<Key<32>>();
       break;
     case k64:
-      ForwardKeyForBench<Key64>();
+      ForwardKeyForBench<Key<64>>();
       break;
     case k128:
-      ForwardKeyForBench<Key128>();
+      ForwardKeyForBench<Key<128>>();
       break;
     default:
       std::cout << "WARN: the input key size is invalid." << std::endl;
-      std::cout << "WARN: use 8byte keys." << std::endl;
-      ForwardKeyForBench<Key8>();
       break;
   }
 
