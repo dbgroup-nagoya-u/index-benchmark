@@ -16,17 +16,11 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 
 #### Memory Allocation
 
-- `INDEX_BENCH_OVERRIDE_JEMALLOC`: override entire memory allocation with jemalloc if `ON` (default: `OFF`).
-    - We assume that jemalloc is configured with the following command.
-
-    ```bash
-    ./configure --prefix=/usr/local --with-version=VERSION
-    ```
-
 - `INDEX_BENCH_OVERRIDE_MIMALLOC`: override entire memory allocation with mimalloc if `ON` (default: `OFF`).
 
 #### Optional Benchmarking Targets
 
+- `INDEX_BENCH_BUILD_YAKUSHIMA`: build a benchmarker with yakushima if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_BTREE_OLC`: build a benchmarker with OLC based B+tree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_OPEN_BWTREE`: build a benchmarker with OpenBw-Tree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_MASSTREE`: build a benchmarker with Masstree if `ON` (default: `OFF`).
@@ -43,7 +37,7 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 
 ```bash
 mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DINDEX_BENCH_BUILD_TESTS=on ..
+cmake -DCMAKE_BUILD_TYPE=Release -DINDEX_BENCH_BUILD_TESTS=ON ..
 make -j
 ctest -C Release
 ```
