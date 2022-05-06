@@ -120,9 +120,8 @@ class YakushimaWrapper
       [[maybe_unused]] const Key &key,
       [[maybe_unused]] const Payload &value)
   {
-    // this operation is not implemented
-    assert(false);
-    return 1;
+    // ues a write API for inserting
+    return Write(key, value);
   }
 
   auto
@@ -130,9 +129,8 @@ class YakushimaWrapper
       [[maybe_unused]] const Key &key,
       [[maybe_unused]] const Payload &value)
   {
-    // this operation is not implemented
-    assert(false);
-    return 1;
+    // ues a write API for updating
+    return Write(key, value);
   }
 
   auto
