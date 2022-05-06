@@ -33,6 +33,9 @@
 
 #include "bw_tree/bw_tree.hpp"
 #include "bztree/bztree.hpp"
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+#include "indexes/yakushima_wrapper.hpp"
+#endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
 #include "indexes/btree_olc_wrapper.hpp"
 #endif
@@ -58,6 +61,11 @@ DEFINE_bool(bw, false, "Use Bw-tree with variable-length data as a benchmark tar
 DEFINE_bool(bw_opt, false, "Use Bw-tree with fixed-length data as a benchmark target");
 DEFINE_bool(bz_in_place, false, "Use BzTree with in-place based update as a benchmark target");
 DEFINE_bool(bz_append, false, "Use BzTree with append based update as a benchmark target");
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+DEFINE_bool(yakushima, false, "Use yakushima as a benchmark target");
+#else
+DEFINE_bool(yakushima, false, "yakushima is not built as a benchmark target.");
+#endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
 DEFINE_bool(b_olc, false, "Use OLC based B-tree as a benchmark target");
 #else
