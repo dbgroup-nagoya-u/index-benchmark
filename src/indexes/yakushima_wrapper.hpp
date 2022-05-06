@@ -179,7 +179,7 @@ class YakushimaWrapper
    *##################################################################################*/
 
   /// a table name for identifying a unique storage
-  inline static const std::string table_name_{"index_bench"};
+  inline static const std::string table_name_{"T"};
 
   /// a token for each thread
   Token token_{};
