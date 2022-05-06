@@ -100,14 +100,15 @@ class YakushimaWrapper
       const Key &begin_key,
       const size_t scan_range)
   {
-    // prepare begin/end keys
-    const auto &begin_k = ToStrView(begin_key);
-    const auto &end_k = ToStrView(begin_key + scan_range);
+    const auto &end_key = begin_key + scan_range;
 
     // scan target tuples
     std::vector<std::tuple<std::string, Payload *, size_t>> tuples{};
     tuples.reserve(scan_range);
-    ::yakushima::scan(table_name_, begin_k, kInclusive, end_k, kInclusive, tuples);
+    ::yakushima::scan(table_name_,                                                  //
+                      ToStrView(begin_key), ::yakushima::scan_endpoint::INCLUSIVE,  //
+                      ToStrView(end_key), ::yakushima::scan_endpoint::EXCLUSIVE,    //
+                      tuples);
 
     // summarize scan results
     size_t sum{0};
@@ -156,12 +157,6 @@ class YakushimaWrapper
   }
 
  private:
-  /*####################################################################################
-   * Internal constants
-   *##################################################################################*/
-
-  static constexpr auto kInclusive = ::yakushima::scan_endpoint::INCLUSIVE;
-
   /*####################################################################################
    * Internal utility functions
    *##################################################################################*/
