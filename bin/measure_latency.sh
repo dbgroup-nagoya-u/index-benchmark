@@ -97,6 +97,8 @@ for IMPL in ${IMPL_CANDIDATES}; do
     IMPL_ARGS="--open-bw=t"
   elif [ ${IMPL} == 102 ]; then
     IMPL_ARGS="--mass=t"
+  elif [ ${IMPL} == 103 ]; then
+    IMPL_ARGS="--yakushima=t"
   else
     continue
   fi
