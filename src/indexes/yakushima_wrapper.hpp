@@ -33,11 +33,17 @@ class YakushimaWrapper
    * Type aliases
    *##################################################################################*/
 
-  using Entry_t = Entry<Key, Payload>;
   using status = ::yakushima::status;
   using Token = ::yakushima::Token;
 
  public:
+  /*####################################################################################
+   * Public type aliases
+   *##################################################################################*/
+
+  using K = Key;
+  using V = Payload;
+
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
@@ -68,7 +74,7 @@ class YakushimaWrapper
 
   constexpr auto
   Bulkload(  //
-      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const std::vector<Entry<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {
@@ -113,7 +119,7 @@ class YakushimaWrapper
     // summarize scan results
     size_t sum{0};
     for (const auto &tuple : tuples) {
-      sum += std::get<1>(tuple)->GetValue();
+      sum += *(std::get<1>(tuple));
     }
   }
 

@@ -1,14 +1,12 @@
 [submodule "external/bztree"]
 	path = external/bztree
 	url = git@github.com:dbgroup-nagoya-u/bztree.git
-	branch = main
 [submodule "external/cpp-utility"]
 	path = external/cpp-utility
 	url = https://github.com/dbgroup-nagoya-u/cpp-utility.git
-	branch = main
 [submodule "external/PAM"]
 	path = external/PAM
-	url = git@github.com:cmuparlay/PAM.git
+	url = https://github.com/cmuparlay/PAM.git
 [submodule "latest-open-bw-repo"]
 	path = external/open_bwtree
 	url = https://github.com/wangziqi2016/index-microbench.git
@@ -23,7 +21,7 @@
 	url = git@github.com:dbgroup-nagoya-u/bw-tree.git
 [submodule "external/cpp-benchmark"]
 	path = external/cpp-benchmark
-	url = git@github.com:dbgroup-nagoya-u/cpp-benchmark.git
+	url = https://github.com/dbgroup-nagoya-u/cpp-benchmark.git
 [submodule "external/yakushima"]
 	path = external/yakushima
 	url = git@github.com:project-tsurugi/yakushima.git

@@ -20,7 +20,7 @@
 #include <optional>
 #include <utility>
 
-#include "../common.hpp"
+#include "common.hpp"
 #include "open_bwtree/BTreeOLC/BTreeOLC.h"
 
 template <class Key, class Payload>
@@ -31,10 +31,15 @@ class BTreeOLCWrapper
    *##################################################################################*/
 
   using BTreeOLC_t = btreeolc::BTree<Key, Payload>;
-  using Entry_t = Entry<Key, Payload>;
-  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
 
  public:
+  /*####################################################################################
+   * Public type aliases
+   *##################################################################################*/
+
+  using K = Key;
+  using V = Payload;
+
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
@@ -59,7 +64,7 @@ class BTreeOLCWrapper
 
   constexpr auto
   Bulkload(  //
-      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const std::vector<Entry<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {

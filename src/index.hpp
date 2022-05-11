@@ -46,17 +46,6 @@
 #include "indexes/masstree_wrapper.hpp"
 #endif
 
-namespace dbgroup::atomic::mwcas
-{
-template <>
-constexpr auto
-CanMwCAS<InPlaceVal>()  //
-    -> bool
-{
-  return true;
-}
-}  // namespace dbgroup::atomic::mwcas
-
 DEFINE_bool(bw, false, "Use Bw-tree with variable-length data as a benchmark target");
 DEFINE_bool(bw_opt, false, "Use Bw-tree with fixed-length data as a benchmark target");
 DEFINE_bool(bz_in_place, false, "Use BzTree with in-place based update as a benchmark target");
@@ -178,7 +167,7 @@ class Index
   {
     switch (ops.type) {
       case IndexOperation::kScan:
-        index_->Scan(ops.GetKey(), ops.GetPayload().GetValue());
+        index_->Scan(ops.GetKey(), ops.GetPayload());
         break;
       case IndexOperation::kWrite:
         index_->Write(ops.GetKey(), ops.GetPayload());

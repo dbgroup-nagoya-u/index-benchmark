@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "key.hpp"
-#include "value.hpp"
 
 /*######################################################################################
  * Global enum and constants
