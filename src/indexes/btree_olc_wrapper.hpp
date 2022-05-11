@@ -20,7 +20,7 @@
 #include <optional>
 #include <utility>
 
-#include "../common.hpp"
+#include "common.hpp"
 #include "open_bwtree/BTreeOLC/BTreeOLC.h"
 
 template <class Key, class Payload>

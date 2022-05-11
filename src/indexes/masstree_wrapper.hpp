@@ -22,7 +22,7 @@
 #include <string>
 #include <utility>
 
-#include "../common.hpp"
+#include "common.hpp"
 #include "masstree/clp.h"
 #include "masstree/config.h"
 #include "masstree/json.hh"

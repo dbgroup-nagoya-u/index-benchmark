@@ -19,8 +19,8 @@
 
 #include <utility>
 
-#include "../common.hpp"
 #include "bztree/bztree.hpp"
+#include "common.hpp"
 
 template <class Key, class Payload, template <class K, class V> class Index>
 class IndexWrapper

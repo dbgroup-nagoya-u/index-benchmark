@@ -22,7 +22,7 @@
 #include <utility>
 #include <vector>
 
-#include "../common.hpp"
+#include "common.hpp"
 #include "open_bwtree/BwTree/bwtree.h"
 
 /*######################################################################################
