@@ -58,10 +58,12 @@ Log(const std::string &message)
   }
 }
 
-template <class Key, class Payload, class Implementation>
+template <class Implementation>
 void
 Run(const std::string &target_name)
 {
+  using Key = typename Implementation::K;
+  using Payload = typename Implementation::V;
   using Index_t = Index<Key, Payload, Implementation>;
   using Entry_t = Entry<Key, Payload>;
 
@@ -133,21 +135,23 @@ template <class Key>
 void
 ForwardKeyForBench()
 {
-  using BwTreeVarLen_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTreeVarLen>;
-  using BwTreeFixLen_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTreeFixLen>;
-  using BzInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
-  using BzAppend_t = IndexWrapper<Key, AppendVal, ::dbgroup::index::bztree::BzTree>;
+  using Payload = uint64_t;
+
+  using BwTreeVarLen_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeVarLen>;
+  using BwTreeFixLen_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeFixLen>;
+  using BzInPlace_t = IndexWrapper<Key, Payload, ::dbgroup::index::bztree::BzTree>;
+  using BzAppend_t = IndexWrapper<Key, int64_t, ::dbgroup::index::bztree::BzTree>;
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  using Yakushima_t = YakushimaWrapper<Key, InPlaceVal>;
+  using Yakushima_t = YakushimaWrapper<Key, Payload>;
 #endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceVal>;
+  using BTreeOLC_t = BTreeOLCWrapper<Key, Payload>;
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  using OpenBw_t = OpenBwTreeWrapper<Key, InPlaceVal>;
+  using OpenBw_t = OpenBwTreeWrapper<Key, Payload>;
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  using Mass_t = MasstreeWrapper<Key, InPlaceVal>;
+  using Mass_t = MasstreeWrapper<Key, Payload>;
 #endif
 
   if (!FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_yakushima
@@ -157,21 +161,21 @@ ForwardKeyForBench()
   }
 
   // run benchmark for each implementaton
-  if (FLAGS_bw) Run<Key, InPlaceVal, BwTreeVarLen_t>("Bw-tree");
-  if (FLAGS_bw_opt) Run<Key, InPlaceVal, BwTreeFixLen_t>("Optimized Bw-tree");
-  if (FLAGS_bz_in_place) Run<Key, InPlaceVal, BzInPlace_t>("BzTree in-place mode");
-  if (FLAGS_bz_append) Run<Key, AppendVal, BzAppend_t>("BzTree append mode");
+  if (FLAGS_bw) Run<BwTreeVarLen_t>("Bw-tree");
+  if (FLAGS_bw_opt) Run<BwTreeFixLen_t>("Optimized Bw-tree");
+  if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode");
+  if (FLAGS_bz_append) Run<BzAppend_t>("BzTree append mode");
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  if (FLAGS_yakushima) Run<Key, InPlaceVal, Yakushima_t>("yakushima");
+  if (FLAGS_yakushima) Run<Yakushima_t>("yakushima");
 #endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) Run<Key, InPlaceVal, BTreeOLC_t>("B-tree based on OLC");
+  if (FLAGS_b_olc) Run<BTreeOLC_t>("B-tree based on OLC");
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) Run<Key, InPlaceVal, OpenBw_t>("OpenBw-Tree");
+  if (FLAGS_open_bw) Run<OpenBw_t>("OpenBw-Tree");
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) Run<Key, InPlaceVal, Mass_t>("Masstree");
+  if (FLAGS_mass) Run<Mass_t>("Masstree");
 #endif
 }
 

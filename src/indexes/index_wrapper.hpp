@@ -30,13 +30,15 @@ class IndexWrapper
    *##################################################################################*/
 
   using Index_t = Index<Key, Payload>;
-  using Entry_t = Entry<Key, Payload>;
-  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
-
-  // temporal alias for bulkoading
-  using BzTree_t = ::dbgroup::index::bztree::BzTree<Key, Payload>;
 
  public:
+  /*####################################################################################
+   * Public type aliases
+   *##################################################################################*/
+
+  using K = Key;
+  using V = Payload;
+
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
@@ -61,7 +63,7 @@ class IndexWrapper
 
   constexpr auto
   Bulkload(  //
-      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const std::vector<Entry<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {
@@ -89,7 +91,7 @@ class IndexWrapper
 
     size_t sum{0};
     for (auto &&iter = index_.Scan(begin_k, end_k); iter.HasNext(); ++iter) {
-      sum += iter.GetPayload().GetValue();
+      sum += iter.GetPayload();
     }
   }
 

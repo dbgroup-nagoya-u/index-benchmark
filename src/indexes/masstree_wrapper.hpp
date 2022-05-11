@@ -73,10 +73,15 @@ class MasstreeWrapper
 
   using Table_t = Masstree::default_table;
   using Str_t = lcdf::Str;
-  using Entry_t = Entry<Key, Payload>;
-  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
 
  public:
+  /*####################################################################################
+   * Public type aliases
+   *##################################################################################*/
+
+  using K = Key;
+  using V = Payload;
+
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
@@ -113,7 +118,7 @@ class MasstreeWrapper
 
   constexpr auto
   Bulkload(  //
-      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const std::vector<Entry<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {

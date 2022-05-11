@@ -55,10 +55,15 @@ class OpenBwTreeWrapper
 
   using BwTree_t = wangziqi2013::bwtree::BwTree<Key, Payload>;
   using ForwardIterator = typename BwTree_t::ForwardIterator;
-  using Entry_t = Entry<Key, Payload>;
-  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
 
  public:
+  /*####################################################################################
+   * Public type aliases
+   *##################################################################################*/
+
+  using K = Key;
+  using V = Payload;
+
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
@@ -86,7 +91,7 @@ class OpenBwTreeWrapper
 
   constexpr auto
   Bulkload(  //
-      [[maybe_unused]] const std::vector<Entry_t> &entries,
+      [[maybe_unused]] const std::vector<Entry<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {

@@ -47,12 +47,14 @@ DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency"
  * Utility functions
  *####################################################################################*/
 
-template <class Key, class Payload, class Implementation>
+template <class Implementation>
 void
 Run(  //
     const std::string &target_name,
     const Workload &workload)
 {
+  using Key = typename Implementation::K;
+  using Payload = typename Implementation::V;
   using Operation_t = Operation<Key, Payload>;
   using OperationEngine_t = OperationEngine<Key, Payload>;
   using Index_t = Index<Key, Payload, Implementation>;
@@ -80,21 +82,23 @@ template <class Key>
 void
 ForwardKeyForBench()
 {
-  using BwTreeVarLen_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTreeVarLen>;
-  using BwTreeFixLen_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTreeFixLen>;
-  using BzInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
-  using BzAppend_t = IndexWrapper<Key, AppendVal, ::dbgroup::index::bztree::BzTree>;
+  using Payload = uint64_t;
+
+  using BwTreeVarLen_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeVarLen>;
+  using BwTreeFixLen_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeFixLen>;
+  using BzInPlace_t = IndexWrapper<Key, Payload, ::dbgroup::index::bztree::BzTree>;
+  using BzAppend_t = IndexWrapper<Key, int64_t, ::dbgroup::index::bztree::BzTree>;
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  using Yakushima_t = YakushimaWrapper<Key, InPlaceVal>;
+  using Yakushima_t = YakushimaWrapper<Key, Payload>;
 #endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceVal>;
+  using BTreeOLC_t = BTreeOLCWrapper<Key, Payload>;
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  using OpenBw_t = OpenBwTreeWrapper<Key, InPlaceVal>;
+  using OpenBw_t = OpenBwTreeWrapper<Key, Payload>;
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  using Mass_t = MasstreeWrapper<Key, InPlaceVal>;
+  using Mass_t = MasstreeWrapper<Key, Payload>;
 #endif
 
   if (!FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_yakushima
@@ -110,21 +114,21 @@ ForwardKeyForBench()
                         : Workload{};
 
   // run benchmark for each implementaton
-  if (FLAGS_bw) Run<Key, InPlaceVal, BwTreeVarLen_t>("Bw-tree", workload);
-  if (FLAGS_bw_opt) Run<Key, InPlaceVal, BwTreeFixLen_t>("Optimized Bw-tree", workload);
-  if (FLAGS_bz_in_place) Run<Key, InPlaceVal, BzInPlace_t>("BzTree in-place mode", workload);
-  if (FLAGS_bz_append) Run<Key, AppendVal, BzAppend_t>("BzTree append mode", workload);
+  if (FLAGS_bw) Run<BwTreeVarLen_t>("Bw-tree", workload);
+  if (FLAGS_bw_opt) Run<BwTreeFixLen_t>("Optimized Bw-tree", workload);
+  if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode", workload);
+  if (FLAGS_bz_append) Run<BzAppend_t>("BzTree append mode", workload);
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  if (FLAGS_yakushima) Run<Key, InPlaceVal, Yakushima_t>("yakushima", workload);
+  if (FLAGS_yakushima) Run<Yakushima_t>("yakushima", workload);
 #endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) Run<Key, InPlaceVal, BTreeOLC_t>("B-tree based on OLC", workload);
+  if (FLAGS_b_olc) Run<BTreeOLC_t>("B-tree based on OLC", workload);
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) Run<Key, InPlaceVal, OpenBw_t>("OpenBw-Tree", workload);
+  if (FLAGS_open_bw) Run<OpenBw_t>("OpenBw-Tree", workload);
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) Run<Key, InPlaceVal, Mass_t>("Masstree", workload);
+  if (FLAGS_mass) Run<Mass_t>("Masstree", workload);
 #endif
 }
 
@@ -142,19 +146,19 @@ main(int argc, char *argv[])  //
 
   switch (FLAGS_key_size) {
     case k8:
-      ForwardKeyForBench<Key<8>>();
+      ForwardKeyForBench<Key<k8>>();
       break;
     case k16:
-      ForwardKeyForBench<Key<16>>();
+      ForwardKeyForBench<Key<k16>>();
       break;
     case k32:
-      ForwardKeyForBench<Key<32>>();
+      ForwardKeyForBench<Key<k32>>();
       break;
     case k64:
-      ForwardKeyForBench<Key<64>>();
+      ForwardKeyForBench<Key<k64>>();
       break;
     case k128:
-      ForwardKeyForBench<Key<128>>();
+      ForwardKeyForBench<Key<k128>>();
       break;
     default:
       std::cout << "WARN: the input key size is invalid." << std::endl;
