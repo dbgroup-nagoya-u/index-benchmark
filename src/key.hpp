@@ -23,50 +23,6 @@
 #include <cstring>
 #include <functional>
 
-/*######################################################################################
- * Global constants
- *####################################################################################*/
-
-constexpr size_t kKeySeedSize = sizeof(uint32_t);
-
-/*######################################################################################
- * Global utilities
- *####################################################################################*/
-
-template <size_t kKeyLen>
-constexpr void
-ExtendToKey(  //
-    const uint32_t val,
-    uint8_t key[kKeyLen])
-{
-  constexpr size_t kCopyLen = kKeyLen / kKeySeedSize;
-
-  const auto *arr = reinterpret_cast<const uint8_t *>(&val);
-  for (size_t i = 0, j = kKeyLen - kCopyLen; i < kKeySeedSize; ++i, j -= kCopyLen) {
-    key[j] = arr[i];
-  }
-}
-
-template <size_t kKeyLen>
-constexpr auto
-CompressKey(const uint8_t key[kKeyLen])  //
-    -> uint32_t
-{
-  constexpr size_t kCopyLen = kKeyLen / kKeySeedSize;
-
-  uint32_t val{0};
-  auto *arr = reinterpret_cast<uint8_t *>(&val);
-  for (size_t i = 0, j = kKeyLen - kCopyLen; i < kKeySeedSize; ++i, j -= kCopyLen) {
-    arr[i] = key[j];
-  }
-
-  return val;
-}
-
-/*######################################################################################
- * Static variable-length key definition
- *####################################################################################*/
-
 template <size_t kKeyLen>
 class Key
 {
@@ -77,7 +33,7 @@ class Key
 
   constexpr Key() = default;
 
-  constexpr explicit Key(const uint32_t key) { ExtendToKey<kKeyLen>(key, key_); }
+  explicit Key(const uint32_t key) { ExtendToKey(key); }
 
   constexpr Key(const Key &) = default;
   constexpr Key(Key &&) noexcept = default;
@@ -94,28 +50,28 @@ class Key
    * Public utilities
    *##################################################################################*/
 
-  constexpr auto
+  auto
   operator<(const Key &obj) const  //
       -> bool
   {
     return memcmp(&key_, &(obj.key_), kKeyLen) < 0;
   }
 
-  constexpr auto
+  auto
   operator>(const Key &obj) const  //
       -> bool
   {
     return memcmp(&key_, &(obj.key_), kKeyLen) > 0;
   }
 
-  constexpr auto
+  auto
   operator==(const Key &obj) const  //
       -> bool
   {
     return memcmp(&key_, &(obj.key_), kKeyLen) == 0;
   }
 
-  constexpr auto
+  auto
   operator+(const size_t val) const  //
       -> Key
   {
@@ -127,10 +83,46 @@ class Key
   GetValue() const  //
       -> size_t
   {
-    return CompressKey<kKeyLen>(key_);
+    return CompressKey();
   }
 
  private:
+  /*####################################################################################
+   * Internal constants
+   *##################################################################################*/
+
+  static constexpr size_t kKeySeedSize = sizeof(uint32_t);
+
+  /*####################################################################################
+   * Internal utilities
+   *##################################################################################*/
+
+  void
+  ExtendToKey(const uint32_t val)
+  {
+    constexpr size_t kCopyLen = kKeyLen / kKeySeedSize;
+
+    const auto *arr = reinterpret_cast<const uint8_t *>(&val);
+    for (size_t i = 0, j = kKeyLen - kCopyLen; i < kKeySeedSize; ++i, j -= kCopyLen) {
+      memset(&(key_[j]), arr[i], kCopyLen);
+    }
+  }
+
+  constexpr auto
+  CompressKey() const  //
+      -> uint32_t
+  {
+    constexpr size_t kCopyLen = kKeyLen / kKeySeedSize;
+
+    uint32_t val{0};
+    auto *arr = reinterpret_cast<uint8_t *>(&val);
+    for (size_t i = 0, j = kKeyLen - kCopyLen; i < kKeySeedSize; ++i, j -= kCopyLen) {
+      arr[i] = key_[j];
+    }
+
+    return val;
+  }
+
   /*####################################################################################
    * Internal member variables
    *##################################################################################*/
