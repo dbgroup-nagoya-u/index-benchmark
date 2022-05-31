@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_WORKLOAD_HPP
-#define INDEX_BENCHMARK_WORKLOAD_HPP
+#ifndef INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP
+#define INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP
 
 #include <fstream>
 #include <iostream>
@@ -93,4 +93,4 @@ struct Workload {
   size_t scan_max{150};
 };
 
-#endif  // INDEX_BENCHMARK_WORKLOAD_HPP
+#endif  // INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP

@@ -19,7 +19,7 @@
 #include "benchmark/benchmarker.hpp"
 #include "cla_validator.hpp"
 #include "index.hpp"
-#include "operation_engine.hpp"
+#include "workload/operation_engine.hpp"
 
 /*######################################################################################
  * Command line arguments

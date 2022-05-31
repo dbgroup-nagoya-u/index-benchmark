@@ -25,7 +25,7 @@
 
 #include "common.hpp"
 #include "indexes/index_wrapper.hpp"
-#include "operation.hpp"
+#include "workload/operation.hpp"
 
 /*######################################################################################
  * Target indexes and its pre-definitions

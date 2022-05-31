@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_OPERATION_HPP
-#define INDEX_BENCHMARK_OPERATION_HPP
+#ifndef INDEX_BENCHMARK_WORKLOAD_OPERATION_HPP
+#define INDEX_BENCHMARK_WORKLOAD_OPERATION_HPP
 
 #include "common.hpp"
 
@@ -84,4 +84,4 @@ struct Operation {
   uint32_t value{};
 };
 
-#endif  // INDEX_BENCHMARK_OPERATION_HPP
+#endif  // INDEX_BENCHMARK_WORKLOAD_OPERATION_HPP

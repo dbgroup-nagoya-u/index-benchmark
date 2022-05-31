@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_OPERATION_ENGINE_HPP
-#define INDEX_BENCHMARK_OPERATION_ENGINE_HPP
+#ifndef INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP
+#define INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP
 
 #include <random>
 
@@ -120,4 +120,4 @@ class OperationEngine
   std::uniform_int_distribution<size_t> range_generator_{};
 };
 
-#endif  // INDEX_BENCHMARK_OPERATION_ENGINE_HPP
+#endif  // INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP
