@@ -47,7 +47,6 @@ endif()
 # --------------------------------------------------------------------------------------#
 # Build option for target indexes
 # --------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_BTREE_PCL "Build BTreePCL as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
