@@ -33,7 +33,6 @@
 
 #include "bw_tree/bw_tree.hpp"
 #include "bztree/bztree.hpp"
-#include "indexes/btree_pcl_wrapper.hpp"
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
 #include "indexes/yakushima_wrapper.hpp"
 #endif

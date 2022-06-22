@@ -141,7 +141,7 @@ ForwardKeyForBench()
   using BwTreeFixLen_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeFixLen>;
   using BzInPlace_t = IndexWrapper<Key, Payload, ::dbgroup::index::bztree::BzTree>;
   using BzAppend_t = IndexWrapper<Key, int64_t, ::dbgroup::index::bztree::BzTree>;
-  using BTreePCL_t = BTreePCLWrapper<Key, Payload>;
+  using BTreePCL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePCL>;
 
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
   using Yakushima_t = YakushimaWrapper<Key, Payload>;

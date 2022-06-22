@@ -19,6 +19,7 @@
 
 #include <utility>
 
+#include "b_tree/b_tree_pcl.hpp"
 #include "bztree/bztree.hpp"
 #include "common.hpp"
 
@@ -43,7 +44,14 @@ class IndexWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  explicit IndexWrapper([[maybe_unused]] const size_t worker_num) {}
+  explicit IndexWrapper([[maybe_unused]] const size_t worker_num)
+  {
+    if constexpr (std::is_same_v<Index_t, ::dbgroup::index::b_tree::BTreePCL<K, V>>) {
+      index_ = std::make_unique<Index_t>();
+    } else {
+      index_ = std::make_unique<Index_t>(kGCInterval, kGCThreadNum);
+    }
+  }
 
   ~IndexWrapper() = default;
 
@@ -78,7 +86,7 @@ class IndexWrapper
   Read(const Key &key)  //
       -> std::optional<Payload>
   {
-    return index_.Read(key);
+    return index_->Read(key);
   }
 
   void
@@ -90,7 +98,7 @@ class IndexWrapper
     const auto &end_k = std::make_pair(begin_key + scan_range, !kClosed);
 
     size_t sum{0};
-    for (auto &&iter = index_.Scan(begin_k, end_k); iter.HasNext(); ++iter) {
+    for (auto &&iter = index_->Scan(begin_k, end_k); iter.HasNext(); ++iter) {
       sum += iter.GetPayload();
     }
   }
@@ -100,7 +108,7 @@ class IndexWrapper
       const Key &key,
       const Payload &value)
   {
-    return index_.Write(key, value);
+    return index_->Write(key, value);
   }
 
   auto
@@ -108,7 +116,7 @@ class IndexWrapper
       const Key &key,
       const Payload &value)
   {
-    return index_.Insert(key, value);
+    return index_->Insert(key, value);
   }
 
   auto
@@ -116,21 +124,20 @@ class IndexWrapper
       const Key &key,
       const Payload &value)
   {
-    return index_.Update(key, value);
+    return index_->Update(key, value);
   }
 
   auto
   Delete(const Key &key)
   {
-    return index_.Delete(key);
+    return index_->Delete(key);
   }
 
  private:
   /*####################################################################################
    * Internal member variables
    *##################################################################################*/
-
-  Index_t index_{kGCInterval, kGCThreadNum};
+  std::unique_ptr<Index_t> index_{nullptr};
 };
 
 #endif  // INDEX_BENCHMARK_INDEXES_INDEX_WRAPPER_HPP

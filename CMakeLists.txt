@@ -18,16 +18,17 @@ set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
 set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Use gflags to manage CLI options
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
+
 find_package(gflags REQUIRED)
 
 find_package(TBB REQUIRED)
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Build option for efficient memory allocators
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_OVERRIDE_JEMALLOC "Override entire memory allocation with jemalloc" OFF)
 option(INDEX_BENCH_OVERRIDE_MIMALLOC "Override entire memory allocation with mimalloc" OFF)
 
@@ -44,77 +45,72 @@ if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
   find_package(mimalloc 1.7 REQUIRED)
 endif()
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Build option for target indexes
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_PTREE "Build PTree as a benchmarking target" OFF)
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Configurations for target indexes
-# --------------------------------------------------------------------------------------#
-set(INDEX_BENCH_PAGE_SIZE "" CACHE STRING "The default page size in bytes.")
+#--------------------------------------------------------------------------------------#
 
+set(INDEX_BENCH_PAGE_SIZE "" CACHE STRING "The default page size in bytes.")
 if(NOT "${INDEX_BENCH_PAGE_SIZE}" STREQUAL "")
   set(BW_TREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
   set(BZTREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
 endif()
 
 set(INDEX_BENCH_MAX_DELTA_RECORD_NUM "" CACHE STRING "The maximum number of delta records if used.")
-
 if(NOT "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" STREQUAL "")
   set(BW_TREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
   set(BZTREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
 endif()
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Configure B-tree
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/b-tree")
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Configure Bw-tree
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bw-tree")
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Configure BzTree
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Configure Masstree
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
+
 if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
   execute_process(
     COMMAND ./bootstrap.sh
     RESULT_VARIABLE result
     WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
   )
-
   if(result)
     message(FATAL_ERROR "Bootstrap step for Masstree failed: ${result}")
   endif()
-
   execute_process(
     COMMAND ./configure --disable-assertions
     RESULT_VARIABLE result
     WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
   )
-
   if(result)
     message(FATAL_ERROR "Configure step for Masstree failed: ${result}")
   endif()
-
   execute_process(
     COMMAND make -j
     RESULT_VARIABLE result
     WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
   )
-
   if(result)
     message(FATAL_ERROR "Build step for Masstree failed: ${result}")
   endif()
@@ -132,25 +128,26 @@ set(INDEX_BENCH_MASSTREE_LIBS
   "${MASSTREE_SOURCE_DIR}/libjson.a"
 )
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Configure nlohmann_json
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
+
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Configure cpp-utility
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Configure benchmarker
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Build Benchmark
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 
 # define function to add unit tests in the same format
 function(ADD_BENCHMARK BENCHMARK_TARGET)
@@ -209,15 +206,13 @@ endfunction()
 ADD_BENCHMARK("index_bench")
 ADD_BENCHMARK("bulkload_bench")
 
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 # Build unit tests if required
-# --------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_BUILD_TESTS "Build unit tests" OFF)
-
 if(${INDEX_BENCH_BUILD_TESTS})
   # enable CTest
   enable_testing()
-
   # include unit tests
   add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/test")
 endif()
