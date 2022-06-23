@@ -71,6 +71,11 @@ if(NOT "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" STREQUAL "")
 endif()
 
 #--------------------------------------------------------------------------------------#
+# Configure B-tree
+#--------------------------------------------------------------------------------------#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/b-tree")
+
+#--------------------------------------------------------------------------------------#
 # Configure Bw-tree
 #--------------------------------------------------------------------------------------#
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bw-tree")
@@ -172,6 +177,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     nlohmann_json::nlohmann_json
     cpp_utility::cpp_utility
     cpp_bench::cpp_bench
+    b_tree::b_tree
     bw_tree::bw_tree
     bztree::bztree
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:PkgConfig::JEMALLOC>

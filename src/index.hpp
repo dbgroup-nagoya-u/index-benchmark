@@ -46,6 +46,7 @@
 #include "indexes/masstree_wrapper.hpp"
 #endif
 
+DEFINE_bool(b_pcl, false, "Use BTreePCL with variable-length data as a benchmark target");
 DEFINE_bool(bw, false, "Use Bw-tree with variable-length data as a benchmark target");
 DEFINE_bool(bw_opt, false, "Use Bw-tree with fixed-length data as a benchmark target");
 DEFINE_bool(bz_in_place, false, "Use BzTree with in-place based update as a benchmark target");
