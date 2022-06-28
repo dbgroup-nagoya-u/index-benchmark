@@ -20,10 +20,14 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
+#include <stdexcept>
+#include <string>
 #include <thread>
 #include <vector>
 
 #include "key.hpp"
+#include "nlohmann/json.hpp"
 
 /*######################################################################################
  * Global enum and constants
@@ -33,22 +37,43 @@
  * @brief A list of index read/write operations.
  *
  */
-enum class IndexOperation : uint32_t
-{
+enum IndexOperation {
+  kNotDefined = -1,
   kRead,
   kScan,
   kWrite,
   kInsert,
   kUpdate,
-  kDelete
+  kDelete,
+  kInsertOrUpdate,
+  kDeleteAndInsert,
+  kDeleteAndInsertOrInsert,
+  kDeleteOrInsert,
+  kInsertAndDelete,
 };
+
+// mapping for JSON strings
+NLOHMANN_JSON_SERIALIZE_ENUM(IndexOperation,
+                             {
+                                 {kNotDefined, nullptr},
+                                 {kRead, "read"},
+                                 {kScan, "scan"},
+                                 {kWrite, "write"},
+                                 {kInsert, "insert"},
+                                 {kUpdate, "update"},
+                                 {kDelete, "delete"},
+                                 {kInsertOrUpdate, "insert or update"},
+                                 {kDeleteAndInsert, "delete and insert"},
+                                 {kDeleteAndInsertOrInsert, "delete and insert or insert"},
+                                 {kDeleteOrInsert, "delete or insert"},
+                                 {kInsertAndDelete, "insert and delete"},
+                             })
 
 /**
  * @brief A list of the size of target keys.
  *
  */
-enum KeySize
-{
+enum KeySize {
   k8 = 8,
   k16 = 16,
   k32 = 32,
@@ -64,9 +89,20 @@ constexpr bool kClosed = true;
 
 constexpr bool kUseBulkload = true;
 
+constexpr double kEpsilon = 0.001;
+
 /*######################################################################################
  * Global utilities
  *####################################################################################*/
+
+constexpr auto
+AlmostEqual(  //
+    const double a,
+    const double b)  //
+    -> bool
+{
+  return fabs(a - b) <= kEpsilon;
+}
 
 /**
  * @brief A class to represent bulkload entries.

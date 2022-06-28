@@ -49,9 +49,7 @@ DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency"
 
 template <class Implementation>
 void
-Run(  //
-    const std::string &target_name,
-    const Workload &workload)
+Run(const std::string &target_name)
 {
   using Key = typename Implementation::K;
   using Payload = typename Implementation::V;
@@ -69,7 +67,9 @@ Run(  //
   index.Construct(entries, init_thread, kUseBulkload);
 
   // create an operation engine
-  OperationEngine_t ops_engine{workload, FLAGS_num_key, FLAGS_skew_parameter};
+  std::string workload_json{FLAGS_workload};
+  auto ops_engine =
+      (ValidateWorkload(workload_json)) ? OperationEngine_t{workload_json} : OperationEngine_t{};
   auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
   // run benchmark
@@ -103,32 +103,26 @@ ForwardKeyForBench()
 
   if (!FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_yakushima
       && !FLAGS_b_olc && !FLAGS_open_bw && !FLAGS_mass && !FLAGS_p) {
-    std::cout << "NOTE: benchmark targets are not specified." << std::endl;
-    return;
+    std::cerr << "NOTE: benchmark targets are not specified, so use BzTree." << std::endl;
+    FLAGS_bz_append = true;
   }
 
-  // load a target workload from a JSON file
-  std::string workload_json{FLAGS_workload};
-  auto &&workload = (ValidateWorkload(workload_json))
-                        ? Workload::CreateWorkloadFromJson(FLAGS_workload)
-                        : Workload{};
-
   // run benchmark for each implementaton
-  if (FLAGS_bw) Run<BwTreeVarLen_t>("Bw-tree", workload);
-  if (FLAGS_bw_opt) Run<BwTreeFixLen_t>("Optimized Bw-tree", workload);
-  if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode", workload);
-  if (FLAGS_bz_append) Run<BzAppend_t>("BzTree append mode", workload);
+  if (FLAGS_bw) Run<BwTreeVarLen_t>("Bw-tree");
+  if (FLAGS_bw_opt) Run<BwTreeFixLen_t>("Optimized Bw-tree");
+  if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode");
+  if (FLAGS_bz_append) Run<BzAppend_t>("BzTree append mode");
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  if (FLAGS_yakushima) Run<Yakushima_t>("yakushima", workload);
+  if (FLAGS_yakushima) Run<Yakushima_t>("yakushima");
 #endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) Run<BTreeOLC_t>("B-tree based on OLC", workload);
+  if (FLAGS_b_olc) Run<BTreeOLC_t>("B-tree based on OLC");
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) Run<OpenBw_t>("OpenBw-Tree", workload);
+  if (FLAGS_open_bw) Run<OpenBw_t>("OpenBw-Tree");
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) Run<Mass_t>("Masstree", workload);
+  if (FLAGS_mass) Run<Mass_t>("Masstree");
 #endif
 }
 
