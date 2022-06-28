@@ -41,37 +41,27 @@ class Workload
    * Public constructors and assignment operators
    *##################################################################################*/
 
-  Workload() { ops_cum_dist_.emplace_back(kRead, 1.0); }
+  Workload() : zipf_engine_{key_num_, skew_parameter_} { ops_cum_dist_.emplace_back(kRead, 1.0); }
 
   explicit Workload(const Json_t &json)
-      : zipf_engine_{json.at("# of keys"), json.at("skew parameter")},
+      : key_num_{json.at("# of keys")},
+        access_pattern_{json.at("access pattern").get<AccessPattern>()},
+        skew_parameter_{json.at("skew parameter")},
         execution_ratio_{json.at("execution ratio")}
   {
+    // check access pattern and create the Zipf's law engine if needed
+    if (access_pattern_ == kRandom) {
+      zipf_engine_ = ZipfGenerator{key_num_, skew_parameter_};
+    } else if (access_pattern_ == kUndefinedAccessPattern) {
+      std::string err_msg = "ERROR: an undefined access pattern (";
+      err_msg += json.at("access pattern");
+      err_msg += ") is given.";
+      throw std::runtime_error{err_msg};
+    }
+
     // compute cumulative distribution for operations
-    double cum_val = 0;
     const auto &ops_ratios = json.at("operation ratios");
-    for (const auto &[key, val] : ops_ratios.items()) {
-      // check the given key is a valid operation
-      Json_t ops_j = key;  // parse a key string to JSON
-      const auto ops = ops_j.get<IndexOperation>();
-      if (ops == kNotDefined) {
-        std::string err_msg = "ERROR: an undefined operation (";
-        err_msg += key;
-        err_msg += ") is given.";
-        throw std::runtime_error{err_msg};
-      }
-
-      // compute a cumulative value for simplicity
-      cum_val += val.get<double>();
-      ops_cum_dist_.emplace_back(ops, cum_val);
-    }
-
-    // check the given workload is valid
-    if (!AlmostEqual(cum_val, 1.0)) {
-      throw std::runtime_error{"ERROR: the sum of operation ratios is not one."};
-    }
-
-    // set parameters for determining a scan length if exist
+    ParseOperationsJson(ops_ratios);
     if (ops_ratios.contains("scan") && ops_ratios.at("scan") > 0) {
       scan_length_ = json.at("scan length");
     }
@@ -86,6 +76,13 @@ class Workload
   /*####################################################################################
    * Public getters/setters
    *##################################################################################*/
+
+  constexpr auto
+  GetKeyNum() const  //
+      -> size_t
+  {
+    return key_num_;
+  }
 
   constexpr auto
   GetExecutionRatio() const  //
@@ -112,11 +109,9 @@ class Workload
     // generate an operation-queue for benchmarking
     for (size_t i = 0; i < n; ++i) {
       const auto ops = GetOperationType(ratio_dist(rand_engine));
-      const auto key = zipf_engine_(rand_engine);
+      const auto key = (access_pattern_ == kRandom) ? zipf_engine_(rand_engine) : i % key_num_;
       const auto val = (ops == kScan) ? scan_length_ : value_dist(rand_engine);
       operations.emplace_back(ops, key, val);
-
-      std::cout << ops << std::endl;
     }
   }
 
@@ -124,6 +119,32 @@ class Workload
   /*####################################################################################
    * Internal utilities
    *##################################################################################*/
+
+  void
+  ParseOperationsJson(const Json_t &ops_ratios)
+  {
+    double cum_val = 0;
+    for (const auto &[key, val] : ops_ratios.items()) {
+      // check the given key is a valid operation
+      Json_t ops_j = key;  // parse a key string to JSON
+      const auto ops = ops_j.get<IndexOperation>();
+      if (ops == kUndefinedOperation) {
+        std::string err_msg = "ERROR: an undefined operation (";
+        err_msg += key;
+        err_msg += ") is given.";
+        throw std::runtime_error{err_msg};
+      }
+
+      // compute a cumulative value for simplicity
+      cum_val += val.get<double>();
+      ops_cum_dist_.emplace_back(ops, cum_val);
+    }
+
+    // check the given workload is valid
+    if (!AlmostEqual(cum_val, 1.0)) {
+      throw std::runtime_error{"ERROR: the sum of operation ratios is not one."};
+    }
+  }
 
   auto
   GetOperationType(const double rand_val) const  //
@@ -140,6 +161,12 @@ class Workload
    *##################################################################################*/
 
   std::vector<std::pair<IndexOperation, double>> ops_cum_dist_{};
+
+  size_t key_num_{1000000};
+
+  AccessPattern access_pattern_{kRandom};
+
+  double skew_parameter_{0};
 
   ZipfGenerator zipf_engine_{};
 

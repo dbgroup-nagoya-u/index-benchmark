@@ -38,7 +38,7 @@
  *
  */
 enum IndexOperation {
-  kNotDefined = -1,
+  kUndefinedOperation = -1,
   kRead,
   kScan,
   kWrite,
@@ -52,10 +52,10 @@ enum IndexOperation {
   kInsertAndDelete,
 };
 
-// mapping for JSON strings
+// mapping for operation strings
 NLOHMANN_JSON_SERIALIZE_ENUM(IndexOperation,
                              {
-                                 {kNotDefined, nullptr},
+                                 {kUndefinedOperation, nullptr},
                                  {kRead, "read"},
                                  {kScan, "scan"},
                                  {kWrite, "write"},
@@ -67,6 +67,20 @@ NLOHMANN_JSON_SERIALIZE_ENUM(IndexOperation,
                                  {kDeleteAndInsertOrInsert, "delete and insert or insert"},
                                  {kDeleteOrInsert, "delete or insert"},
                                  {kInsertAndDelete, "insert and delete"},
+                             })
+
+enum AccessPattern {
+  kUndefinedAccessPattern = -1,
+  kRandom,
+  kSequential
+};
+
+// mapping for access pattern strings
+NLOHMANN_JSON_SERIALIZE_ENUM(AccessPattern,
+                             {
+                                 {kUndefinedAccessPattern, nullptr},
+                                 {kRandom, "random"},
+                                 {kSequential, "sequential"},
                              })
 
 /**
