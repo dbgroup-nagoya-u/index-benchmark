@@ -127,8 +127,6 @@ class Workload
       const auto key = GetKeyID(key_dist, rand_engine, i, worker_id, worker_num);
       const auto val = (ops == kScan) ? scan_length_ : value_dist(rand_engine);
       operations.emplace_back(ops, key, val);
-
-      std::cout << key << std::endl;
     }
   }
 

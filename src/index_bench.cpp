@@ -27,16 +27,12 @@
 
 DEFINE_uint64(num_exec, 10000, "The total number of operations for benchmarking");
 DEFINE_validator(num_exec, &ValidateNonZero);
-DEFINE_uint64(num_key, 10000, "The total number of keys");
-DEFINE_validator(num_key, &ValidateNonZero);
 DEFINE_uint64(num_thread, 1, "The number of worker threads");
 DEFINE_validator(num_thread, &ValidateNonZero);
 DEFINE_uint64(num_init_insert, 10000, "The number of insert operations for initialization");
 DEFINE_uint64(num_init_thread, 1, "The number of worker threads for initialization");
 DEFINE_validator(num_init_thread, &ValidateNonZero);
 DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
-DEFINE_double(skew_parameter, 0, "A skew parameter (based on Zipf's law)");
-DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");

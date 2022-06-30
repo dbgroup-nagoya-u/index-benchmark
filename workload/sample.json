@@ -1,0 +1,27 @@
+{
+  "workloads": [
+    {
+      "operation ratios": {
+        "read": 0.2,
+        "write": 0.8
+      },
+      "# of keys": 1000000,
+      "access pattern": "random",
+      "partitioning policy": "stripe",
+      "skew parameter": 0.5,
+      "execution ratio": 0.5
+    },
+    {
+      "operation ratios": {
+        "read": 0.2,
+        "write": 0.4,
+        "delete": 0.4
+      },
+      "# of keys": 1000000,
+      "access pattern": "sequential",
+      "partitioning policy": "range",
+      "skew parameter": 0.0,
+      "execution ratio": 0.5
+    }
+  ]
+}
