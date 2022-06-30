@@ -57,6 +57,7 @@ Run(const std::string &target_name)
   using OperationEngine_t = OperationEngine<Key, Payload>;
   using Index_t = Index<Key, Payload, Implementation>;
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation_t, OperationEngine_t>;
+  using Json_t = ::nlohmann::json;
 
   const size_t init_size = FLAGS_num_init_insert;
   const size_t init_thread = FLAGS_num_init_thread;
@@ -67,9 +68,16 @@ Run(const std::string &target_name)
   index.Construct(entries, init_thread, kUseBulkload);
 
   // create an operation engine
+  OperationEngine_t ops_engine{FLAGS_num_thread};
   std::string workload_json{FLAGS_workload};
-  auto ops_engine =
-      (ValidateWorkload(workload_json)) ? OperationEngine_t{workload_json} : OperationEngine_t{};
+  if (ValidateWorkload(workload_json)) {
+    Json_t parsed_json{};
+    std::ifstream workload_in{workload_json};
+    workload_in >> parsed_json;
+    ops_engine.SetWorkloads(parsed_json);
+  }
+
+  // prepare random seed if needed
   auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
   // run benchmark

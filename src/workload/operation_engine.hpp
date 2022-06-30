@@ -40,26 +40,9 @@ class OperationEngine
    * Public constructors and assignment operators
    *##################################################################################*/
 
-  OperationEngine() { workloads_.emplace_back(); }
+  OperationEngine() = default;
 
-  explicit OperationEngine(const std::string &filename)
-  {
-    // parse a given JSON file
-    std::ifstream workload_in{filename};
-    Json_t parsed_json{};
-    workload_in >> parsed_json;
-
-    const auto &workloads_json = parsed_json.at("workloads");
-    double cum_val = 0;
-    for (const auto &w_json : workloads_json) {
-      workloads_.emplace_back(w_json);
-      cum_val += workloads_.back().GetExecutionRatio();
-    }
-
-    if (!AlmostEqual(cum_val, 1.0)) {
-      throw std::runtime_error{"ERROR: the total execution ratios is not one."};
-    }
-  }
+  explicit OperationEngine(const size_t worker_num) : worker_num_{worker_num} {}
 
   constexpr OperationEngine(const OperationEngine &) = default;
   constexpr OperationEngine(OperationEngine &&) = default;
@@ -77,12 +60,30 @@ class OperationEngine
    * Public utilities
    *##################################################################################*/
 
+  void
+  SetWorkloads(const Json_t &json)
+  {
+    workloads_.clear();
+
+    const auto &workloads_json = json.at("workloads");
+    double cum_val = 0;
+    for (const auto &w_json : workloads_json) {
+      workloads_.emplace_back(w_json);
+      cum_val += workloads_.back().GetExecutionRatio();
+    }
+
+    if (!AlmostEqual(cum_val, 1.0)) {
+      throw std::runtime_error{"ERROR: the total execution ratios is not one."};
+    }
+  }
+
   auto
   Generate(  //
       const size_t total_num,
       const size_t random_seed)  //
       -> std::vector<Operation_t>
   {
+    const auto worker_id = worker_count_.fetch_add(1);
     const auto phase_num = workloads_.size();
     std::mt19937_64 rand_engine{random_seed};
 
@@ -95,7 +96,7 @@ class OperationEngine
       const auto exec_ratio = phase.GetExecutionRatio();
       const size_t n = (i == phase_num - 1) ? total_num - exec_num : total_num * exec_ratio;
 
-      phase.AddOperations(operations, n, rand_engine());
+      phase.AddOperations(operations, n, worker_id, worker_num_, rand_engine());
 
       exec_num += n;
     }
@@ -108,7 +109,11 @@ class OperationEngine
    * Internal member variables
    *##################################################################################*/
 
-  std::vector<Workload> workloads_{};
+  static inline std::atomic_size_t worker_count_{0};
+
+  size_t worker_num_{1};
+
+  std::vector<Workload> workloads_{Workload{}};
 };
 
 #endif  // INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP
