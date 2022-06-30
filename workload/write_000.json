@@ -5,10 +5,9 @@
         "read": 1.0
       },
       "# of keys": 1000000,
-      "access pattern": "random",
       "partitioning policy": "none",
-      "skew parameter": 0.0,
-      "execution ratio": 1.0
+      "access pattern": "random",
+      "skew parameter": 0.0
     }
   ]
 }

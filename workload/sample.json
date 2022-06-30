@@ -6,8 +6,8 @@
         "write": 0.8
       },
       "# of keys": 1000000,
-      "access pattern": "random",
       "partitioning policy": "stripe",
+      "access pattern": "random",
       "skew parameter": 0.5,
       "execution ratio": 0.5
     },
@@ -18,9 +18,8 @@
         "delete": 0.4
       },
       "# of keys": 1000000,
-      "access pattern": "sequential",
       "partitioning policy": "range",
-      "skew parameter": 0.0,
+      "access pattern": "sequential",
       "execution ratio": 0.5
     }
   ]

@@ -51,8 +51,8 @@ class Workload
         key_num_{json.at("# of keys")},
         access_pattern_{json.at("access pattern").get<AccessPattern>()},
         partition_{json.at("partitioning policy").get<Partitioning>()},
-        execution_ratio_{json.at("execution ratio")},
-        skew_parameter_{json.at("skew parameter")}
+        execution_ratio_{json.value("execution ratio", 1.0)},
+        skew_parameter_{json.value("skew parameter", 0.0)}
   {
     // check access pattern and create the Zipf's law engine if needed
     if (access_pattern_ == kUndefinedAccessPattern) {
