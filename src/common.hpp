@@ -47,7 +47,6 @@ enum IndexOperation {
   kDelete,
   kInsertOrUpdate,
   kDeleteAndInsert,
-  kDeleteAndInsertOrInsert,
   kDeleteOrInsert,
   kInsertAndDelete,
 };
@@ -64,7 +63,6 @@ NLOHMANN_JSON_SERIALIZE_ENUM(IndexOperation,
                                  {kDelete, "delete"},
                                  {kInsertOrUpdate, "insert or update"},
                                  {kDeleteAndInsert, "delete and insert"},
-                                 {kDeleteAndInsertOrInsert, "delete and insert or insert"},
                                  {kDeleteOrInsert, "delete or insert"},
                                  {kInsertAndDelete, "insert and delete"},
                              })
@@ -103,13 +101,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Partitioning,
  * @brief A list of the size of target keys.
  *
  */
-enum KeySize {
-  k8 = 8,
-  k16 = 16,
-  k32 = 32,
-  k64 = 64,
-  k128 = 128
-};
+enum KeySize { k8 = 8, k16 = 16, k32 = 32, k64 = 64, k128 = 128 };
 
 constexpr size_t kGCInterval = 100000;
 

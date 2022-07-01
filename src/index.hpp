@@ -166,25 +166,45 @@ class Index
   Execute(const Operation_t &ops)
   {
     switch (ops.type) {
-      case IndexOperation::kScan:
-        index_->Scan(ops.GetKey(), ops.GetPayload());
-        break;
-      case IndexOperation::kWrite:
-        index_->Write(ops.GetKey(), ops.GetPayload());
-        break;
-      case IndexOperation::kInsert:
-        index_->Insert(ops.GetKey(), ops.GetPayload());
-        break;
-      case IndexOperation::kUpdate:
-        index_->Update(ops.GetKey(), ops.GetPayload());
-        break;
-      case IndexOperation::kDelete:
-        index_->Delete(ops.GetKey());
-        break;
-      case IndexOperation::kRead:
-      default:
+      case kRead:
         index_->Read(ops.GetKey());
         break;
+      case kScan:
+        index_->Scan(ops.GetKey(), ops.GetPayload());
+        break;
+      case kWrite:
+        index_->Write(ops.GetKey(), ops.GetPayload());
+        break;
+      case kInsert:
+        index_->Insert(ops.GetKey(), ops.GetPayload());
+        break;
+      case kUpdate:
+        index_->Update(ops.GetKey(), ops.GetPayload());
+        break;
+      case kDelete:
+        index_->Delete(ops.GetKey());
+        break;
+      case kInsertOrUpdate:
+        if (index_->Insert(ops.GetKey(), ops.GetPayload())) {
+          index_->Update(ops.GetKey(), ops.GetPayload());
+        }
+        break;
+      case kDeleteAndInsert:
+        index_->Delete(ops.GetKey());
+        index_->Insert(ops.GetKey(), ops.GetPayload());
+        break;
+      case kDeleteOrInsert:
+        if (index_->Delete(ops.GetKey())) {
+          index_->Insert(ops.GetKey(), ops.GetPayload());
+        }
+        break;
+      case kInsertAndDelete:
+        index_->Insert(ops.GetKey(), ops.GetPayload());
+        index_->Delete(ops.GetKey());
+        break;
+      default:
+        std::string err_msg = "ERROR: an undefined operation is about to be executed.";
+        throw std::runtime_error{err_msg};
     }
   }
 
