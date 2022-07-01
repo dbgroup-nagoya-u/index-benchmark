@@ -147,8 +147,7 @@ class MasstreeWrapper
       [[maybe_unused]] const Key &begin_key,
       [[maybe_unused]] const size_t scan_range)
   {
-    // this operation is not implemented
-    assert(false);
+    throw std::runtime_error{"ERROR: the scan operation is not implemented."};
   }
 
   auto
@@ -170,8 +169,7 @@ class MasstreeWrapper
       [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
-    // this operation is not implemented
-    assert(false);
+    throw std::runtime_error{"ERROR: the insert operation is not implemented."};
     return 1;
   }
 
@@ -181,8 +179,7 @@ class MasstreeWrapper
       [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
-    // this operation is not implemented
-    assert(false);
+    throw std::runtime_error{"ERROR: the update operation is not implemented."};
     return 1;
   }
 
