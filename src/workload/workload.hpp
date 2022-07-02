@@ -169,9 +169,9 @@ class Workload
   {
     const uint32_t key_num = (partition_ == kNone) ? key_num_ : (key_num_ - (w_id + 1)) / w_num + 1;
 
-    if (skew_parameter_ == 0) return std::uniform_int_distribution<uint32_t>{0, key_num};
-    if (key_num < 1E5) return ExactZipf_t{0, key_num, skew_parameter_};
-    return ApproxZipf_t{0, key_num, skew_parameter_};
+    if (skew_parameter_ == 0) return std::uniform_int_distribution<uint32_t>{0, key_num - 1};
+    if (key_num < 1E5) return ExactZipf_t{0, key_num - 1, skew_parameter_};
+    return ApproxZipf_t{0, key_num - 1, skew_parameter_};
   }
 
   auto

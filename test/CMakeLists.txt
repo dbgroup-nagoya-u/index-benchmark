@@ -86,6 +86,7 @@ endfunction()
 
 # add unit tests to build targets
 ADD_INDEX_BENCH_TEST("key_test")
+ADD_INDEX_BENCH_TEST("workload_test")
 # ADD_INDEX_BENCH_TEST("operation_generator_test")
 # ADD_INDEX_BENCH_TEST("index_wrapper_test")
 # ADD_INDEX_BENCH_TEST("index_wrapper_multi_thread_test")
