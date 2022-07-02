@@ -25,3 +25,6 @@
 [submodule "external/yakushima"]
 	path = external/yakushima
 	url = git@github.com:project-tsurugi/yakushima.git
+[submodule "external/b-tree"]
+	path = external/b-tree
+	url = git@github.com:dbgroup-nagoya-u/b-tree.git
