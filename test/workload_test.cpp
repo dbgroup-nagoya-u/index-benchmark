@@ -95,22 +95,25 @@ TEST_F(WorkloadFixture, ConstructorWOArgsGenerateReadOnlyWorkload)
 TEST_F(WorkloadFixture, WorkloadHavingAllOperationsGenerateOperationsUniformly)
 {  //
   constexpr size_t kOpsTypeNum = 10;
-  constexpr auto kOpsRatio = 1.0 / kOpsTypeNum;
-  Json_t w_json = {{"operation ratios",
-                    {{"read", kOpsRatio},
-                     {"scan", kOpsRatio},
-                     {"write", kOpsRatio},
-                     {"insert", kOpsRatio},
-                     {"update", kOpsRatio},
-                     {"delete", kOpsRatio},
-                     {"insert or update", kOpsRatio},
-                     {"delete and insert", kOpsRatio},
-                     {"delete or insert", kOpsRatio},
-                     {"insert and delete", kOpsRatio}}},
-                   {"# of keys", kDefaultKeyNum},
-                   {"partitioning policy", "none"},
-                   {"access pattern", "random"},
-                   {"scan length", 100}};
+
+  Json_t w_json = R"({
+    "operation ratios": {
+      "read": 0.1,
+      "scan": 0.1,
+      "write": 0.1,
+      "insert": 0.1,
+      "update": 0.1,
+      "delete": 0.1,
+      "insert or update": 0.1,
+      "delete and insert": 0.1,
+      "delete or insert": 0.1,
+      "insert and delete": 0.1
+    },
+    "# of keys": 1000000,
+    "partitioning policy": "none",
+    "access pattern": "random",
+    "scan length": 100
+  })"_json;
 
   Workload workload{w_json};
 
@@ -131,14 +134,13 @@ TEST_F(WorkloadFixture, WorkloadHavingAllOperationsGenerateOperationsUniformly)
 
 TEST_F(WorkloadFixture, WorkloadWithSkewParameterGenerateSkewedKeys)
 {  //
-  Json_t w_json = {{
-                       "operation ratios",
-                       {{"read", 1.0}},
-                   },
-                   {"# of keys", kDefaultKeyNum},
-                   {"partitioning policy", "none"},
-                   {"access pattern", "random"},
-                   {"skew parameter", 1.0}};
+  Json_t w_json = R"({
+    "operation ratios": {"read": 1.0},
+    "# of keys": 1000000,
+    "partitioning policy": "none",
+    "access pattern": "random",
+    "skew parameter": 1.0
+  })"_json;
 
   Workload workload{w_json};
 
@@ -164,13 +166,12 @@ TEST_F(WorkloadFixture, WorkloadWithRangePartitionGenerateSeparatedKeys)
 {  //
   constexpr size_t kOpsNumPerThread = kDefaultKeyNum / kThreadNum;
 
-  Json_t w_json = {{
-                       "operation ratios",
-                       {{"read", 1.0}},
-                   },
-                   {"# of keys", kDefaultKeyNum},
-                   {"partitioning policy", "range"},
-                   {"access pattern", "sequential"}};
+  Json_t w_json = R"({
+    "operation ratios": {"read": 1.0},
+    "# of keys": 1000000,
+    "partitioning policy": "range",
+    "access pattern": "sequential"
+  })"_json;
 
   Workload workload{w_json};
 
@@ -192,13 +193,12 @@ TEST_F(WorkloadFixture, WorkloadWithStripePartitionGenerateStripedKeys)
 {  //
   constexpr size_t kOpsNumPerThread = kDefaultKeyNum / kThreadNum;
 
-  Json_t w_json = {{
-                       "operation ratios",
-                       {{"read", 1.0}},
-                   },
-                   {"# of keys", kDefaultKeyNum},
-                   {"partitioning policy", "stripe"},
-                   {"access pattern", "sequential"}};
+  Json_t w_json = R"({
+    "operation ratios": {"read": 1.0},
+    "# of keys": 1000000,
+    "partitioning policy": "stripe",
+    "access pattern": "sequential"
+  })"_json;
 
   Workload workload{w_json};
 
