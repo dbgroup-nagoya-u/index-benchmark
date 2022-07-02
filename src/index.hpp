@@ -71,11 +71,6 @@ DEFINE_bool(mass, false, "Use Masstree as a benchmark target");
 #else
 DEFINE_bool(mass, false, "Massree is not built as a benchmark target. ");
 #endif
-#ifdef INDEX_BENCH_BUILD_PTREE
-DEFINE_bool(p, false, "Use PTree as a benchmark target");
-#else
-DEFINE_bool(p, false, "PTree is not built as a benchmark target.");
-#endif
 
 /*######################################################################################
  * Class definition

@@ -14,7 +14,6 @@ buildType:
         INDEX_BENCH_BUILD_BTREE_OLC: ON
         INDEX_BENCH_BUILD_OPEN_BWTREE: OFF
         INDEX_BENCH_BUILD_MASSTREE: ON
-        INDEX_BENCH_BUILD_PTREE: OFF
     relWithDebInfo:
       short: RelWithDebInfo
       long: Perform optimizations and include debugging informatin
@@ -27,7 +26,6 @@ buildType:
         INDEX_BENCH_BUILD_BTREE_OLC: ON
         INDEX_BENCH_BUILD_OPEN_BWTREE: OFF
         INDEX_BENCH_BUILD_MASSTREE: ON
-        INDEX_BENCH_BUILD_PTREE: OFF
     release:
       short: Release
       long: Perform optimizations and omit debugging informatin
@@ -40,4 +38,3 @@ buildType:
         INDEX_BENCH_BUILD_BTREE_OLC: ON
         INDEX_BENCH_BUILD_OPEN_BWTREE: OFF
         INDEX_BENCH_BUILD_MASSTREE: ON
-        INDEX_BENCH_BUILD_PTREE: OFF
