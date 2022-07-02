@@ -14,329 +14,283 @@
  * limitations under the License.
  */
 
-#include "index_wrapper.hpp"
+#include "indexes/index_wrapper.hpp"
+
+#include <algorithm>
+#include <memory>
 
 #include "gtest/gtest.h"
 
-/*##################################################################################################
+/*######################################################################################
  * Target index implementations
- *################################################################################################*/
+ *####################################################################################*/
 
-#include "bztree/bztree.hpp"
-using BzTree_t = IndexWrapper<Key, Value, ::dbgroup::index::bztree::BzTree>;
+using Key_t = Key<k8>;
+using Value_t = uint64_t;
 
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-#include "open_bwtree_wrapper.hpp"
-using OpenBwTree_t = OpenBwTreeWrapper<Key, Value>;
+using BTreePCL_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::b_tree::BTreePCL>;
+using BwTree_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bw_tree::BwTreeVarLen>;
+using BwTreeOpt_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bw_tree::BwTreeFixLen>;
+using BzTreeInPace_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bztree::BzTree>;
+using BzTreeAppend_t = IndexWrapper<Key_t, int64_t, ::dbgroup::index::bztree::BzTree>;
+
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+#include "indexes/yakushima_wrapper.hpp"
+using Yakushima_t = YakushimaWrapper<Key_t, Value_t>;
 #endif
-
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+#include "indexes/btree_olc_wrapper.hpp"
+using BTreeOLC_t = BTreeOLCWrapper<Key_t, Value_t>;
+#endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-#include "masstree_wrapper.hpp"
-using Masstree_t = MasstreeWrapper<Key, Value>;
+#include "indexes/masstree_wrapper.hpp"
+using Masstree_t = MasstreeWrapper<Key_t, Value_t>;
 #endif
 
-#ifdef INDEX_BENCH_BUILD_PTREE
-#include "ptree_wrapper.hpp"
-using PTree_t = PTreeWrapper<Key, Value>;
-#endif
+/*######################################################################################
+ * Global constants
+ *####################################################################################*/
+
+constexpr size_t kExecNum = 1E6;
+constexpr uint32_t kMaxKey = (~0L);
+constexpr size_t kRandAccessSeed = 20;
+constexpr bool kExpectSucceeded = true;
+constexpr bool kExpectFailed = false;
+constexpr bool kSeqAccess = true;
+constexpr bool kRandAccess = false;
+
+/*######################################################################################
+ * Fixture class definition
+ *####################################################################################*/
 
 template <class Index>
 class IndexWrapperFixture : public ::testing::Test
 {
+ public:
+  using Index_t = Index;
+
  protected:
-  /*################################################################################################
-   * Internal constants
-   *##############################################################################################*/
-
-  static constexpr size_t kExecNum = 1e6;
-
-  /*################################################################################################
-   * Internal member variables
-   *##############################################################################################*/
-
-  // a target index instance
-  std::unique_ptr<Index> index;
-
-  /*################################################################################################
+  /*####################################################################################
    * Setup/Teardown
-   *##############################################################################################*/
+   *##################################################################################*/
 
   void
   SetUp() override
   {
-    index = std::make_unique<Index>();
-
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      open_bw_thread_counter.store(0);
-      index->ReserveThreads(1);
-      index->RegisterThread();
-    }
-#endif
+    index = std::make_unique<Index>(1);
+    index->SetUp();
   }
 
   void
   TearDown() override
   {
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    if constexpr (std::is_same_v<Index, OpenBwTree_t>) {
-      index->UnregisterThread();
-    }
-#endif
+    index->TearDown();
   }
 
-  /*################################################################################################
+  /*####################################################################################
    * Functions for verification
-   *##############################################################################################*/
+   *##################################################################################*/
+
+  auto
+  PrepareKeys(const bool is_sequential)  //
+      -> std::vector<Key_t>
+  {
+    std::vector<Key_t> keys{};
+    keys.reserve(kExecNum);
+
+    for (uint32_t i = 0; i < kExecNum; ++i) {
+      keys.emplace_back(i);
+    }
+
+    if (is_sequential) {
+      std::mt19937_64 rand_engine{kRandAccessSeed};
+      std::shuffle(keys.begin(), keys.end(), rand_engine);
+    }
+
+    return keys;
+  }
 
   void
-  VerifyRead(  //
-      const Key key,
-      const Value expected,
-      const bool expect_fail = false)
+  PerformReads(  //
+      const Value_t expected_value,
+      const bool expect_success,
+      const bool is_sequential)
   {
-    const auto [rc, actual] = index->Read(key);
-
-    if (expect_fail) {
-      EXPECT_NE(0, rc);
-    } else {
-      EXPECT_EQ(0, rc);
-      EXPECT_EQ(expected, actual);
+    for (const auto &key : PrepareKeys(is_sequential)) {
+      const auto &read_val = index->Read(key);
+      if (expect_success) {
+        ASSERT_TRUE(read_val);
+        EXPECT_EQ(read_val.value(), expected_value);
+      } else {
+        EXPECT_FALSE(read_val);
+      }
     }
   }
 
   void
-  VerifyInsert(  //
-      const Key key,
-      const Value payload,
-      const bool expect_fail = false)
+  PerformWrites(  //
+      const Value_t written_value,
+      const bool is_sequential)
   {
-    const auto rc = index->Insert(key, payload);
-
-    if (expect_fail) {
-      EXPECT_NE(0, rc);
-    } else {
-      EXPECT_EQ(0, rc);
+    for (const auto &key : PrepareKeys(is_sequential)) {
+      index->Write(key, written_value);
     }
   }
 
   void
-  VerifyUpdate(  //
-      const Key key,
-      const Value payload,
-      const bool expect_fail = false)
+  PerformDeletes(  //
+      const bool expect_success,
+      const bool is_sequential)
   {
-    const auto rc = index->Update(key, payload);
-
-    if (expect_fail) {
-      EXPECT_NE(0, rc);
-    } else {
-      EXPECT_EQ(0, rc);
+    for (const auto &key : PrepareKeys(is_sequential)) {
+      const auto rc = index->Delete(key);
+      if (expect_success) {
+        EXPECT_EQ(0, rc);
+      } else {
+        EXPECT_NE(0, rc);
+      }
     }
   }
 
-  void
-  VerifyDelete(  //
-      const Key key,
-      const bool expect_fail = false)
-  {
-    const auto rc = index->Delete(key);
+  /*####################################################################################
+   * Internal member variables
+   *##################################################################################*/
 
-    if (expect_fail) {
-      EXPECT_NE(0, rc);
-    } else {
-      EXPECT_EQ(0, rc);
-    }
-  }
+  /// a target index instance
+  std::unique_ptr<Index> index{nullptr};
 };
 
-/*##################################################################################################
+/*######################################################################################
  * Preparation for typed testing
- *################################################################################################*/
+ *####################################################################################*/
 
-using Indexes = ::testing::Types<BzTree_t
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-                                 ,
-                                 OpenBwTree_t
+using Indexes = ::testing::Types<  //
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+    Yakushima_t,
+#endif
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+    BTreeOLC_t,
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-                                 ,
-                                 Masstree_t
+    Masstree_t,
 #endif
-#ifdef INDEX_BENCH_BUILD_PTREE
-                                 ,
-                                 PTree_t
-#endif
-                                 >;
+    BTreePCL_t,
+    BwTree_t,
+    BwTreeOpt_t,
+    BzTreeInPace_t,
+    BzTreeAppend_t  //
+    >;
+
 TYPED_TEST_CASE(IndexWrapperFixture, Indexes);
 
-/*##################################################################################################
+/*######################################################################################
  * Unit test definitions
- *################################################################################################*/
+ *####################################################################################*/
 
-/*--------------------------------------------------------------------------------------------------
- * Write operation
- *------------------------------------------------------------------------------------------------*/
-
-TYPED_TEST(IndexWrapperFixture, Write_UniqueKeys_ReadInsertedPayloads)
+TYPED_TEST(IndexWrapperFixture, WriteReadSequentially)
 {
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::index->Write(i, i);
-  }
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyRead(i, i);
-  }
+  TestFixture::PerformWrites(0, kSeqAccess);
+  TestFixture::PerformReads(0, kExpectSucceeded, kSeqAccess);
 }
 
-TYPED_TEST(IndexWrapperFixture, Write_DuplicateKeys_ReadUpdatedPayloads)
-{
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::index->Write(i, i);
-  }
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::index->Write(i, i + 1);
-  }
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyRead(i, i + 1);
-  }
-}
-
-/*--------------------------------------------------------------------------------------------------
- * Insert operation
- *------------------------------------------------------------------------------------------------*/
-
-TYPED_TEST(IndexWrapperFixture, Insert_UniqueKeys_ReadInsertedPayloads)
+TYPED_TEST(IndexWrapperFixture, WriteWriteReadSequentially)
 {
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
-    return;
-  }
-#endif
-#ifdef INDEX_BENCH_BUILD_PTREE
-  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
-    return;
-  }
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) return;
 #endif
 
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyInsert(i, i);
-  }
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyRead(i, i);
-  }
+  TestFixture::PerformWrites(0, kSeqAccess);
+  TestFixture::PerformWrites(1, kSeqAccess);
+  TestFixture::PerformReads(1, kExpectSucceeded, kSeqAccess);
 }
 
-TYPED_TEST(IndexWrapperFixture, Insert_DuplicateKeys_InsertFail)
+TYPED_TEST(IndexWrapperFixture, WriteDeleteReadSequentially)
+{
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+#endif
+
+  TestFixture::PerformWrites(0, kSeqAccess);
+  TestFixture::PerformDeletes(kExpectSucceeded, kSeqAccess);
+  TestFixture::PerformReads(0, kExpectFailed, kSeqAccess);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteSequentially)
+{
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+#endif
+
+  TestFixture::PerformWrites(0, kSeqAccess);
+  TestFixture::PerformDeletes(kExpectSucceeded, kSeqAccess);
+  TestFixture::PerformDeletes(kExpectFailed, kSeqAccess);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteWriteReadSequentially)
+{
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+#endif
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) return;
+#endif
+
+  TestFixture::PerformWrites(0, kSeqAccess);
+  TestFixture::PerformDeletes(kExpectSucceeded, kSeqAccess);
+  TestFixture::PerformWrites(1, kSeqAccess);
+  TestFixture::PerformReads(1, kExpectSucceeded, kSeqAccess);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteReadRandomly)
+{
+  TestFixture::PerformWrites(0, kRandAccess);
+  TestFixture::PerformReads(0, kExpectSucceeded, kRandAccess);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteWriteReadRandomly)
 {
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
-    return;
-  }
-#endif
-#ifdef INDEX_BENCH_BUILD_PTREE
-  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
-    return;
-  }
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) return;
 #endif
 
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyInsert(i, i);
-  }
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyInsert(i, i, true);
-  }
+  TestFixture::PerformWrites(0, kRandAccess);
+  TestFixture::PerformWrites(1, kRandAccess);
+  TestFixture::PerformReads(1, kExpectSucceeded, kRandAccess);
 }
 
-/*--------------------------------------------------------------------------------------------------
- * Update operation
- *------------------------------------------------------------------------------------------------*/
-
-TYPED_TEST(IndexWrapperFixture, Update_UniqueKeys_UpdateFail)
+TYPED_TEST(IndexWrapperFixture, WriteDeleteReadRandomly)
 {
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+#endif
+
+  TestFixture::PerformWrites(0, kRandAccess);
+  TestFixture::PerformDeletes(kExpectSucceeded, kRandAccess);
+  TestFixture::PerformReads(0, kExpectFailed, kRandAccess);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteRandomly)
+{
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+#endif
+
+  TestFixture::PerformWrites(0, kRandAccess);
+  TestFixture::PerformDeletes(kExpectSucceeded, kRandAccess);
+  TestFixture::PerformDeletes(kExpectFailed, kRandAccess);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteWriteReadRandomly)
+{
+#ifdef INDEX_BENCH_BUILD_BTREE_OLC
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+#endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
-    return;
-  }
-#endif
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if constexpr (std::is_same_v<TypeParam, OpenBwTree_t>) {
-    // update is not implemented in OpenBw-Tree
-    return;
-  }
-#endif
-#ifdef INDEX_BENCH_BUILD_PTREE
-  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
-    return;
-  }
+  if constexpr (std::is_same_v<TypeParam, Masstree_t>) return;
 #endif
 
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyUpdate(i, i + 1, true);
-  }
-}
-
-TYPED_TEST(IndexWrapperFixture, Update_DuplicateKeys_ReadUpdatedPayloads)
-{
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-  if constexpr (std::is_same_v<TypeParam, Masstree_t>) {
-    return;
-  }
-#endif
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if constexpr (std::is_same_v<TypeParam, OpenBwTree_t>) {
-    // update is not implemented in OpenBw-Tree
-    return;
-  }
-#endif
-#ifdef INDEX_BENCH_BUILD_PTREE
-  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
-    return;
-  }
-#endif
-
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::index->Insert(i, i);
-  }
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyUpdate(i, i + 1);
-  }
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyRead(i, i + 1);
-  }
-}
-
-/*--------------------------------------------------------------------------------------------------
- * Delete operation
- *------------------------------------------------------------------------------------------------*/
-
-TYPED_TEST(IndexWrapperFixture, Delete_UniqueKeys_DeleteFail)
-{
-#ifdef INDEX_BENCH_BUILD_PTREE
-  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
-    return;
-  }
-#endif
-
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyDelete(i, true);
-  }
-}
-
-TYPED_TEST(IndexWrapperFixture, Delete_DuplicateKeys_ReadFailWithDeletedKeys)
-{
-#ifdef INDEX_BENCH_BUILD_PTREE
-  if constexpr (std::is_same_v<TypeParam, PTree_t>) {
-    return;
-  }
-#endif
-
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::index->Write(i, i);
-  }
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyDelete(i);
-  }
-  for (size_t i = 0; i < TestFixture::kExecNum; ++i) {
-    TestFixture::VerifyRead(i, i, true);
-  }
+  TestFixture::PerformWrites(0, kRandAccess);
+  TestFixture::PerformDeletes(kExpectSucceeded, kRandAccess);
+  TestFixture::PerformWrites(1, kRandAccess);
+  TestFixture::PerformReads(1, kExpectSucceeded, kRandAccess);
 }

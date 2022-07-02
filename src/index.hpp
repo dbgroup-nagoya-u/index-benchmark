@@ -31,8 +31,6 @@
  * Target indexes and its pre-definitions
  *####################################################################################*/
 
-#include "bw_tree/bw_tree.hpp"
-#include "bztree/bztree.hpp"
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
 #include "indexes/yakushima_wrapper.hpp"
 #endif

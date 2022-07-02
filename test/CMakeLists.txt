@@ -58,6 +58,7 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     nlohmann_json::nlohmann_json
     cpp_utility::cpp_utility
     cpp_bench::cpp_bench
+    b_tree::b_tree
     bw_tree::bw_tree
     bztree::bztree
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:PkgConfig::JEMALLOC>
@@ -65,6 +66,7 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
   )
   target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
+    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
     $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
@@ -72,10 +74,10 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
   )
 
-  if(${INDEX_BENCH_BUILD_MASSTREE})
-    # target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
-    #   ${INDEX_BENCH_MASSTREE_LIBS}
-    # )
+  if(${INDEX_BENCH_BUILD_MASSTREE} AND ${INDEX_BENCH_TEST_TARGET} MATCHES "index_wrapper.*_test")
+    target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
+      ${INDEX_BENCH_MASSTREE_LIBS}
+    )
   endif()
 
   add_test(NAME ${INDEX_BENCH_TEST_TARGET} COMMAND $<TARGET_FILE:${INDEX_BENCH_TEST_TARGET}>)
@@ -85,5 +87,5 @@ endfunction()
 ADD_INDEX_BENCH_TEST("key_test")
 ADD_INDEX_BENCH_TEST("workload_test")
 ADD_INDEX_BENCH_TEST("operation_engine_test")
-# ADD_INDEX_BENCH_TEST("index_wrapper_test")
+ADD_INDEX_BENCH_TEST("index_wrapper_test")
 # ADD_INDEX_BENCH_TEST("index_wrapper_multi_thread_test")

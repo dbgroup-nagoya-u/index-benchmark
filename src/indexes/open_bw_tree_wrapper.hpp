@@ -124,9 +124,9 @@ class OpenBwTreeWrapper
     ForwardIterator tree_iterator{&index_, begin_key};
     for (; !tree_iterator.IsEnd(); ++tree_iterator) {
       const auto &[key, value] = *tree_iterator;
-      if (key >= end_key) break;
+      if (end_key < key) break;
 
-      sum += value.GetValue();
+      sum += value;
     }
   }
 

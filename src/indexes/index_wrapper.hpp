@@ -20,6 +20,7 @@
 #include <utility>
 
 #include "b_tree/b_tree_pcl.hpp"
+#include "bw_tree/bw_tree.hpp"
 #include "bztree/bztree.hpp"
 #include "common.hpp"
 
