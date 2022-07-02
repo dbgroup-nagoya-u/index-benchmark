@@ -17,8 +17,11 @@
 #ifndef INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP
 #define INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP
 
+#include <atomic>
 #include <fstream>
+#include <random>
 
+#include "operation.hpp"
 #include "workload.hpp"
 
 /**
@@ -42,7 +45,10 @@ class OperationEngine
 
   OperationEngine() = default;
 
-  explicit OperationEngine(const size_t worker_num) : worker_num_{worker_num} {}
+  explicit OperationEngine(const size_t worker_num) : worker_num_{worker_num}
+  {
+    worker_count_.store(0);
+  }
 
   constexpr OperationEngine(const OperationEngine &) = default;
   constexpr OperationEngine(OperationEngine &&) = default;
