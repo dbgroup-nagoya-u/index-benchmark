@@ -19,7 +19,7 @@
 #include "benchmark/benchmarker.hpp"
 #include "cla_validator.hpp"
 #include "index.hpp"
-#include "operation_engine.hpp"
+#include "workload/operation_engine.hpp"
 
 /*######################################################################################
  * Command line arguments
@@ -27,16 +27,12 @@
 
 DEFINE_uint64(num_exec, 10000, "The total number of operations for benchmarking");
 DEFINE_validator(num_exec, &ValidateNonZero);
-DEFINE_uint64(num_key, 10000, "The total number of keys");
-DEFINE_validator(num_key, &ValidateNonZero);
 DEFINE_uint64(num_thread, 1, "The number of worker threads");
 DEFINE_validator(num_thread, &ValidateNonZero);
 DEFINE_uint64(num_init_insert, 10000, "The number of insert operations for initialization");
 DEFINE_uint64(num_init_thread, 1, "The number of worker threads for initialization");
 DEFINE_validator(num_init_thread, &ValidateNonZero);
 DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
-DEFINE_double(skew_parameter, 0, "A skew parameter (based on Zipf's law)");
-DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
@@ -49,9 +45,7 @@ DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency"
 
 template <class Implementation>
 void
-Run(  //
-    const std::string &target_name,
-    const Workload &workload)
+Run(const std::string &target_name)
 {
   using Key = typename Implementation::K;
   using Payload = typename Implementation::V;
@@ -59,6 +53,7 @@ Run(  //
   using OperationEngine_t = OperationEngine<Key, Payload>;
   using Index_t = Index<Key, Payload, Implementation>;
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation_t, OperationEngine_t>;
+  using Json_t = ::nlohmann::json;
 
   const size_t init_size = FLAGS_num_init_insert;
   const size_t init_thread = FLAGS_num_init_thread;
@@ -69,7 +64,16 @@ Run(  //
   index.Construct(entries, init_thread, kUseBulkload);
 
   // create an operation engine
-  OperationEngine_t ops_engine{workload, FLAGS_num_key, FLAGS_skew_parameter};
+  OperationEngine_t ops_engine{FLAGS_num_thread};
+  std::string workload_json{FLAGS_workload};
+  if (ValidateWorkload(workload_json)) {
+    Json_t parsed_json{};
+    std::ifstream workload_in{workload_json};
+    workload_in >> parsed_json;
+    ops_engine.SetWorkloads(parsed_json);
+  }
+
+  // prepare random seed if needed
   auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
   // run benchmark
@@ -109,29 +113,23 @@ ForwardKeyForBench()
     return;
   }
 
-  // load a target workload from a JSON file
-  std::string workload_json{FLAGS_workload};
-  auto &&workload = (ValidateWorkload(workload_json))
-                        ? Workload::CreateWorkloadFromJson(FLAGS_workload)
-                        : Workload{};
-
   // run benchmark for each implementaton
-  if (FLAGS_b_pcl) Run<BTreePCL_t>("BTreePCL", workload);
-  if (FLAGS_bw) Run<BwTreeVarLen_t>("Bw-tree", workload);
-  if (FLAGS_bw_opt) Run<BwTreeFixLen_t>("Optimized Bw-tree", workload);
-  if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode", workload);
-  if (FLAGS_bz_append) Run<BzAppend_t>("BzTree append mode", workload);
+  if (FLAGS_b_pcl) Run<BTreePCL_t>("BTreePCL");
+  if (FLAGS_bw) Run<BwTreeVarLen_t>("Bw-tree");
+  if (FLAGS_bw_opt) Run<BwTreeFixLen_t>("Optimized Bw-tree");
+  if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode");
+  if (FLAGS_bz_append) Run<BzAppend_t>("BzTree append mode");
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  if (FLAGS_yakushima) Run<Yakushima_t>("yakushima", workload);
+  if (FLAGS_yakushima) Run<Yakushima_t>("yakushima");
 #endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) Run<BTreeOLC_t>("B-tree based on OLC", workload);
+  if (FLAGS_b_olc) Run<BTreeOLC_t>("B-tree based on OLC");
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) Run<OpenBw_t>("OpenBw-Tree", workload);
+  if (FLAGS_open_bw) Run<OpenBw_t>("OpenBw-Tree");
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) Run<Mass_t>("Masstree", workload);
+  if (FLAGS_mass) Run<Mass_t>("Masstree");
 #endif
 }
 

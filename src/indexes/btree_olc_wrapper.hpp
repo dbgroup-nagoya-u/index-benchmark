@@ -89,9 +89,7 @@ class BTreeOLCWrapper
       [[maybe_unused]] const Key &begin_key,
       [[maybe_unused]] const size_t scan_range)
   {
-    // this operation is not implemented
-    assert(false);
-    return;
+    throw std::runtime_error{"ERROR: the scan operation is not implemented."};
   }
 
   auto
@@ -108,8 +106,7 @@ class BTreeOLCWrapper
       [[maybe_unused]] const Key &key,
       [[maybe_unused]] const Payload &value)
   {
-    // this operation is not implemented
-    assert(false);
+    throw std::runtime_error{"ERROR: the insert operation is not implemented."};
     return 1;
   }
 
@@ -118,16 +115,14 @@ class BTreeOLCWrapper
       [[maybe_unused]] const Key &key,
       [[maybe_unused]] const Payload &value)
   {
-    // this operation is not implemented
-    assert(false);
+    throw std::runtime_error{"ERROR: the update operation is not implemented."};
     return 1;
   }
 
   auto
   Delete([[maybe_unused]] const Key &key)
   {
-    // this operation is not implemented
-    assert(false);
+    throw std::runtime_error{"ERROR: the delete operation is not implemented."};
     return 1;
   }
 

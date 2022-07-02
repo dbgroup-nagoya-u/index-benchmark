@@ -155,8 +155,7 @@ class OpenBwTreeWrapper
       [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
-    // this operation is not implemented
-    assert(false);
+    throw std::runtime_error{"ERROR: the update operation is not implemented."};
     return 1;
   }
 

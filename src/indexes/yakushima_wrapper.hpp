@@ -137,20 +137,20 @@ class YakushimaWrapper
 
   auto
   Insert(  //
-      const Key &key,
-      const Payload &value)
+      [[maybe_unused]] const Key &key,
+      [[maybe_unused]] const Payload &value)
   {
-    // ues a write API for inserting
-    return Write(key, value);
+    throw std::runtime_error{"ERROR: the insert operation is not implemented."};
+    return 1;
   }
 
   auto
   Update(  //
-      const Key &key,
-      const Payload &value)
+      [[maybe_unused]] const Key &key,
+      [[maybe_unused]] const Payload &value)
   {
-    // ues a write API for updating
-    return Write(key, value);
+    throw std::runtime_error{"ERROR: the update operation is not implemented."};
+    return 1;
   }
 
   auto
@@ -160,6 +160,7 @@ class YakushimaWrapper
     const auto rc = ::yakushima::remove(token_, table_name_, ToStrView(key));
 
     return (rc == status::OK) ? 0 : 1;
+    return 1;
   }
 
  private:

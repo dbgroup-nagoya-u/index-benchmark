@@ -20,10 +20,14 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
+#include <stdexcept>
+#include <string>
 #include <thread>
 #include <vector>
 
 #include "key.hpp"
+#include "nlohmann/json.hpp"
 
 /*######################################################################################
  * Global enum and constants
@@ -33,28 +37,71 @@
  * @brief A list of index read/write operations.
  *
  */
-enum class IndexOperation : uint32_t
-{
+enum IndexOperation {
+  kUndefinedOperation = -1,
   kRead,
   kScan,
   kWrite,
   kInsert,
   kUpdate,
-  kDelete
+  kDelete,
+  kInsertOrUpdate,
+  kDeleteAndInsert,
+  kDeleteOrInsert,
+  kInsertAndDelete,
 };
+
+// mapping for operation strings
+NLOHMANN_JSON_SERIALIZE_ENUM(IndexOperation,
+                             {
+                                 {kUndefinedOperation, nullptr},
+                                 {kRead, "read"},
+                                 {kScan, "scan"},
+                                 {kWrite, "write"},
+                                 {kInsert, "insert"},
+                                 {kUpdate, "update"},
+                                 {kDelete, "delete"},
+                                 {kInsertOrUpdate, "insert or update"},
+                                 {kDeleteAndInsert, "delete and insert"},
+                                 {kDeleteOrInsert, "delete or insert"},
+                                 {kInsertAndDelete, "insert and delete"},
+                             })
+
+enum AccessPattern {
+  kUndefinedAccessPattern = -1,
+  kRandom,
+  kSequential,
+};
+
+// mapping for access pattern strings
+NLOHMANN_JSON_SERIALIZE_ENUM(AccessPattern,
+                             {
+                                 {kUndefinedAccessPattern, nullptr},
+                                 {kRandom, "random"},
+                                 {kSequential, "sequential"},
+                             })
+
+enum Partitioning {
+  kUndefinedPartitioning = -1,
+  kNone,
+  kRange,
+  kStripe,
+};
+
+// mapping for access pattern strings
+NLOHMANN_JSON_SERIALIZE_ENUM(Partitioning,
+                             {
+                                 {kUndefinedPartitioning, nullptr},
+                                 {kNone, "none"},
+                                 {kRange, "range"},
+                                 {kStripe, "stripe"},
+                             })
 
 /**
  * @brief A list of the size of target keys.
  *
  */
-enum KeySize
-{
-  k8 = 8,
-  k16 = 16,
-  k32 = 32,
-  k64 = 64,
-  k128 = 128
-};
+enum KeySize { k8 = 8, k16 = 16, k32 = 32, k64 = 64, k128 = 128 };
 
 constexpr size_t kGCInterval = 100000;
 
@@ -64,9 +111,20 @@ constexpr bool kClosed = true;
 
 constexpr bool kUseBulkload = true;
 
+constexpr double kEpsilon = 0.001;
+
 /*######################################################################################
  * Global utilities
  *####################################################################################*/
+
+constexpr auto
+AlmostEqual(  //
+    const double a,
+    const double b)  //
+    -> bool
+{
+  return fabs(a - b) <= kEpsilon;
+}
 
 /**
  * @brief A class to represent bulkload entries.
