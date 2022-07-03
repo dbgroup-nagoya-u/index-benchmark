@@ -60,7 +60,7 @@ using BTreeOLC_t = void;
  * Global constants
  *####################################################################################*/
 
-constexpr size_t kThreadNum = 8;
+constexpr size_t kThreadNum = INDEX_BENCH_TEST_THREAD_NUM;
 constexpr size_t kExecNum = 1E6;
 constexpr size_t kRandAccessSeed = 20;
 constexpr bool kExpectSucceeded = true;

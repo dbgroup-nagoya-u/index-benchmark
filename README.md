@@ -29,7 +29,7 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 ### Build Options for Unit Testing
 
 - `INDEX_BENCH_BUILD_TESTS`: build unit tests if `ON` (default: `OFF`).
-- `INDEX_BENCH_TEST_THREAD_NUM`: The maximum number of threads to perform unit tests (default `8`).
+- `INDEX_BENCH_TEST_THREAD_NUM`: the maximum number of threads to perform unit tests (default `8`).
 
 ### Build and Run Unit Tests
 

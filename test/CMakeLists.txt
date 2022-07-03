@@ -30,6 +30,9 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
 # Build Unit Tests
 #--------------------------------------------------------------------------------------#
 
+# tuning parameters for testing
+set(INDEX_BENCH_TEST_THREAD_NUM "8" CACHE STRING "the maximum number of threads to perform unit tests.")
+
 # define function to add unit tests in the same format
 function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   add_executable(${INDEX_BENCH_TEST_TARGET}
@@ -66,6 +69,7 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
   )
   target_compile_definitions(${INDEX_BENCH_TEST_TARGET} PRIVATE
+    INDEX_BENCH_TEST_THREAD_NUM=${INDEX_BENCH_TEST_THREAD_NUM}
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
     $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>

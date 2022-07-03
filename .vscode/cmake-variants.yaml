@@ -9,11 +9,12 @@ buildType:
       settings:
         INDEX_BENCH_OVERRIDE_JEMALLOC: OFF
         INDEX_BENCH_OVERRIDE_MIMALLOC: OFF
-        INDEX_BENCH_BUILD_TESTS: ON
         INDEX_BENCH_BUILD_YAKUSHIMA: ON
         INDEX_BENCH_BUILD_BTREE_OLC: ON
         INDEX_BENCH_BUILD_OPEN_BWTREE: OFF
         INDEX_BENCH_BUILD_MASSTREE: ON
+        INDEX_BENCH_BUILD_TESTS: ON
+        INDEX_BENCH_BUILD_TEST_THREAD_NUM: 8
     relWithDebInfo:
       short: RelWithDebInfo
       long: Perform optimizations and include debugging informatin
@@ -21,11 +22,12 @@ buildType:
       settings:
         INDEX_BENCH_OVERRIDE_JEMALLOC: OFF
         INDEX_BENCH_OVERRIDE_MIMALLOC: OFF
-        INDEX_BENCH_BUILD_TESTS: ON
         INDEX_BENCH_BUILD_YAKUSHIMA: ON
         INDEX_BENCH_BUILD_BTREE_OLC: ON
         INDEX_BENCH_BUILD_OPEN_BWTREE: OFF
         INDEX_BENCH_BUILD_MASSTREE: ON
+        INDEX_BENCH_BUILD_TESTS: ON
+        INDEX_BENCH_BUILD_TEST_THREAD_NUM: 8
     release:
       short: Release
       long: Perform optimizations and omit debugging informatin
@@ -33,8 +35,9 @@ buildType:
       settings:
         INDEX_BENCH_OVERRIDE_JEMALLOC: OFF
         INDEX_BENCH_OVERRIDE_MIMALLOC: OFF
-        INDEX_BENCH_BUILD_TESTS: ON
         INDEX_BENCH_BUILD_YAKUSHIMA: ON
         INDEX_BENCH_BUILD_BTREE_OLC: ON
         INDEX_BENCH_BUILD_OPEN_BWTREE: OFF
         INDEX_BENCH_BUILD_MASSTREE: ON
+        INDEX_BENCH_BUILD_TESTS: ON
+        INDEX_BENCH_BUILD_TEST_THREAD_NUM: 8
