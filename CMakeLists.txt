@@ -52,7 +52,6 @@ option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OF
 option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_PTREE "Build PTree as a benchmarking target" OFF)
 
 #--------------------------------------------------------------------------------------#
 # Configurations for target indexes
@@ -163,13 +162,12 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
-    $<$<OR:$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>,$<BOOL:${INDEX_BENCH_BUILD_PTREE}>>:-mcx16>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:-mcx16>
   )
   target_include_directories(${BENCHMARK_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/external"
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:${JEMALLOC_INCLUDE_DIRS}>
-    $<$<BOOL:${INDEX_BENCH_BUILD_PTREE}>:${CMAKE_CURRENT_SOURCE_DIR}/external/PAM/c++/>
   )
   target_link_libraries(${BENCHMARK_TARGET} PRIVATE
     gflags
@@ -191,8 +189,6 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
     $<$<AND:$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>,$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">>:BWTREE_NODEBUG>
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
-    $<$<BOOL:${INDEX_BENCH_BUILD_PTREE}>:INDEX_BENCH_BUILD_PTREE>
-    $<$<BOOL:${INDEX_BENCH_BUILD_PTREE}>:HOMEGROWN>
   )
 
   if(${INDEX_BENCH_BUILD_MASSTREE})

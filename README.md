@@ -25,13 +25,11 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 - `INDEX_BENCH_BUILD_OPEN_BWTREE`: build a benchmarker with OpenBw-Tree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_MASSTREE`: build a benchmarker with Masstree if `ON` (default: `OFF`).
     - Note: when you turn on both `INDEX_BENCH_BUILD_MASSTREE` and `INDEX_BENCH_BUILD_OPEN_BWTREE`, the performance of Masstree decreases (we do not know what caused it).
-- `INDEX_BENCH_BUILD_PTREE`: build a benchmarker with PTree if `ON` (default: `OFF`).
-    - Note: when you measure the performance of indexes other than PTree, turn off this option because PTree reserves threads for parallel writing.
 
 ### Build Options for Unit Testing
 
 - `INDEX_BENCH_BUILD_TESTS`: build unit tests if `ON` (default: `OFF`).
-- `INDEX_BENCH_TEST_THREAD_NUM`: The maximum number of threads to perform unit tests (default `8`).
+- `INDEX_BENCH_TEST_THREAD_NUM`: the maximum number of threads to perform unit tests (default `8`).
 
 ### Build and Run Unit Tests
 

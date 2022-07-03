@@ -31,8 +31,6 @@
  * Target indexes and its pre-definitions
  *####################################################################################*/
 
-#include "bw_tree/bw_tree.hpp"
-#include "bztree/bztree.hpp"
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
 #include "indexes/yakushima_wrapper.hpp"
 #endif
@@ -70,11 +68,6 @@ DEFINE_bool(open_bw, false, "OpenBw-Tree is not built as a benchmark target.");
 DEFINE_bool(mass, false, "Use Masstree as a benchmark target");
 #else
 DEFINE_bool(mass, false, "Massree is not built as a benchmark target. ");
-#endif
-#ifdef INDEX_BENCH_BUILD_PTREE
-DEFINE_bool(p, false, "Use PTree as a benchmark target");
-#else
-DEFINE_bool(p, false, "PTree is not built as a benchmark target.");
 #endif
 
 /*######################################################################################

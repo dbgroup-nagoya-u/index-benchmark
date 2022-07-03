@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <random>
 #include <shared_mutex>
@@ -26,245 +29,434 @@
 #include "index.hpp"
 #include "indexes/index_wrapper.hpp"
 
-/*##################################################################################################
+/*######################################################################################
  * Target index implementations
- *################################################################################################*/
+ *####################################################################################*/
 
-#include "bw_tree/bw_tree.hpp"
-#include "bztree/bztree.hpp"
+using Key_t = Key<k8>;
+using Value_t = uint64_t;
 
-using BwTree_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bw_tree::BwTree>;
-using BzTreeInPlace_t = IndexWrapper<Key, InPlaceVal, ::dbgroup::index::bztree::BzTree>;
+using BTreePCL_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::b_tree::BTreePCL>;
+using BwTree_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bw_tree::BwTreeVarLen>;
+using BwTreeOpt_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bw_tree::BwTreeFixLen>;
+using BzTreeInPace_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bztree::BzTree>;
+using BzTreeAppend_t = IndexWrapper<Key_t, int64_t, ::dbgroup::index::bztree::BzTree>;
+
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+#include "indexes/yakushima_wrapper.hpp"
+using Yakushima_t = YakushimaWrapper<Key_t, Value_t>;
+#else
+using Yakushima_t = void;
+#endif
 
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
 #include "indexes/btree_olc_wrapper.hpp"
-using BTreeOLC_t = BTreeOLCWrapper<Key, InPlaceVal>;
+using BTreeOLC_t = BTreeOLCWrapper<Key_t, Value_t>;
+#else
+using BTreeOLC_t = void;
 #endif
 
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-#include "indexes/open_bw_tree_wrapper.hpp"
-using OpenBwTree_t = OpenBwTreeWrapper<Key, InPlaceVal>;
-#endif
+/*######################################################################################
+ * Global constants
+ *####################################################################################*/
 
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-#include "indexes/masstree_wrapper.hpp"
-using Masstree_t = MasstreeWrapper<Key, InPlaceVal>;
-#endif
+constexpr size_t kThreadNum = INDEX_BENCH_TEST_THREAD_NUM;
+constexpr size_t kExecNum = 1E6;
+constexpr size_t kRandAccessSeed = 20;
+constexpr bool kExpectSucceeded = true;
+constexpr bool kExpectFailed = false;
+constexpr bool kSeqAccess = true;
+constexpr bool kRandAccess = false;
+constexpr bool kRangePart = true;
+constexpr bool kStripePart = false;
+
+/*######################################################################################
+ * Fixture class definition
+ *####################################################################################*/
 
 template <class Index>
 class IndexWrapperFixture : public ::testing::Test
 {
  protected:
-  /*################################################################################################
-   * Internal struct
-   *##############################################################################################*/
-
-  enum WriteType
-  {
-    kWrite,
-    kInsert,
-    kUpdate,
-    kDelete
-  };
-
-  struct Operation {
-    Key key;
-    InPlaceVal payload;
-  };
-
-  /*################################################################################################
-   * Internal constants
-   *##############################################################################################*/
-
-#ifdef INDEX_BENCH_TEST_THREAD_NUM
-  static constexpr size_t kThreadNum = INDEX_BENCH_TEST_THREAD_NUM;
-#else
-  static constexpr size_t kThreadNum = 8;
-#endif
-  static constexpr size_t kExecNum = 1e6;
-  static constexpr size_t kTotalExecNum = kExecNum * kThreadNum;
-  static constexpr size_t kRandomSeed = 10;
-  static constexpr size_t kSuccess = 0;
-
-  /*################################################################################################
-   * Internal member variables
-   *##############################################################################################*/
-
-  // a target index instance
-  std::unique_ptr<Index> index;
-
-  // a uniform random generator
-  std::uniform_int_distribution<size_t> id_dist{0, kTotalExecNum - 1};
-
-  // a lock to stop a main thread
-  std::shared_mutex main_lock;
-
-  // a lock to stop worker threads
-  std::shared_mutex worker_lock;
-
-  /*################################################################################################
+  /*####################################################################################
    * Setup/Teardown
-   *##############################################################################################*/
+   *##################################################################################*/
 
   void
   SetUp() override
   {
-    index = std::make_unique<Index>(kThreadNum);
+    index = std::make_unique<Index>(kThreadNum * 4);
+    is_ready = false;
   }
 
   void
   TearDown() override
   {
+    index = nullptr;
   }
 
-  /*################################################################################################
+  /*####################################################################################
    * Utility functions
-   *##############################################################################################*/
+   *##################################################################################*/
 
   auto
-  PerformWriteOperation(  //
-      const WriteType w_type,
-      const Operation &ops)
+  PrepareKeys(const uint32_t worker_id)  //
+      -> std::vector<Key_t>
   {
-    switch (w_type) {
-      case kInsert:
-        return index->Insert(ops.key, ops.payload);
-      case kUpdate:
-        return index->Update(ops.key, ops.payload);
-      case kDelete:
-        return index->Delete(ops.key);
-      case kWrite:
-        break;
-    }
-    return index->Write(ops.key, ops.payload);
-  }
+    std::vector<Key_t> keys{};
+    {
+      std::shared_lock guard{s_mtx};
 
-  Operation
-  PrepareOperation(  //
-      const WriteType w_type,
-      std::mt19937_64 &rand_engine)
-  {
-    const auto rand_val = id_dist(rand_engine);
+      keys.reserve(kExecNum);
+      for (uint32_t i = 0; i < kExecNum; ++i) {
+        const auto id =
+            (is_range_partition) ? worker_id * kExecNum + i : kThreadNum * i + worker_id;
+        keys.emplace_back(id);
+      }
 
-    switch (w_type) {
-      case kWrite:
-      case kInsert:
-      case kDelete:
-        break;
-      case kUpdate:
-        return Operation{Key{rand_val}, InPlaceVal{rand_val + 1}};
+      if (is_sequential) {
+        std::mt19937_64 rand_engine{kRandAccessSeed};
+        std::shuffle(keys.begin(), keys.end(), rand_engine);
+      }
     }
-    return Operation{Key{rand_val}, InPlaceVal{rand_val}};
+
+    std::unique_lock lock{x_mtx};
+    cond.wait(lock, [this] { return is_ready; });
+
+    return keys;
   }
 
   void
-  WriteRandomKeys(  //
-      const WriteType w_type,
-      const size_t rand_seed)
+  ReadByWorker(  //
+      const uint32_t worker_id,
+      const bool expect_success)
   {
     index->SetUp();
 
-    std::vector<Operation> operations;
-    std::vector<Key> written_keys;
-    operations.reserve(kExecNum);
-    written_keys.reserve(kExecNum);
-
-    {  // create a lock to prevent a main thread
-      const std::shared_lock<std::shared_mutex> guard{main_lock};
-
-      // prepare operations to be executed
-      std::mt19937_64 rand_engine{rand_seed};
-      for (size_t i = 0; i < kExecNum; ++i) {
-        operations.emplace_back(PrepareOperation(w_type, rand_engine));
+    for (const auto &key : PrepareKeys(worker_id)) {
+      const auto &read_val = index->Read(key);
+      if (expect_success) {
+        ASSERT_TRUE(read_val);
+        EXPECT_EQ(read_val.value(), worker_id);
+      } else {
+        EXPECT_FALSE(read_val);
       }
-    }
-
-    {  // wait for a main thread to release a lock
-      const std::shared_lock<std::shared_mutex> lock{worker_lock};
-
-      // perform and gather results
-      for (auto &&ops : operations) {
-        if (PerformWriteOperation(w_type, ops) == kSuccess) {
-          written_keys.emplace_back(ops.key);
-        }
-      }
-    }
-
-    for (auto &&key : written_keys) {
-      VerifyRead(w_type, key);
     }
 
     index->TearDown();
   }
 
   void
-  RunOverMultiThread(const WriteType w_type)
+  WriteByWorker(const uint32_t worker_id)
   {
-    std::vector<std::thread> threads;
+    index->SetUp();
 
-    {  // create a lock to prevent workers from executing
-      const std::unique_lock<std::shared_mutex> guard{worker_lock};
-
-      // run a function over multi-threads with promise
-      std::mt19937_64 rand_engine(kRandomSeed);
-      for (size_t i = 0; i < kThreadNum; ++i) {
-        const auto rand_seed = rand_engine();
-        threads.emplace_back(&IndexWrapperFixture::WriteRandomKeys, this, w_type, rand_seed);
-      }
-
-      // wait for all workers to finish initialization
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      const std::unique_lock<std::shared_mutex> lock{main_lock};
+    for (const auto &key : PrepareKeys(worker_id)) {
+      index->Write(key, worker_id);
     }
 
-    // wait for all the worker threads to finish
-    for (auto &&t : threads) t.join();
+    index->TearDown();
   }
-
-  /*################################################################################################
-   * Functions for verification
-   *##############################################################################################*/
 
   void
-  VerifyRead(  //
-      const WriteType w_type,
-      const Key key)
+  DeleteByWorker(  //
+      const uint32_t worker_id,
+      const bool expect_success)
   {
-    const auto &actual = index->Read(key);
+    index->SetUp();
 
-    switch (w_type) {
-      case kWrite:
-      default:
-        ASSERT_TRUE(actual);
-        EXPECT_EQ(key.GetValue(), actual->GetValue());
-        break;
+    for (const auto &key : PrepareKeys(worker_id)) {
+      const auto rc = index->Delete(key);
+      if (expect_success) {
+        EXPECT_EQ(0, rc);
+      } else {
+        EXPECT_NE(0, rc);
+      }
+    }
+
+    index->TearDown();
+  }
+
+  void
+  PerformReads(const bool expect_success)
+  {
+    std::vector<std::thread> threads{};
+    for (uint32_t i = 0; i < kThreadNum; ++i) {
+      threads.emplace_back(&IndexWrapperFixture::ReadByWorker, this, i, expect_success);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    std::lock_guard guard{s_mtx};
+
+    is_ready = true;
+    cond.notify_all();
+
+    for (auto &&t : threads) {
+      t.join();
     }
   }
+
+  void
+  PerformWrites()
+  {
+    std::vector<std::thread> threads{};
+    for (uint32_t i = 0; i < kThreadNum; ++i) {
+      threads.emplace_back(&IndexWrapperFixture::WriteByWorker, this, i);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    std::lock_guard guard{s_mtx};
+
+    is_ready = true;
+    cond.notify_all();
+
+    for (auto &&t : threads) {
+      t.join();
+    }
+  }
+
+  void
+  PerformDeletes(const bool expect_success)
+  {
+    std::vector<std::thread> threads{};
+    for (uint32_t i = 0; i < kThreadNum; ++i) {
+      threads.emplace_back(&IndexWrapperFixture::DeleteByWorker, this, i, expect_success);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    std::lock_guard guard{s_mtx};
+
+    is_ready = true;
+    cond.notify_all();
+
+    for (auto &&t : threads) {
+      t.join();
+    }
+  }
+
+  void
+  SetParameters(  //
+      const bool access_pattern,
+      const bool partitioning)
+  {
+    is_sequential = access_pattern;
+    is_range_partition = partitioning;
+  }
+
+  /*####################################################################################
+   * Internal member variables
+   *##################################################################################*/
+
+  /// a target index instance.
+  std::unique_ptr<Index> index{nullptr};
+
+  /// access pattern.
+  bool is_sequential{};
+
+  /// partitioning.
+  bool is_range_partition{};
+
+  /// a mutex for notifying worker threads.
+  std::mutex x_mtx{};
+
+  /// a shared mutex for blocking main process.
+  std::shared_mutex s_mtx{};
+
+  /// a flag for indicating ready.
+  bool is_ready{false};
+
+  /// a condition variable for notifying worker threads.
+  std::condition_variable cond{};
 };
 
-/*##################################################################################################
+/*######################################################################################
  * Preparation for typed testing
- *################################################################################################*/
+ *####################################################################################*/
 
 using Indexes = ::testing::Types<  //
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+    Yakushima_t,
+#endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
     BTreeOLC_t,
 #endif
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-    OpenBwTree_t,
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-    Masstree_t,
-#endif
+    // BTreePCL_t,  // too slow
     BwTree_t,
-    BzTreeInPlace_t>;
+    BwTreeOpt_t,
+    BzTreeInPace_t,
+    BzTreeAppend_t  //
+    >;
+
 TYPED_TEST_CASE(IndexWrapperFixture, Indexes);
 
-/*##################################################################################################
+/*######################################################################################
  * Unit test definitions
- *################################################################################################*/
+ *####################################################################################*/
 
-TYPED_TEST(IndexWrapperFixture, Write_MultiThreads_ReadWrittenPayloads)
+TYPED_TEST(IndexWrapperFixture, WriteReadSequentiallyOnRangePartition)
 {
-  TestFixture::RunOverMultiThread(TestFixture::WriteType::kWrite);
+  TestFixture::SetParameters(kSeqAccess, kRangePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformReads(kExpectSucceeded);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteReadSequentiallyOnRangePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kSeqAccess, kRangePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformReads(kExpectFailed);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteSequentiallyOnRangePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kSeqAccess, kRangePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformDeletes(kExpectFailed);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteWriteReadSequentiallyOnRangePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kSeqAccess, kRangePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformWrites();
+  TestFixture::PerformReads(kExpectSucceeded);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteReadSequentiallyOnStripePartition)
+{
+  TestFixture::SetParameters(kSeqAccess, kStripePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformReads(kExpectSucceeded);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteReadSequentiallyOnStripePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kSeqAccess, kStripePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformReads(kExpectFailed);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteSequentiallyOnStripePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kSeqAccess, kStripePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformDeletes(kExpectFailed);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteWriteReadSequentiallyOnStripePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kSeqAccess, kStripePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformWrites();
+  TestFixture::PerformReads(kExpectSucceeded);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteReadRandomlyOnRangePartition)
+{
+  TestFixture::SetParameters(kRandAccess, kRangePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformReads(kExpectSucceeded);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteReadRandomlyOnRangePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kRandAccess, kRangePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformReads(kExpectFailed);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteRandomlyOnRangePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kRandAccess, kRangePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformDeletes(kExpectFailed);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteWriteReadRandomlyOnRangePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kRandAccess, kRangePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformWrites();
+  TestFixture::PerformReads(kExpectSucceeded);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteReadRandomlyOnStripePartition)
+{
+  TestFixture::SetParameters(kRandAccess, kStripePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformReads(kExpectSucceeded);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteReadRandomlyOnStripePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kRandAccess, kStripePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformReads(kExpectFailed);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteRandomlyOnStripePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kRandAccess, kStripePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformDeletes(kExpectFailed);
+}
+
+TYPED_TEST(IndexWrapperFixture, WriteDeleteWriteReadRandomlyOnStripePartition)
+{
+  if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
+
+  TestFixture::SetParameters(kRandAccess, kStripePart);
+
+  TestFixture::PerformWrites();
+  TestFixture::PerformDeletes(kExpectSucceeded);
+  TestFixture::PerformWrites();
+  TestFixture::PerformReads(kExpectSucceeded);
 }

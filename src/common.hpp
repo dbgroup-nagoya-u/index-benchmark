@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <thread>

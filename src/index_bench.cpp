@@ -108,7 +108,7 @@ ForwardKeyForBench()
 #endif
 
   if (!FLAGS_b_pcl && !FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append
-      && !FLAGS_yakushima && !FLAGS_b_olc && !FLAGS_open_bw && !FLAGS_mass && !FLAGS_p) {
+      && !FLAGS_yakushima && !FLAGS_b_olc && !FLAGS_open_bw && !FLAGS_mass) {
     std::cout << "NOTE: benchmark targets are not specified." << std::endl;
     return;
   }
