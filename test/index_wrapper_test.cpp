@@ -37,14 +37,22 @@ using BzTreeAppend_t = IndexWrapper<Key_t, int64_t, ::dbgroup::index::bztree::Bz
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
 #include "indexes/yakushima_wrapper.hpp"
 using Yakushima_t = YakushimaWrapper<Key_t, Value_t>;
+#else
+using Yakushima_t = void;
 #endif
+
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
 #include "indexes/btree_olc_wrapper.hpp"
 using BTreeOLC_t = BTreeOLCWrapper<Key_t, Value_t>;
+#else
+using BTreeOLC_t = void;
 #endif
+
 #ifdef INDEX_BENCH_BUILD_MASSTREE
 #include "indexes/masstree_wrapper.hpp"
 using Masstree_t = MasstreeWrapper<Key_t, Value_t>;
+#else
+using Masstree_t = void;
 #endif
 
 /*######################################################################################
@@ -195,9 +203,7 @@ TYPED_TEST(IndexWrapperFixture, WriteReadSequentially)
 
 TYPED_TEST(IndexWrapperFixture, WriteWriteReadSequentially)
 {
-#ifdef INDEX_BENCH_BUILD_MASSTREE
   if constexpr (std::is_same_v<TypeParam, Masstree_t>) return;
-#endif
 
   TestFixture::PerformWrites(0, kSeqAccess);
   TestFixture::PerformWrites(1, kSeqAccess);
@@ -206,9 +212,7 @@ TYPED_TEST(IndexWrapperFixture, WriteWriteReadSequentially)
 
 TYPED_TEST(IndexWrapperFixture, WriteDeleteReadSequentially)
 {
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
-#endif
 
   TestFixture::PerformWrites(0, kSeqAccess);
   TestFixture::PerformDeletes(kExpectSucceeded, kSeqAccess);
@@ -217,9 +221,7 @@ TYPED_TEST(IndexWrapperFixture, WriteDeleteReadSequentially)
 
 TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteSequentially)
 {
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
-#endif
 
   TestFixture::PerformWrites(0, kSeqAccess);
   TestFixture::PerformDeletes(kExpectSucceeded, kSeqAccess);
@@ -228,12 +230,8 @@ TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteSequentially)
 
 TYPED_TEST(IndexWrapperFixture, WriteDeleteWriteReadSequentially)
 {
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
   if constexpr (std::is_same_v<TypeParam, Masstree_t>) return;
-#endif
 
   TestFixture::PerformWrites(0, kSeqAccess);
   TestFixture::PerformDeletes(kExpectSucceeded, kSeqAccess);
@@ -249,9 +247,7 @@ TYPED_TEST(IndexWrapperFixture, WriteReadRandomly)
 
 TYPED_TEST(IndexWrapperFixture, WriteWriteReadRandomly)
 {
-#ifdef INDEX_BENCH_BUILD_MASSTREE
   if constexpr (std::is_same_v<TypeParam, Masstree_t>) return;
-#endif
 
   TestFixture::PerformWrites(0, kRandAccess);
   TestFixture::PerformWrites(1, kRandAccess);
@@ -260,9 +256,7 @@ TYPED_TEST(IndexWrapperFixture, WriteWriteReadRandomly)
 
 TYPED_TEST(IndexWrapperFixture, WriteDeleteReadRandomly)
 {
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
-#endif
 
   TestFixture::PerformWrites(0, kRandAccess);
   TestFixture::PerformDeletes(kExpectSucceeded, kRandAccess);
@@ -271,9 +265,7 @@ TYPED_TEST(IndexWrapperFixture, WriteDeleteReadRandomly)
 
 TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteRandomly)
 {
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
-#endif
 
   TestFixture::PerformWrites(0, kRandAccess);
   TestFixture::PerformDeletes(kExpectSucceeded, kRandAccess);
@@ -282,12 +274,8 @@ TYPED_TEST(IndexWrapperFixture, WriteDeleteDeleteRandomly)
 
 TYPED_TEST(IndexWrapperFixture, WriteDeleteWriteReadRandomly)
 {
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if constexpr (std::is_same_v<TypeParam, BTreeOLC_t>) return;
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
   if constexpr (std::is_same_v<TypeParam, Masstree_t>) return;
-#endif
 
   TestFixture::PerformWrites(0, kRandAccess);
   TestFixture::PerformDeletes(kExpectSucceeded, kRandAccess);
