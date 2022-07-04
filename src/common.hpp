@@ -106,6 +106,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Partitioning,
  */
 enum KeySize { k8 = 8, k16 = 16, k32 = 32, k64 = 64, k128 = 128 };
 
+constexpr size_t kMaxCoreNum = INDEX_BENCH_MAX_CORES;
+
 constexpr size_t kGCInterval = 100000;
 
 constexpr size_t kGCThreadNum = 8;

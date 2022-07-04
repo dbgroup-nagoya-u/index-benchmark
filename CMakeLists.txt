@@ -21,9 +21,11 @@ set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
 #--------------------------------------------------------------------------------------#
 # Use gflags to manage CLI options
 #--------------------------------------------------------------------------------------#
-
 find_package(gflags REQUIRED)
 
+#--------------------------------------------------------------------------------------#
+# Use Intel oneTBB for parallel sort
+#--------------------------------------------------------------------------------------#
 find_package(TBB REQUIRED)
 
 #--------------------------------------------------------------------------------------#
@@ -67,6 +69,16 @@ set(INDEX_BENCH_MAX_DELTA_RECORD_NUM "" CACHE STRING "The maximum number of delt
 if(NOT "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" STREQUAL "")
   set(BW_TREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
   set(BZTREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
+endif()
+
+include(ProcessorCount)
+ProcessorCount(TMP_PROC_COUNT)
+if(NOT TMP_PROC_COUNT EQUAL 0)
+  set(INDEX_BENCH_MAX_CORES "${TMP_PROC_COUNT}" CACHE STRING "The number of logical cores.")
+  message("The detected # of cores: ${INDEX_BENCH_MAX_CORES}")
+else()
+  set(INDEX_BENCH_MAX_CORES "128" CACHE STRING "The number of logical cores.")
+  message(WARNING "The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORES explicitly.")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -183,6 +195,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
   )
   target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
+    INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
     $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
