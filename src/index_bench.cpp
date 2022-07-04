@@ -29,9 +29,6 @@ DEFINE_uint64(num_exec, 10000, "The total number of operations for benchmarking"
 DEFINE_validator(num_exec, &ValidateNonZero);
 DEFINE_uint64(num_thread, 1, "The number of worker threads");
 DEFINE_validator(num_thread, &ValidateNonZero);
-DEFINE_uint64(num_init_insert, 10000, "The number of insert operations for initialization");
-DEFINE_uint64(num_init_thread, 1, "The number of worker threads for initialization");
-DEFINE_validator(num_init_thread, &ValidateNonZero);
 DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
@@ -55,14 +52,6 @@ Run(const std::string &target_name)
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation_t, OperationEngine_t>;
   using Json_t = ::nlohmann::json;
 
-  const size_t init_size = FLAGS_num_init_insert;
-  const size_t init_thread = FLAGS_num_init_thread;
-
-  // create a target index
-  Index_t index{FLAGS_num_thread + init_thread};
-  const auto &entries = PrepareBulkLoadEntries<Key, Payload>(init_size, init_thread);
-  index.Construct(entries, init_thread, kUseBulkload);
-
   // create an operation engine
   OperationEngine_t ops_engine{FLAGS_num_thread};
   std::string workload_json{FLAGS_workload};
@@ -70,11 +59,18 @@ Run(const std::string &target_name)
     Json_t parsed_json{};
     std::ifstream workload_in{workload_json};
     workload_in >> parsed_json;
-    ops_engine.SetWorkloads(parsed_json);
+    ops_engine.ParseJson(parsed_json);
   }
 
   // prepare random seed if needed
   auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
+
+  // create a target index
+  const auto [init_size, use_all_thread] = ops_engine.GetInitParameters();
+  const auto init_thread = (use_all_thread) ? kMaxCoreNum : 1;
+  Index_t index{FLAGS_num_thread + init_thread};
+  const auto &entries = PrepareBulkLoadEntries<Key, Payload>(init_size, init_thread);
+  index.Construct(entries, init_thread, kUseBulkload);
 
   // run benchmark
   Bench_t bench{index,       ops_engine,       FLAGS_num_exec, FLAGS_num_thread,

@@ -1,0 +1,16 @@
+{
+  "initialization": {
+    "# of keys": 0,
+    "use all cores": false
+  },
+  "workloads": [
+    {
+      "operation ratios": {
+        "write": 1.0
+      },
+      "# of keys": 100000000,
+      "partitioning policy": "range",
+      "access pattern": "sequential"
+    }
+  ]
+}

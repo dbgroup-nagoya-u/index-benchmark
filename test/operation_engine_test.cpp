@@ -64,6 +64,10 @@ class OperationEngineFixture : public ::testing::Test
 TEST_F(OperationEngineFixture, SinglePhaseWorkloadGenerateValidOperations)
 {
   Json_t w_json = R"({
+    "initialization": {
+      "# of keys": 1000000,
+      "use all cores": true
+    },
     "workloads": [
       {
         "operation ratios": {"read": 1.0},
@@ -74,7 +78,11 @@ TEST_F(OperationEngineFixture, SinglePhaseWorkloadGenerateValidOperations)
     ]
   })"_json;
 
-  ops_engine.SetWorkloads(w_json);
+  ops_engine.ParseJson(w_json);
+
+  const auto [init_num, use_all] = ops_engine.GetInitParameters();
+  EXPECT_EQ(init_num, 1000000);
+  EXPECT_TRUE(use_all);
 
   size_t counter = 0;
   for (const auto &ops : ops_engine.Generate(kOpsNumPerThread, kRandomSeed)) {
@@ -93,6 +101,10 @@ TEST_F(OperationEngineFixture, SinglePhaseWorkloadGenerateValidOperations)
 TEST_F(OperationEngineFixture, MultiplePhasesWorkloadGenerateValidOperations)
 {
   Json_t w_json = R"({
+    "initialization": {
+      "# of keys": 1000000,
+      "use all cores": false
+    },
     "workloads": [
       {
         "operation ratios": {"read": 1.0},
@@ -111,7 +123,11 @@ TEST_F(OperationEngineFixture, MultiplePhasesWorkloadGenerateValidOperations)
     ]
   })"_json;
 
-  ops_engine.SetWorkloads(w_json);
+  ops_engine.ParseJson(w_json);
+
+  const auto [init_num, use_all] = ops_engine.GetInitParameters();
+  EXPECT_EQ(init_num, 1000000);
+  EXPECT_FALSE(use_all);
 
   size_t counter = 0;
   for (const auto &ops : ops_engine.Generate(kOpsNumPerThread, kRandomSeed)) {

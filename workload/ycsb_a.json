@@ -1,0 +1,18 @@
+{
+  "initialization": {
+    "# of keys": 100000000,
+    "use all cores": true
+  },
+  "workloads": [
+    {
+      "operation ratios": {
+        "read": 0.5,
+        "write": 0.5
+      },
+      "# of keys": 100000000,
+      "partitioning policy": "none",
+      "access pattern": "random",
+      "skew parameter": 0.0
+    }
+  ]
+}
