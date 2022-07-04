@@ -63,14 +63,30 @@ class OperationEngine
   ~OperationEngine() = default;
 
   /*####################################################################################
+   * Public getters
+   *##################################################################################*/
+
+  auto
+  GetInitParameters() const  //
+      -> std::pair<size_t, bool>
+  {
+    return {init_key_num_, use_all_cores_for_init_};
+  }
+
+  /*####################################################################################
    * Public utilities
    *##################################################################################*/
 
   void
-  SetWorkloads(const Json_t &json)
+  ParseJson(const Json_t &json)
   {
-    workloads_.clear();
+    // set initialization settings
+    const auto &init_json = json.at("initialization");
+    init_key_num_ = init_json.at("# of keys");
+    use_all_cores_for_init_ = init_json.at("use all cores");
 
+    // set workloads
+    workloads_.clear();
     const auto &workloads_json = json.at("workloads");
     double cum_val = 0;
     for (const auto &w_json : workloads_json) {
@@ -116,6 +132,10 @@ class OperationEngine
    *##################################################################################*/
 
   static inline std::atomic_size_t worker_count_{0};
+
+  size_t init_key_num_{0};
+
+  bool use_all_cores_for_init_{true};
 
   size_t worker_num_{1};
 
