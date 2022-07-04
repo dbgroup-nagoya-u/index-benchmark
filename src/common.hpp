@@ -72,6 +72,7 @@ enum AccessPattern {
   kUndefinedAccessPattern = -1,
   kRandom,
   kSequential,
+  kSeqReverse,
 };
 
 // mapping for access pattern strings
@@ -80,6 +81,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(AccessPattern,
                                  {kUndefinedAccessPattern, nullptr},
                                  {kRandom, "random"},
                                  {kSequential, "sequential"},
+                                 {kSeqReverse, "reverse"},
                              })
 
 enum Partitioning {
