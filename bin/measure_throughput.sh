@@ -101,25 +101,17 @@ for IMPL in ${IMPL_CANDIDATES}; do
     continue
   fi
 
-  for INDEX_SIZE in ${SIZE_CANDIDATES}; do
-    for KEY_SIZE in ${KEY_CANDIDATES}; do
-      for SKEW_PARAMETER in ${SKEW_CANDIDATES}; do
-        for THREAD_NUM in ${THREAD_CANDIDATES}; do
-          for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
-            echo -n "${IMPL},${INDEX_SIZE},${KEY_SIZE},${SKEW_PARAMETER},${THREAD_NUM},"
-            ${BENCH_BIN} ${IMPL_ARGS} \
-              --csv \
-              --throughput=t \
-              --workload "${WORKLOAD}" \
-              --key-size ${KEY_SIZE} \
-              --num-key ${INDEX_SIZE} \
-              --skew-parameter ${SKEW_PARAMETER} \
-              --num-init-insert ${INDEX_SIZE} \
-              --num-init-thread ${INIT_THREAD_NUM} \
-              --num-exec ${OPERATION_COUNT} \
-              --num-thread ${THREAD_NUM}
-          done
-        done
+  for KEY_SIZE in ${KEY_CANDIDATES}; do
+    for THREAD_NUM in ${THREAD_CANDIDATES}; do
+      for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
+        echo -n "${IMPL},${KEY_SIZE},${THREAD_NUM},"
+        ${BENCH_BIN} ${IMPL_ARGS} \
+          --csv \
+          --throughput=t \
+          --workload "${WORKLOAD}" \
+          --key-size ${KEY_SIZE} \
+          --num-exec ${OPERATION_COUNT} \
+          --num-thread ${THREAD_NUM}
       done
     done
   done
