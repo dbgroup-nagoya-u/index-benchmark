@@ -170,7 +170,7 @@ TEST_F(WorkloadFixture, WorkloadWithRangePartitionGenerateSeparatedKeys)
     "operation ratios": {"read": 1.0},
     "# of keys": 1000000,
     "partitioning policy": "range",
-    "access pattern": "sequential"
+    "access pattern": "reverse"
   })"_json;
 
   Workload workload{w_json};
@@ -179,11 +179,11 @@ TEST_F(WorkloadFixture, WorkloadWithRangePartitionGenerateSeparatedKeys)
   EXPECT_EQ(workload.GetExecutionRatio(), 1.0);
 
   auto &&operations = PrepareOperationVector();
-  size_t counter = 0;
-  for (size_t i = 0; i < kThreadNum; ++i) {
+  size_t counter = kDefaultKeyNum;
+  for (int64_t i = kThreadNum - 1; i >= 0; --i) {
     workload.AddOperations(operations, kOpsNumPerThread, i, kThreadNum, kRandomSeed);
     for (const auto &ops : operations) {
-      EXPECT_EQ(ops.key, counter++);
+      EXPECT_EQ(ops.key, --counter);
     }
     operations.clear();
   }

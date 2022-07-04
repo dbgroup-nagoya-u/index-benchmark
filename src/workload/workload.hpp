@@ -188,25 +188,28 @@ class Workload
   GetKeyID(  //
       KeyDist &key_dist,
       std::mt19937_64 &rand_engine,
-      const size_t i,
+      const uint32_t i,
       const size_t w_id,
       const size_t w_num) const  //
       -> uint32_t
   {
     const uint32_t key_num = (partition_ == kNone) ? key_num_ : (key_num_ - (w_id + 1)) / w_num + 1;
-    const auto key_id = (access_pattern_ == kSequential)
-                            ? i % key_num
-                            : std::visit([&](auto &dist) { return dist(rand_engine); }, key_dist);
-    if (partition_ == kNone) return key_id;
-
-    if (partition_ == kRange) {
-      const uint32_t pad = key_num_ % w_num;
-      const uint32_t begin_pos = (key_num_ / w_num) * w_id + ((w_id < pad) ? w_id : pad);
-      return begin_pos + key_id;
+    uint32_t key_id{};
+    if (access_pattern_ == kRandom) {
+      key_id = std::visit([&](auto &dist) { return dist(rand_engine); }, key_dist);
+    } else if (access_pattern_ == kSequential) {
+      key_id = i % key_num;
+    } else {  // access_pattern_ == kSeqReverse
+      key_id = key_num - 1 - (i % key_num);
     }
 
-    // partition_ == kStripe
-    return key_id * w_num + w_id;
+    if (partition_ == kNone) return key_id;
+    if (partition_ == kStripe) return key_id * w_num + w_id;
+
+    // partition_ == kRange
+    const uint32_t pad = key_num_ % w_num;
+    const uint32_t begin_pos = (key_num_ / w_num) * w_id + ((w_id < pad) ? w_id : pad);
+    return begin_pos + key_id;
   }
 
   /*####################################################################################
