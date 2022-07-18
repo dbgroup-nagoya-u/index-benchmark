@@ -72,11 +72,15 @@ class IndexWrapper
 
   constexpr auto
   Bulkload(  //
-      [[maybe_unused]] const std::vector<Entry<Key, Payload>> &entries,
+      [[maybe_unused]] const std::vector<std::pair<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {
-    return false;
+    if constexpr (std::is_same_v<Index_t, ::dbgroup::index::b_tree::BTreePCL<K, V>>) {
+      return false;
+    } else {
+      return index_->Bulkload(entries, thread_num) == 0;
+    }
   }
 
   /*####################################################################################

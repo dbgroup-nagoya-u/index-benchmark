@@ -118,7 +118,7 @@ class MasstreeWrapper
 
   constexpr auto
   Bulkload(  //
-      [[maybe_unused]] const std::vector<Entry<Key, Payload>> &entries,
+      [[maybe_unused]] const std::vector<std::pair<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {

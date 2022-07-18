@@ -132,89 +132,6 @@ AlmostEqual(  //
 }
 
 /**
- * @brief A class to represent bulkload entries.
- *
- */
-template <class Key, class Payload>
-struct Entry {
- public:
-  /*####################################################################################
-   * Public constructors and assignment operators
-   *##################################################################################*/
-
-  constexpr Entry() = default;
-
-  constexpr Entry(  //
-      uint32_t k,
-      uint32_t v)
-      : key_{k}, payload_{v}
-  {
-  }
-
-  constexpr Entry(const Entry &obj) = default;
-  constexpr Entry(Entry &&obj) = default;
-
-  constexpr auto operator=(const Entry &obj) -> Entry & = default;
-  constexpr auto operator=(Entry &&obj) -> Entry & = default;
-
-  ~Entry() = default;
-
-  /*####################################################################################
-   * Public utility operators
-   *##################################################################################*/
-
-  constexpr auto
-  operator<(const Entry &obj) const  //
-      -> bool
-  {
-    return GetKey() < obj.GetKey();
-  }
-
-  /*####################################################################################
-   * Public getters
-   *##################################################################################*/
-
-  [[nodiscard]] constexpr auto
-  GetKey() const  //
-      -> Key
-  {
-    return Key{key_};
-  }
-
-  [[nodiscard]] constexpr auto
-  GetPayload() const  //
-      -> Payload
-  {
-    return Payload{payload_};
-  }
-
-  [[nodiscard]] constexpr auto
-  GetKeyLength() const  //
-      -> size_t
-  {
-    return sizeof(Key);
-  }
-
-  [[nodiscard]] constexpr auto
-  GetPayloadLength() const  //
-      -> size_t
-  {
-    return sizeof(Payload);
-  }
-
- private:
-  /*####################################################################################
-   * Internal member variables
-   *##################################################################################*/
-
-  /// a target key of this operation
-  uint32_t key_{};
-
-  /// a target data of this operation
-  uint32_t payload_{};
-};
-
-/**
  * @brief Create key/value entries for bulkloading.
  *
  * @tparam Key
@@ -229,22 +146,20 @@ PrepareBulkLoadEntries(  //
     const size_t size,
     const size_t thread_num,
     const int64_t seed = -1)  //
-    -> std::vector<Entry<Key, Payload>>
+    -> std::vector<std::pair<Key, Payload>>
 {
-  using Entry_t = Entry<Key, Payload>;
-
-  std::vector<Entry_t> entries{size};
+  std::vector<std::pair<Key, Payload>> entries{size};
 
   // a lambda function for creating bulkload entries
   auto f = [&](const size_t begin_pos, const size_t n, const size_t thread_id) {
     const size_t end_pos = begin_pos + n;
     if (seed < 0) {
       for (uint32_t i = begin_pos; i < end_pos; ++i) {
-        entries.at(i) = Entry_t{i, i};
+        entries.at(i) = {Key{i}, Payload{i}};
       }
     } else {
       for (uint32_t i = begin_pos, k = thread_id; i < end_pos; ++i, k += thread_num) {
-        entries.at(i) = Entry_t{k, k};
+        entries.at(i) = {Key{k}, Payload{k}};
       }
       auto &&begin_it = std::next(entries.begin(), begin_pos);
       auto &&end_it = std::next(begin_it, n);
@@ -253,7 +168,7 @@ PrepareBulkLoadEntries(  //
   };
 
   // prepare bulkload entries
-  std::vector<std::thread> threads;
+  std::vector<std::thread> threads{};
   size_t begin_pos = 0;
   for (size_t i = 0; i < thread_num; ++i) {
     const size_t n = (size + ((thread_num - 1) - i)) / thread_num;

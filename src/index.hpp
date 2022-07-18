@@ -87,8 +87,7 @@ class Index
    *##################################################################################*/
 
   using Operation_t = Operation<Key, Payload>;
-  using Entry_t = Entry<Key, Payload>;
-  using ConstIter_t = typename std::vector<Entry_t>::const_iterator;
+  using ConstIter_t = typename std::vector<std::pair<Key, Payload>>::const_iterator;
 
  public:
   /*####################################################################################
@@ -124,7 +123,7 @@ class Index
 
   void
   Construct(  //
-      const std::vector<Entry_t> &entries,
+      const std::vector<std::pair<Key, Payload>> &entries,
       const size_t thread_num,
       const bool use_bulkload)
   {
@@ -136,7 +135,8 @@ class Index
       // lambda function to insert key-value pairs in a certain thread
       index_->SetUp();
       for (; iter != end_it; ++iter) {
-        index_->Write(iter->GetKey(), iter->GetPayload());
+        const auto &[key, payload] = *iter;
+        index_->Write(key, payload);
       }
       index_->TearDown();
     };

@@ -65,7 +65,6 @@ Run(const std::string &target_name)
   using Key = typename Implementation::K;
   using Payload = typename Implementation::V;
   using Index_t = Index<Key, Payload, Implementation>;
-  using Entry_t = Entry<Key, Payload>;
 
   Log("*** START " + target_name + " ***");
 
@@ -75,7 +74,7 @@ Run(const std::string &target_name)
 
   // create a container of bulkload entries
   Log("...Prepare bulkload entries for benchmarking.");
-  std::vector<Entry_t> entries;
+  std::vector<std::pair<Key, Payload>> entries;
 
   // shuffle entries if needed
   if (FLAGS_use_shuffled_entries) {
