@@ -140,7 +140,7 @@ ForwardKeyForBench()
   using BwTreeFixLen_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeFixLen>;
   using BzInPlace_t = IndexWrapper<Key, Payload, ::dbgroup::index::bztree::BzTree>;
   using BzAppend_t = IndexWrapper<Key, int64_t, ::dbgroup::index::bztree::BzTree>;
-  using BTreePCL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePCL>;
+  using BTreePML_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePML>;
 
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
   using Yakushima_t = YakushimaWrapper<Key, Payload>;
@@ -155,14 +155,14 @@ ForwardKeyForBench()
   using Mass_t = MasstreeWrapper<Key, Payload>;
 #endif
 
-  if (!FLAGS_b_pcl && !FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append
+  if (!FLAGS_b_pml && !FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append
       && !FLAGS_yakushima && !FLAGS_b_olc && !FLAGS_open_bw && !FLAGS_mass) {
     std::cout << "NOTE: benchmark targets are not specified." << std::endl;
     return;
   }
 
   // run benchmark for each implementaton
-  if (FLAGS_b_pcl) Run<BTreePCL_t>("BTreePCL");
+  if (FLAGS_b_pml) Run<BTreePML_t>("BTreePML");
   if (FLAGS_bw) Run<BwTreeVarLen_t>("Bw-tree");
   if (FLAGS_bw_opt) Run<BwTreeFixLen_t>("Optimized Bw-tree");
   if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode");

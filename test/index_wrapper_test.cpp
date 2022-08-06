@@ -25,10 +25,14 @@
  * Target index implementations
  *####################################################################################*/
 
+#include "b_tree/b_tree.hpp"
+#include "bw_tree/bw_tree.hpp"
+#include "bztree/bztree.hpp"
+
 using Key_t = Key<k8>;
 using Value_t = uint64_t;
 
-using BTreePCL_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::b_tree::BTreePCL>;
+using BTreePML_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::b_tree::BTreePML>;
 using BwTree_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bw_tree::BwTreeVarLen>;
 using BwTreeOpt_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bw_tree::BwTreeFixLen>;
 using BzTreeInPace_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bztree::BzTree>;
@@ -182,7 +186,7 @@ using Indexes = ::testing::Types<  //
 #ifdef INDEX_BENCH_BUILD_MASSTREE
     Masstree_t,
 #endif
-    BTreePCL_t,
+    BTreePML_t,
     BwTree_t,
     BwTreeOpt_t,
     BzTreeInPace_t,
