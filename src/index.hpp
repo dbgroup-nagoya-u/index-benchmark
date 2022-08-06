@@ -31,6 +31,10 @@
  * Target indexes and its pre-definitions
  *####################################################################################*/
 
+#include "b_tree/b_tree.hpp"
+#include "bw_tree/bw_tree.hpp"
+#include "bztree/bztree.hpp"
+
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
 #include "indexes/yakushima_wrapper.hpp"
 #endif
@@ -44,7 +48,10 @@
 #include "indexes/masstree_wrapper.hpp"
 #endif
 
-DEFINE_bool(b_pcl, false, "Use BTreePCL with variable-length data as a benchmark target");
+DEFINE_bool(b_pml, false, "Use BTreePML with variable-length data as a benchmark target");
+DEFINE_bool(b_pml_opt, false, "Use BTreePML with fixed-length data as a benchmark target");
+DEFINE_bool(b_psl, false, "Use BTreePSL with variable-length data as a benchmark target");
+DEFINE_bool(b_psl_opt, false, "Use BTreePSL with fixed-length data as a benchmark target");
 DEFINE_bool(bw, false, "Use Bw-tree with variable-length data as a benchmark target");
 DEFINE_bool(bw_opt, false, "Use Bw-tree with fixed-length data as a benchmark target");
 DEFINE_bool(bz_in_place, false, "Use BzTree with in-place based update as a benchmark target");

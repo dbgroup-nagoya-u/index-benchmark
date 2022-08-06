@@ -19,9 +19,6 @@
 
 #include <utility>
 
-#include "b_tree/b_tree_pcl.hpp"
-#include "bw_tree/bw_tree.hpp"
-#include "bztree/bztree.hpp"
 #include "common.hpp"
 
 template <class Key, class Payload, template <class K, class V> class Index>
@@ -47,11 +44,7 @@ class IndexWrapper
 
   explicit IndexWrapper([[maybe_unused]] const size_t worker_num)
   {
-    if constexpr (std::is_same_v<Index_t, ::dbgroup::index::b_tree::BTreePCL<K, V>>) {
-      index_ = std::make_unique<Index_t>();
-    } else {
-      index_ = std::make_unique<Index_t>(kGCInterval, kGCThreadNum);
-    }
+    index_ = std::make_unique<Index_t>(kGCInterval, kGCThreadNum);
   }
 
   ~IndexWrapper() = default;
@@ -76,11 +69,7 @@ class IndexWrapper
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {
-    if constexpr (std::is_same_v<Index_t, ::dbgroup::index::b_tree::BTreePCL<K, V>>) {
-      return false;
-    } else {
-      return index_->Bulkload(entries, thread_num) == 0;
-    }
+    return index_->Bulkload(entries, thread_num) == 0;
   }
 
   /*####################################################################################

@@ -84,11 +84,14 @@ ForwardKeyForBench()
 {
   using Payload = uint64_t;
 
-  using BwTreeVarLen_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeVarLen>;
-  using BwTreeFixLen_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeFixLen>;
+  using BwTree_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeVarLen>;
+  using BwTreeOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeFixLen>;
   using BzInPlace_t = IndexWrapper<Key, Payload, ::dbgroup::index::bztree::BzTree>;
   using BzAppend_t = IndexWrapper<Key, int64_t, ::dbgroup::index::bztree::BzTree>;
-  using BTreePCL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePCL>;
+  using BTreePML_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePMLVarLen>;
+  using BTreePMLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePMLFixLen>;
+  using BTreePSL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLVarLen>;
+  using BTreePSLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLFixLen>;
 
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
   using Yakushima_t = YakushimaWrapper<Key, Payload>;
@@ -103,16 +106,20 @@ ForwardKeyForBench()
   using Mass_t = MasstreeWrapper<Key, Payload>;
 #endif
 
-  if (!FLAGS_b_pcl && !FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append
-      && !FLAGS_yakushima && !FLAGS_b_olc && !FLAGS_open_bw && !FLAGS_mass) {
+  if (!FLAGS_b_pml && !FLAGS_b_pml_opt && !FLAGS_b_psl && !FLAGS_b_psl_opt && !FLAGS_bw
+      && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_yakushima && !FLAGS_b_olc
+      && !FLAGS_open_bw && !FLAGS_mass) {
     std::cout << "NOTE: benchmark targets are not specified." << std::endl;
     return;
   }
 
   // run benchmark for each implementaton
-  if (FLAGS_b_pcl) Run<BTreePCL_t>("BTreePCL");
-  if (FLAGS_bw) Run<BwTreeVarLen_t>("Bw-tree");
-  if (FLAGS_bw_opt) Run<BwTreeFixLen_t>("Optimized Bw-tree");
+  if (FLAGS_b_pml) Run<BTreePML_t>("B+tree based on PML");
+  if (FLAGS_b_pml_opt) Run<BTreePMLOpt_t>("Optimized B+tree based on PML");
+  if (FLAGS_b_psl) Run<BTreePSL_t>("B+tree based on PSL");
+  if (FLAGS_b_psl_opt) Run<BTreePSLOpt_t>("Optimized B+tree based on PSL");
+  if (FLAGS_bw) Run<BwTree_t>("Bw-tree");
+  if (FLAGS_bw_opt) Run<BwTreeOpt_t>("Optimized Bw-tree");
   if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode");
   if (FLAGS_bz_append) Run<BzAppend_t>("BzTree append mode");
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA

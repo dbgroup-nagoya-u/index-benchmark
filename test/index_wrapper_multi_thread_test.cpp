@@ -36,7 +36,7 @@
 using Key_t = Key<k8>;
 using Value_t = uint64_t;
 
-using BTreePCL_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::b_tree::BTreePCL>;
+using BTreePML_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::b_tree::BTreePML>;
 using BwTree_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bw_tree::BwTreeVarLen>;
 using BwTreeOpt_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bw_tree::BwTreeFixLen>;
 using BzTreeInPace_t = IndexWrapper<Key_t, Value_t, ::dbgroup::index::bztree::BzTree>;
@@ -280,7 +280,7 @@ using Indexes = ::testing::Types<  //
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
     BTreeOLC_t,
 #endif
-    // BTreePCL_t,  // too slow
+    // BTreePML_t,  // too slow
     BwTree_t,
     BwTreeOpt_t,
     BzTreeInPace_t,
