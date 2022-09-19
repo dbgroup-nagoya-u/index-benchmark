@@ -52,6 +52,10 @@ DEFINE_bool(b_pml, false, "Use BTreePML with variable-length data as a benchmark
 DEFINE_bool(b_pml_opt, false, "Use BTreePML with fixed-length data as a benchmark target");
 DEFINE_bool(b_psl, false, "Use BTreePSL with variable-length data as a benchmark target");
 DEFINE_bool(b_psl_opt, false, "Use BTreePSL with fixed-length data as a benchmark target");
+DEFINE_bool(b_oml, false, "Use BTreeOML with variable-length data as a benchmark target");
+DEFINE_bool(b_oml_opt, false, "Use BTreeOML with fixed-length data as a benchmark target");
+DEFINE_bool(b_osl, false, "Use BTreeOSL with variable-length data as a benchmark target");
+DEFINE_bool(b_osl_opt, false, "Use BTreeOSL with fixed-length data as a benchmark target");
 DEFINE_bool(bw, false, "Use Bw-tree with variable-length data as a benchmark target");
 DEFINE_bool(bw_opt, false, "Use Bw-tree with fixed-length data as a benchmark target");
 DEFINE_bool(bz_in_place, false, "Use BzTree with in-place based update as a benchmark target");

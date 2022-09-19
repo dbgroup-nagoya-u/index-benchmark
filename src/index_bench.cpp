@@ -92,6 +92,10 @@ ForwardKeyForBench()
   using BTreePMLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePMLFixLen>;
   using BTreePSL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLVarLen>;
   using BTreePSLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLFixLen>;
+  using BTreeOML_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOMLVarLen>;
+  using BTreeOMLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOMLFixLen>;
+  using BTreeOSL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOSLVarLen>;
+  using BTreeOSLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOSLFixLen>;
 
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
   using Yakushima_t = YakushimaWrapper<Key, Payload>;
@@ -106,8 +110,9 @@ ForwardKeyForBench()
   using Mass_t = MasstreeWrapper<Key, Payload>;
 #endif
 
-  if (!FLAGS_b_pml && !FLAGS_b_pml_opt && !FLAGS_b_psl && !FLAGS_b_psl_opt && !FLAGS_bw
-      && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_yakushima && !FLAGS_b_olc
+  if (!FLAGS_b_pml && !FLAGS_b_pml_opt && !FLAGS_b_psl && !FLAGS_b_psl_opt && !FLAGS_b_oml
+      && !FLAGS_b_oml_opt && !FLAGS_b_osl && !FLAGS_b_osl_opt && !FLAGS_bw && !FLAGS_bw_opt
+      && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_yakushima && !FLAGS_b_olc
       && !FLAGS_open_bw && !FLAGS_mass) {
     std::cout << "NOTE: benchmark targets are not specified." << std::endl;
     return;
@@ -118,6 +123,10 @@ ForwardKeyForBench()
   if (FLAGS_b_pml_opt) Run<BTreePMLOpt_t>("Optimized B+tree based on PML");
   if (FLAGS_b_psl) Run<BTreePSL_t>("B+tree based on PSL");
   if (FLAGS_b_psl_opt) Run<BTreePSLOpt_t>("Optimized B+tree based on PSL");
+  if (FLAGS_b_oml) Run<BTreeOML_t>("B+tree based on OML");
+  if (FLAGS_b_oml_opt) Run<BTreeOMLOpt_t>("Optimized B+tree based on OML");
+  if (FLAGS_b_osl) Run<BTreeOSL_t>("B+tree based on OSL");
+  if (FLAGS_b_osl_opt) Run<BTreeOSLOpt_t>("Optimized B+tree based on OSL");
   if (FLAGS_bw) Run<BwTree_t>("Bw-tree");
   if (FLAGS_bw_opt) Run<BwTreeOpt_t>("Optimized Bw-tree");
   if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode");
