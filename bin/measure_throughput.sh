@@ -89,6 +89,22 @@ for IMPL in ${IMPL_CANDIDATES}; do
     IMPL_ARGS="--bz-in-place=t"
   elif [ ${IMPL} == 3 ]; then
     IMPL_ARGS="--bz-append=t"
+  elif [ ${IMPL} == 4 ]; then
+    IMPL_ARGS="--b-pml=t"
+  elif [ ${IMPL} == 5 ]; then
+    IMPL_ARGS="--b-pml-opt=t"
+  elif [ ${IMPL} == 6 ]; then
+    IMPL_ARGS="--b-psl=t"
+  elif [ ${IMPL} == 7 ]; then
+    IMPL_ARGS="--b-psl-opt=t"
+  elif [ ${IMPL} == 8 ]; then
+    IMPL_ARGS="--b-oml=t"
+  elif [ ${IMPL} == 9 ]; then
+    IMPL_ARGS="--b-oml-opt=t"
+  elif [ ${IMPL} == 10 ]; then
+    IMPL_ARGS="--b-osl=t"
+  elif [ ${IMPL} == 11 ]; then
+    IMPL_ARGS="--b-osl-opt=t"
   elif [ ${IMPL} == 100 ]; then
     IMPL_ARGS="--b-olc=t"
   elif [ ${IMPL} == 101 ]; then
