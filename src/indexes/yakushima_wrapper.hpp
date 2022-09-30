@@ -123,6 +123,39 @@ class YakushimaWrapper
     }
   }
 
+  void
+  FullScan()
+  {
+    constexpr auto kScanSize = 1024;
+
+    Key begin_key{0};
+    Key end_key{kScanSize};
+    size_t sum{0};
+    std::vector<std::tuple<std::string, Payload *, size_t>> tuples{};
+    tuples.reserve(kScanSize);
+
+    ::yakushima::scan(table_name_,                                                //
+                      ToStrView(begin_key), ::yakushima::scan_endpoint::INF,      //
+                      ToStrView(end_key), ::yakushima::scan_endpoint::INCLUSIVE,  //
+                      tuples);
+
+    while (!tuples.empty()) {
+      // summarize scan results
+      for (const auto &tuple : tuples) {
+        sum += *(std::get<1>(tuple));
+      }
+      tuples.clear();
+
+      begin_key = std::move(end_key);
+      end_key = begin_key + kScanSize;
+
+      ::yakushima::scan(table_name_,                                                  //
+                        ToStrView(begin_key), ::yakushima::scan_endpoint::EXCLUSIVE,  //
+                        ToStrView(end_key), ::yakushima::scan_endpoint::INCLUSIVE,    //
+                        tuples);
+    }
+  }
+
   auto
   Write(  //
       const Key &key,
@@ -174,6 +207,14 @@ class YakushimaWrapper
       -> std::string_view
   {
     return std::string_view{reinterpret_cast<const char *>(&data), sizeof(T)};
+  }
+
+  template <class T>
+  static constexpr auto
+  ToKey(const std::string_view &data)  //
+      -> T
+  {
+    return *(reinterpret_cast<const T *>(data.data()));
   }
 
   /*####################################################################################

@@ -97,6 +97,15 @@ class IndexWrapper
     }
   }
 
+  void
+  FullScan()
+  {
+    size_t sum{0};
+    for (auto &&iter = index_->Scan(); iter.HasNext(); ++iter) {
+      sum += iter.GetPayload();
+    }
+  }
+
   auto
   Write(  //
       const Key &key,
