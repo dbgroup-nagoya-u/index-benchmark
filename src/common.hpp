@@ -42,6 +42,7 @@ enum IndexOperation {
   kUndefinedOperation = -1,
   kRead,
   kScan,
+  kFullScan,
   kWrite,
   kInsert,
   kUpdate,
@@ -58,6 +59,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(IndexOperation,
                                  {kUndefinedOperation, nullptr},
                                  {kRead, "read"},
                                  {kScan, "scan"},
+                                 {kFullScan, "full scan"},
                                  {kWrite, "write"},
                                  {kInsert, "insert"},
                                  {kUpdate, "update"},
@@ -104,7 +106,13 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Partitioning,
  * @brief A list of the size of target keys.
  *
  */
-enum KeySize { k8 = 8, k16 = 16, k32 = 32, k64 = 64, k128 = 128 };
+enum KeySize {
+  k8 = 8,
+  k16 = 16,
+  k32 = 32,
+  k64 = 64,
+  k128 = 128,
+};
 
 constexpr size_t kMaxCoreNum = INDEX_BENCH_MAX_CORES;
 

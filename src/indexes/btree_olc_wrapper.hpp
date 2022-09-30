@@ -92,6 +92,12 @@ class BTreeOLCWrapper
     throw std::runtime_error{"ERROR: the scan operation is not implemented."};
   }
 
+  void
+  FullScan()
+  {
+    throw std::runtime_error{"ERROR: the scan operation is not implemented."};
+  }
+
   auto
   Write(  //
       const Key &key,

@@ -177,6 +177,9 @@ class Index
       case kScan:
         index_->Scan(ops.GetKey(), ops.GetPayload());
         break;
+      case kFullScan:
+        index_->FullScan();
+        break;
       case kWrite:
         index_->Write(ops.GetKey(), ops.GetPayload());
         break;
