@@ -66,7 +66,8 @@ TEST_F(OperationEngineFixture, SinglePhaseWorkloadGenerateValidOperations)
   Json_t w_json = R"({
     "initialization": {
       "# of keys": 1000000,
-      "use all cores": true
+      "use all cores": true,
+      "use bulkload if possible": true
     },
     "workloads": [
       {
@@ -80,9 +81,10 @@ TEST_F(OperationEngineFixture, SinglePhaseWorkloadGenerateValidOperations)
 
   ops_engine.ParseJson(w_json);
 
-  const auto [init_num, use_all] = ops_engine.GetInitParameters();
+  const auto [init_num, use_all, use_bulk] = ops_engine.GetInitParameters();
   EXPECT_EQ(init_num, 1000000);
   EXPECT_TRUE(use_all);
+  EXPECT_TRUE(use_bulk);
 
   size_t counter = 0;
   for (const auto &ops : ops_engine.Generate(kOpsNumPerThread, kRandomSeed)) {
@@ -103,7 +105,8 @@ TEST_F(OperationEngineFixture, MultiplePhasesWorkloadGenerateValidOperations)
   Json_t w_json = R"({
     "initialization": {
       "# of keys": 1000000,
-      "use all cores": false
+      "use all cores": false,
+      "use bulkload if possible": false
     },
     "workloads": [
       {
@@ -125,9 +128,10 @@ TEST_F(OperationEngineFixture, MultiplePhasesWorkloadGenerateValidOperations)
 
   ops_engine.ParseJson(w_json);
 
-  const auto [init_num, use_all] = ops_engine.GetInitParameters();
+  const auto [init_num, use_all, use_bulk] = ops_engine.GetInitParameters();
   EXPECT_EQ(init_num, 1000000);
   EXPECT_FALSE(use_all);
+  EXPECT_FALSE(use_bulk);
 
   size_t counter = 0;
   for (const auto &ops : ops_engine.Generate(kOpsNumPerThread, kRandomSeed)) {

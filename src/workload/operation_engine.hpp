@@ -20,6 +20,7 @@
 #include <atomic>
 #include <fstream>
 #include <random>
+#include <tuple>
 
 #include "operation.hpp"
 #include "workload.hpp"
@@ -68,9 +69,9 @@ class OperationEngine
 
   auto
   GetInitParameters() const  //
-      -> std::pair<size_t, bool>
+      -> std::tuple<size_t, bool, bool>
   {
-    return {init_key_num_, use_all_cores_for_init_};
+    return {init_key_num_, use_all_cores_for_init_, use_bulkload_if_possible_};
   }
 
   /*####################################################################################
@@ -83,7 +84,8 @@ class OperationEngine
     // set initialization settings
     const auto &init_json = json.at("initialization");
     init_key_num_ = init_json.at("# of keys");
-    use_all_cores_for_init_ = init_json.at("use all cores");
+    use_all_cores_for_init_ = init_json.value("use all cores", true);
+    use_bulkload_if_possible_ = init_json.value("use bulkload if possible", true);
 
     // set workloads
     workloads_.clear();
@@ -136,6 +138,8 @@ class OperationEngine
   size_t init_key_num_{0};
 
   bool use_all_cores_for_init_{true};
+
+  bool use_bulkload_if_possible_{true};
 
   size_t worker_num_{1};
 

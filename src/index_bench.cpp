@@ -42,7 +42,9 @@ DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency"
 
 template <class Implementation>
 void
-Run(const std::string &target_name)
+Run(  //
+    const std::string &target_name,
+    const bool force_use_bulkload = false)
 {
   using Key = typename Implementation::K;
   using Payload = typename Implementation::V;
@@ -66,11 +68,14 @@ Run(const std::string &target_name)
   auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
   // create a target index
-  const auto [init_size, use_all_thread] = ops_engine.GetInitParameters();
+  auto [init_size, use_all_thread, use_bulkload] = ops_engine.GetInitParameters();
+  if (force_use_bulkload) {
+    use_bulkload = true;
+  }
   const auto init_thread = (use_all_thread) ? kMaxCoreNum : 1;
   Index_t index{FLAGS_num_thread + init_thread};
   const auto &entries = PrepareBulkLoadEntries<Key, Payload>(init_size, init_thread);
-  index.Construct(entries, init_thread, kUseBulkload);
+  index.Construct(entries, init_thread, use_bulkload);
 
   // run benchmark
   Bench_t bench{index,       ops_engine,       FLAGS_num_exec, FLAGS_num_thread,
@@ -119,9 +124,9 @@ ForwardKeyForBench()
   }
 
   // run benchmark for each implementaton
-  if (FLAGS_b_pml) Run<BTreePML_t>("B+tree based on PML");
+  if (FLAGS_b_pml) Run<BTreePML_t>("B+tree based on PML", kUseBulkload);
   if (FLAGS_b_pml_opt) Run<BTreePMLOpt_t>("Optimized B+tree based on PML");
-  if (FLAGS_b_psl) Run<BTreePSL_t>("B+tree based on PSL");
+  if (FLAGS_b_psl) Run<BTreePSL_t>("B+tree based on PSL", kUseBulkload);
   if (FLAGS_b_psl_opt) Run<BTreePSLOpt_t>("Optimized B+tree based on PSL");
   if (FLAGS_b_oml) Run<BTreeOML_t>("B+tree based on OML");
   if (FLAGS_b_oml_opt) Run<BTreeOMLOpt_t>("Optimized B+tree based on OML");
