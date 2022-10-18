@@ -46,10 +46,11 @@ DEFINE_validator(workload, &ValidateWorkload);
  *####################################################################################*/
 
 template <class Implementation>
-void
+auto
 Run(  //
     const std::string &target_name,
-    const bool force_use_bulkload = false)
+    const bool force_use_bulkload = false)  //
+    -> bool
 {
   using Key = typename Implementation::K;
   using Payload = typename Implementation::V;
@@ -83,6 +84,8 @@ Run(  //
   Bench_t bench{index,       target_name,      ops_engine, FLAGS_num_exec, FLAGS_num_thread,
                 random_seed, FLAGS_throughput, FLAGS_csv,  FLAGS_timeout};
   bench.Run();
+
+  return true;
 }
 
 template <class Key>
@@ -117,39 +120,36 @@ ForwardKeyForBench()
   using Mass_t = MasstreeWrapper<Key, Payload>;
 #endif
 
-  if (!FLAGS_b_pml && !FLAGS_b_pml_opt && !FLAGS_b_psl && !FLAGS_b_psl_opt && !FLAGS_b_oml
-      && !FLAGS_b_oml_opt && !FLAGS_b_osl && !FLAGS_b_osl_opt && !FLAGS_bw && !FLAGS_bw_opt
-      && !FLAGS_bz_in_place && !FLAGS_bz_append && !FLAGS_yakushima && !FLAGS_b_olc
-      && !FLAGS_open_bw && !FLAGS_mass) {
-    std::cout << "NOTE: benchmark targets are not specified." << std::endl;
-    return;
-  }
-
   // run benchmark for each implementaton
-  if (FLAGS_b_pml) Run<BTreePML_t>("B+tree based on PML", kUseBulkload);
-  if (FLAGS_b_pml_opt) Run<BTreePMLOpt_t>("Optimized B+tree based on PML");
-  if (FLAGS_b_psl) Run<BTreePSL_t>("B+tree based on PSL", kUseBulkload);
-  if (FLAGS_b_psl_opt) Run<BTreePSLOpt_t>("Optimized B+tree based on PSL");
-  if (FLAGS_b_oml) Run<BTreeOML_t>("B+tree based on OML");
-  if (FLAGS_b_oml_opt) Run<BTreeOMLOpt_t>("Optimized B+tree based on OML");
-  if (FLAGS_b_osl) Run<BTreeOSL_t>("B+tree based on OSL");
-  if (FLAGS_b_osl_opt) Run<BTreeOSLOpt_t>("Optimized B+tree based on OSL");
-  if (FLAGS_bw) Run<BwTree_t>("Bw-tree");
-  if (FLAGS_bw_opt) Run<BwTreeOpt_t>("Optimized Bw-tree");
-  if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode");
-  if (FLAGS_bz_append) Run<BzAppend_t>("BzTree append mode");
+  auto run_any = false;
+  if (FLAGS_b_pml) run_any = Run<BTreePML_t>("B+tree based on PML", kUseBulkload);
+  if (FLAGS_b_pml_opt) run_any = Run<BTreePMLOpt_t>("Optimized B+tree based on PML");
+  if (FLAGS_b_psl) run_any = Run<BTreePSL_t>("B+tree based on PSL", kUseBulkload);
+  if (FLAGS_b_psl_opt) run_any = Run<BTreePSLOpt_t>("Optimized B+tree based on PSL");
+  if (FLAGS_b_oml) run_any = Run<BTreeOML_t>("B+tree based on OML");
+  if (FLAGS_b_oml_opt) run_any = Run<BTreeOMLOpt_t>("Optimized B+tree based on OML");
+  if (FLAGS_b_osl) run_any = Run<BTreeOSL_t>("B+tree based on OSL");
+  if (FLAGS_b_osl_opt) run_any = Run<BTreeOSLOpt_t>("Optimized B+tree based on OSL");
+  if (FLAGS_bw) run_any = Run<BwTree_t>("Bw-tree");
+  if (FLAGS_bw_opt) run_any = Run<BwTreeOpt_t>("Optimized Bw-tree");
+  if (FLAGS_bz_in_place) run_any = Run<BzInPlace_t>("BzTree in-place mode");
+  if (FLAGS_bz_append) run_any = Run<BzAppend_t>("BzTree append mode");
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  if (FLAGS_yakushima) Run<Yakushima_t>("yakushima");
+  if (FLAGS_yakushima) run_any = Run<Yakushima_t>("yakushima");
 #endif
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) Run<BTreeOLC_t>("B-tree based on OLC");
+  if (FLAGS_b_olc) run_any = Run<BTreeOLC_t>("B-tree based on OLC");
 #endif
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) Run<OpenBw_t>("OpenBw-Tree");
+  if (FLAGS_open_bw) run_any = Run<OpenBw_t>("OpenBw-Tree");
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) Run<Mass_t>("Masstree");
+  if (FLAGS_mass) run_any = Run<Mass_t>("Masstree");
 #endif
+
+  if (!run_any) {
+    std::cout << "NOTE: benchmark targets are not specified." << std::endl;
+  }
 }
 
 /*######################################################################################
