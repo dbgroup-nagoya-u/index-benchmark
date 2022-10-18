@@ -92,59 +92,108 @@ template <class Key>
 void
 ForwardKeyForBench()
 {
-  using Payload = uint64_t;
-
-  using BwTree_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeVarLen>;
-  using BwTreeOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeFixLen>;
-  using BzInPlace_t = IndexWrapper<Key, Payload, ::dbgroup::index::bztree::BzTree>;
-  using BzAppend_t = IndexWrapper<Key, int64_t, ::dbgroup::index::bztree::BzTree>;
-  using BTreePML_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePMLVarLen>;
-  using BTreePMLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePMLFixLen>;
-  using BTreePSL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLVarLen>;
-  using BTreePSLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLFixLen>;
-  using BTreeOML_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOMLVarLen>;
-  using BTreeOMLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOMLFixLen>;
-  using BTreeOSL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOSLVarLen>;
-  using BTreeOSLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOSLFixLen>;
-
-#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  using Yakushima_t = YakushimaWrapper<Key, Payload>;
-#endif
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  using BTreeOLC_t = BTreeOLCWrapper<Key, Payload>;
-#endif
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  using OpenBw_t = OpenBwTreeWrapper<Key, Payload>;
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-  using Mass_t = MasstreeWrapper<Key, Payload>;
-#endif
-
   // run benchmark for each implementaton
-  auto run_any = false;
-  if (FLAGS_b_pml) run_any = Run<BTreePML_t>("B+tree based on PML", kUseBulkload);
-  if (FLAGS_b_pml_opt) run_any = Run<BTreePMLOpt_t>("Optimized B+tree based on PML");
-  if (FLAGS_b_psl) run_any = Run<BTreePSL_t>("B+tree based on PSL", kUseBulkload);
-  if (FLAGS_b_psl_opt) run_any = Run<BTreePSLOpt_t>("Optimized B+tree based on PSL");
-  if (FLAGS_b_oml) run_any = Run<BTreeOML_t>("B+tree based on OML");
-  if (FLAGS_b_oml_opt) run_any = Run<BTreeOMLOpt_t>("Optimized B+tree based on OML");
-  if (FLAGS_b_osl) run_any = Run<BTreeOSL_t>("B+tree based on OSL");
-  if (FLAGS_b_osl_opt) run_any = Run<BTreeOSLOpt_t>("Optimized B+tree based on OSL");
-  if (FLAGS_bw) run_any = Run<BwTree_t>("Bw-tree");
-  if (FLAGS_bw_opt) run_any = Run<BwTreeOpt_t>("Optimized Bw-tree");
-  if (FLAGS_bz_in_place) run_any = Run<BzInPlace_t>("BzTree in-place mode");
-  if (FLAGS_bz_append) run_any = Run<BzAppend_t>("BzTree append mode");
-#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  if (FLAGS_yakushima) run_any = Run<Yakushima_t>("yakushima");
-#endif
+  using Payload = uint64_t;
+  auto run_any = false;  // check any indexes are specified as benchmarking targets
+
+  /*----------------------------------------------------------------------------------*
+   * Basic B+tree implementations
+   *----------------------------------------------------------------------------------*/
+
+  if (FLAGS_b_pml) {
+    using BTreePML_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePMLVarLen>;
+    run_any = Run<BTreePML_t>("B+tree based on PML", kUseBulkload);
+  }
+
+  if (FLAGS_b_psl) {
+    using BTreePSL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLVarLen>;
+    run_any = Run<BTreePSL_t>("B+tree based on PSL", kUseBulkload);
+  }
+
+  if (FLAGS_b_oml) {
+    using BTreeOML_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOMLVarLen>;
+    run_any = Run<BTreeOML_t>("B+tree based on OML");
+  }
+
+  if (FLAGS_b_osl) {
+    using BTreeOSL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOSLVarLen>;
+    run_any = Run<BTreeOSL_t>("B+tree based on OSL");
+  }
+
+  if (FLAGS_bw) {
+    using BwTree_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeVarLen>;
+    run_any = Run<BwTree_t>("Bw-tree");
+  }
+
+  if (FLAGS_bz_in_place) {
+    using BzInPlace_t = IndexWrapper<Key, Payload, ::dbgroup::index::bztree::BzTree>;
+    run_any = Run<BzInPlace_t>("BzTree in-place mode");
+  }
+
+  if (FLAGS_bz_append) {
+    using BzAppend_t = IndexWrapper<Key, int64_t, ::dbgroup::index::bztree::BzTree>;
+    run_any = Run<BzAppend_t>("BzTree append mode");
+  }
+
+  /*----------------------------------------------------------------------------------*
+   * B+tree implementations optimized for fixed-length data
+   *----------------------------------------------------------------------------------*/
+
+  if (FLAGS_b_pml_opt) {
+    using BTreePMLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePMLFixLen>;
+    run_any = Run<BTreePMLOpt_t>("Optimized B+tree based on PML");
+  }
+
+  if (FLAGS_b_psl_opt) {
+    using BTreePSLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLFixLen>;
+    run_any = Run<BTreePSLOpt_t>("Optimized B+tree based on PSL");
+  }
+
+  if (FLAGS_b_oml_opt) {
+    using BTreeOMLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOMLFixLen>;
+    run_any = Run<BTreeOMLOpt_t>("Optimized B+tree based on OML");
+  }
+
+  if (FLAGS_b_osl_opt) {
+    using BTreeOSLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOSLFixLen>;
+    run_any = Run<BTreeOSLOpt_t>("Optimized B+tree based on OSL");
+  }
+
+  if (FLAGS_bw_opt) {
+    using BwTreeOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeFixLen>;
+    run_any = Run<BwTreeOpt_t>("Optimized Bw-tree");
+  }
+
+  /*----------------------------------------------------------------------------------*
+   * Other thread-safe index implementations
+   *----------------------------------------------------------------------------------*/
+
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
-  if (FLAGS_b_olc) run_any = Run<BTreeOLC_t>("B-tree based on OLC");
+  if (FLAGS_b_olc) {
+    using BTreeOLC_t = BTreeOLCWrapper<Key, Payload>;
+    run_any = Run<BTreeOLC_t>("B-tree based on OLC");
+  }
 #endif
+
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-  if (FLAGS_open_bw) run_any = Run<OpenBw_t>("OpenBw-Tree");
+  if (FLAGS_open_bw) {
+    using OpenBw_t = OpenBwTreeWrapper<Key, Payload>;
+    run_any = Run<OpenBw_t>("OpenBw-Tree");
+  }
 #endif
+
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+  if (FLAGS_yakushima) {
+    using Yakushima_t = YakushimaWrapper<Key, Payload>;
+    run_any = Run<Yakushima_t>("yakushima");
+  }
+#endif
+
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) run_any = Run<Mass_t>("Masstree");
+  if (FLAGS_mass) {
+    using Mass_t = MasstreeWrapper<Key, Payload>;
+    run_any = Run<Mass_t>("masstree-beta");
+  }
 #endif
 
   if (!run_any) {
