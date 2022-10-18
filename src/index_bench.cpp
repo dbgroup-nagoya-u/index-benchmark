@@ -25,11 +25,13 @@
  * Command line arguments
  *####################################################################################*/
 
-DEFINE_uint64(num_exec, 10000, "The total number of operations for benchmarking");
+DEFINE_uint64(num_exec, 10000000, "The number of executions of each worker");
 DEFINE_validator(num_exec, &ValidateNonZero);
 DEFINE_uint64(num_thread, 1, "The number of worker threads");
 DEFINE_validator(num_thread, &ValidateNonZero);
 DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
+DEFINE_uint64(timeout, 10, "Seconds to timeout");
+DEFINE_validator(timeout, &ValidateNonZero);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
@@ -78,8 +80,8 @@ Run(  //
   index.Construct(entries, init_thread, use_bulkload);
 
   // run benchmark
-  Bench_t bench{index,       ops_engine,       FLAGS_num_exec, FLAGS_num_thread,
-                random_seed, FLAGS_throughput, FLAGS_csv,      target_name};
+  Bench_t bench{index,       target_name,      ops_engine, FLAGS_num_exec, FLAGS_num_thread,
+                random_seed, FLAGS_throughput, FLAGS_csv,  FLAGS_timeout};
   bench.Run();
 }
 

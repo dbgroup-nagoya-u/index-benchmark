@@ -56,6 +56,16 @@ option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
 
 #--------------------------------------------------------------------------------------#
+# Configure cpp-utility
+#--------------------------------------------------------------------------------------#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
+
+#--------------------------------------------------------------------------------------#
+# Configure benchmarker
+#--------------------------------------------------------------------------------------#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
+
+#--------------------------------------------------------------------------------------#
 # Configurations for target indexes
 #--------------------------------------------------------------------------------------#
 
@@ -145,16 +155,6 @@ set(INDEX_BENCH_MASSTREE_LIBS
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
-
-#--------------------------------------------------------------------------------------#
-# Configure cpp-utility
-#--------------------------------------------------------------------------------------#
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
-
-#--------------------------------------------------------------------------------------#
-# Configure benchmarker
-#--------------------------------------------------------------------------------------#
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 
 #--------------------------------------------------------------------------------------#
 # Build Benchmark
