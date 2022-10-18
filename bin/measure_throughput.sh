@@ -81,53 +81,18 @@ fi
 source "${CONFIG_ENV}"
 
 for IMPL in ${IMPL_CANDIDATES}; do
-  if [ ${IMPL} == 0 ]; then
-    IMPL_ARGS="--bw=t"
-  elif [ ${IMPL} == 1 ]; then
-    IMPL_ARGS="--bw-opt=t"
-  elif [ ${IMPL} == 2 ]; then
-    IMPL_ARGS="--bz-in-place=t"
-  elif [ ${IMPL} == 3 ]; then
-    IMPL_ARGS="--bz-append=t"
-  elif [ ${IMPL} == 4 ]; then
-    IMPL_ARGS="--b-pml=t"
-  elif [ ${IMPL} == 5 ]; then
-    IMPL_ARGS="--b-pml-opt=t"
-  elif [ ${IMPL} == 6 ]; then
-    IMPL_ARGS="--b-psl=t"
-  elif [ ${IMPL} == 7 ]; then
-    IMPL_ARGS="--b-psl-opt=t"
-  elif [ ${IMPL} == 8 ]; then
-    IMPL_ARGS="--b-oml=t"
-  elif [ ${IMPL} == 9 ]; then
-    IMPL_ARGS="--b-oml-opt=t"
-  elif [ ${IMPL} == 10 ]; then
-    IMPL_ARGS="--b-osl=t"
-  elif [ ${IMPL} == 11 ]; then
-    IMPL_ARGS="--b-osl-opt=t"
-  elif [ ${IMPL} == 100 ]; then
-    IMPL_ARGS="--b-olc=t"
-  elif [ ${IMPL} == 101 ]; then
-    IMPL_ARGS="--open-bw=t"
-  elif [ ${IMPL} == 102 ]; then
-    IMPL_ARGS="--mass=t"
-  elif [ ${IMPL} == 103 ]; then
-    IMPL_ARGS="--yakushima=t"
-  else
-    continue
-  fi
-
   for KEY_SIZE in ${KEY_CANDIDATES}; do
     for THREAD_NUM in ${THREAD_CANDIDATES}; do
       for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
         echo -n "${IMPL},${KEY_SIZE},${THREAD_NUM},"
-        ${BENCH_BIN} ${IMPL_ARGS} \
-          --csv \
-          --throughput=t \
-          --workload "${WORKLOAD}" \
-          --key-size ${KEY_SIZE} \
-          --num-exec ${OPERATION_COUNT} \
-          --num-thread ${THREAD_NUM}
+        ${BENCH_BIN} \
+          "--${IMPL}=t" \
+          "--csv" \
+          "--throughput=t" \
+          "--workload" "${WORKLOAD}" \
+          "--key-size" ${KEY_SIZE} \
+          "--num-exec" ${OPERATION_COUNT} \
+          "--num-thread" ${THREAD_NUM}
       done
     done
   done

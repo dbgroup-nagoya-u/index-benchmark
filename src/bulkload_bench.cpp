@@ -155,17 +155,11 @@ ForwardKeyForBench()
   using Mass_t = MasstreeWrapper<Key, Payload>;
 #endif
 
-  if (!FLAGS_b_pml && !FLAGS_bw && !FLAGS_bw_opt && !FLAGS_bz_in_place && !FLAGS_bz_append
-      && !FLAGS_yakushima && !FLAGS_b_olc && !FLAGS_open_bw && !FLAGS_mass) {
-    std::cout << "NOTE: benchmark targets are not specified." << std::endl;
-    return;
-  }
-
   // run benchmark for each implementaton
   if (FLAGS_b_pml) Run<BTreePML_t>("BTreePML");
   if (FLAGS_bw) Run<BwTreeVarLen_t>("Bw-tree");
   if (FLAGS_bw_opt) Run<BwTreeFixLen_t>("Optimized Bw-tree");
-  if (FLAGS_bz_in_place) Run<BzInPlace_t>("BzTree in-place mode");
+  if (FLAGS_bz) Run<BzInPlace_t>("BzTree in-place mode");
   if (FLAGS_bz_append) Run<BzAppend_t>("BzTree append mode");
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
   if (FLAGS_yakushima) Run<Yakushima_t>("yakushima");
@@ -177,7 +171,7 @@ ForwardKeyForBench()
   if (FLAGS_open_bw) Run<OpenBw_t>("OpenBw-Tree");
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) Run<Mass_t>("Masstree");
+  if (FLAGS_mass_beta) Run<Mass_t>("Masstree");
 #endif
 }
 
