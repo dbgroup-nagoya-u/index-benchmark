@@ -125,7 +125,7 @@ ForwardKeyForBench()
     run_any = Run<BwTree_t>("Bw-tree");
   }
 
-  if (FLAGS_bz_in_place) {
+  if (FLAGS_bz) {
     using BzInPlace_t = IndexWrapper<Key, Payload, ::dbgroup::index::bztree::BzTree>;
     run_any = Run<BzInPlace_t>("BzTree in-place mode");
   }
@@ -190,7 +190,7 @@ ForwardKeyForBench()
 #endif
 
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass) {
+  if (FLAGS_mass_beta) {
     using Mass_t = MasstreeWrapper<Key, Payload>;
     run_any = Run<Mass_t>("masstree-beta");
   }

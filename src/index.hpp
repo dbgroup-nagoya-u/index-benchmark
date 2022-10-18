@@ -58,7 +58,7 @@ DEFINE_bool(b_osl, false, "Use BTreeOSL with variable-length data as a benchmark
 DEFINE_bool(b_osl_opt, false, "Use BTreeOSL with fixed-length data as a benchmark target");
 DEFINE_bool(bw, false, "Use Bw-tree with variable-length data as a benchmark target");
 DEFINE_bool(bw_opt, false, "Use Bw-tree with fixed-length data as a benchmark target");
-DEFINE_bool(bz_in_place, false, "Use BzTree with in-place based update as a benchmark target");
+DEFINE_bool(bz, false, "Use BzTree with in-place based update as a benchmark target");
 DEFINE_bool(bz_append, false, "Use BzTree with append based update as a benchmark target");
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
 DEFINE_bool(yakushima, false, "Use yakushima as a benchmark target");
@@ -76,9 +76,9 @@ DEFINE_bool(open_bw, false, "Use Open-BwTree as a benchmark target");
 DEFINE_bool(open_bw, false, "OpenBw-Tree is not built as a benchmark target.");
 #endif
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-DEFINE_bool(mass, false, "Use Masstree as a benchmark target");
+DEFINE_bool(mass_beta, false, "Use Masstree as a benchmark target");
 #else
-DEFINE_bool(mass, false, "Massree is not built as a benchmark target. ");
+DEFINE_bool(mass_beta, false, "Massree is not built as a benchmark target. ");
 #endif
 
 /*######################################################################################
