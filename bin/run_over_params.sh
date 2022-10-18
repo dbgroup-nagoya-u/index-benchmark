@@ -46,7 +46,7 @@ EOF
         # run a benchmark program
         ${SCRIPT} "${BENCH_BIN}" "${CONFIG_ENV}" "${TMP_WORKLOAD}" \
           > ${TMP_OUTPUT}
-        sed "s/^/${SKEW},${W_RATIO},${INDEX_SIZE},${SCAN_LENGTH},/g" "${TMP_OUTPUT}" \
+        sed "s/^/${INDEX_SIZE},${W_RATIO},${SKEW},${SCAN_LENGTH},/g" "${TMP_OUTPUT}" \
           >> ${OUTPUT_FILE}
       done
     done
