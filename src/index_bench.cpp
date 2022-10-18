@@ -26,17 +26,20 @@
  *####################################################################################*/
 
 DEFINE_uint64(num_exec, 10000000, "The number of executions of each worker");
-DEFINE_validator(num_exec, &ValidateNonZero);
 DEFINE_uint64(num_thread, 1, "The number of worker threads");
-DEFINE_validator(num_thread, &ValidateNonZero);
 DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
 DEFINE_uint64(timeout, 10, "Seconds to timeout");
-DEFINE_validator(timeout, &ValidateNonZero);
 DEFINE_string(seed, "", "A random seed to control reproducibility");
-DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
 DEFINE_bool(csv, false, "Output benchmark results as CSV format");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency");
+
+DEFINE_validator(num_exec, &ValidateNonZero);
+DEFINE_validator(num_thread, &ValidateNonZero);
+DEFINE_validator(key_size, &ValidateKeySize);
+DEFINE_validator(timeout, &ValidateNonZero);
+DEFINE_validator(seed, &ValidateRandomSeed);
+DEFINE_validator(workload, &ValidateWorkload);
 
 /*######################################################################################
  * Utility functions
@@ -58,13 +61,10 @@ Run(  //
 
   // create an operation engine
   OperationEngine_t ops_engine{FLAGS_num_thread};
-  std::string workload_json{FLAGS_workload};
-  if (ValidateWorkload(workload_json)) {
-    Json_t parsed_json{};
-    std::ifstream workload_in{workload_json};
-    workload_in >> parsed_json;
-    ops_engine.ParseJson(parsed_json);
-  }
+  std::ifstream workload_in{FLAGS_workload};
+  Json_t parsed_json{};
+  workload_in >> parsed_json;
+  ops_engine.ParseJson(parsed_json);
 
   // prepare random seed if needed
   auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
@@ -181,7 +181,6 @@ main(int argc, char *argv[])  //
       ForwardKeyForBench<Key<k128>>();
       break;
     default:
-      std::cout << "WARN: the input key size is invalid." << std::endl;
       break;
   }
 

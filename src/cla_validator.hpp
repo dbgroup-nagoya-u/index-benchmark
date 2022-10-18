@@ -25,35 +25,37 @@
 
 template <class Number>
 auto
-ValidatePositiveVal(const char *flagname, const Number value)  //
+ValidateNonZero(  //
+    const char *flagname,
+    const Number value)  //
     -> bool
 {
-  if (value >= 0) {
-    return true;
-  }
-  std::cout << "A value must be positive for " << flagname << std::endl;
-  return false;
-}
+  if (value != 0) return true;
 
-template <class Number>
-auto
-ValidateNonZero(const char *flagname, const Number value)  //
-    -> bool
-{
-  if (value != 0) {
-    return true;
-  }
   std::cout << "A value must be not zero for " << flagname << std::endl;
   return false;
 }
 
 auto
-ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &seed)  //
+ValidateKeySize(  //
+    [[maybe_unused]] const char *flagname,
+    const uint64_t value)  //
     -> bool
 {
-  if (seed.empty()) {
-    return true;
-  }
+  if (value == 8 || value == 16 || value == 32 || value == 64 || value == 128) return true;
+
+  std::cout << "The specified key size is invalid (only 8, 16, 32, 64, and 128 are allowed)."
+            << std::endl;
+  return false;
+}
+
+auto
+ValidateRandomSeed(  //
+    [[maybe_unused]] const char *flagname,
+    const std::string &seed)  //
+    -> bool
+{
+  if (seed.empty()) return true;
 
   for (size_t i = 0; i < seed.size(); ++i) {
     if (!std::isdigit(seed[i])) {
@@ -65,19 +67,19 @@ ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &see
 }
 
 auto
-ValidateWorkload(const std::string &workload)  //
+ValidateWorkload(  //
+    [[maybe_unused]] const char *flagname,
+    const std::string &workload)  //
     -> bool
 {
   if (workload.empty()) {
-    std::cout << "NOTE: a workload file is not specified." << std::endl;
-    std::cout << "NOTE: use a read-only workload." << std::endl << std::endl;
+    std::cout << "A workload file is not specified." << std::endl;
     return false;
   }
 
   const auto abs_path = std::filesystem::absolute(workload);
   if (!std::filesystem::exists(abs_path)) {
-    std::cout << "NOTE: the specified file does not exist." << std::endl;
-    std::cout << "NOTE: use a read-only workload." << std::endl << std::endl;
+    std::cout << "The specified file does not exist." << std::endl;
     return false;
   }
 
