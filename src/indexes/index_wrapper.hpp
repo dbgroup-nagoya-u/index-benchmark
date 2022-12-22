@@ -93,7 +93,7 @@ class IndexWrapper
         std::make_tuple(begin_key + scan_range, GetLength(begin_key), !kClosed);  // not use key_len
 
     size_t sum{0};
-    for (auto &&iter = index_->Scan(begin_k, end_k); iter.HasRecord(); ++iter) {
+    for (auto &&iter = index_->Scan(begin_k, end_k); iter; ++iter) {
       sum += iter.GetPayload();
     }
   }
