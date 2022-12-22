@@ -139,18 +139,6 @@ AlmostEqual(  //
   return fabs(a - b) <= kEpsilon;
 }
 
-template <class T>
-auto
-GetLength(const T &data)  //
-    -> size_t
-{
-  if constexpr (std::is_same_v<T, char *>) {
-    return strlen(data) + 1;
-  } else {
-    return sizeof(T);
-  }
-}
-
 /**
  * @brief Create key/value entries for bulkloading.
  *

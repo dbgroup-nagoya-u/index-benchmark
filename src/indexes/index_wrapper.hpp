@@ -88,12 +88,11 @@ class IndexWrapper
       const Key &begin_key,
       const size_t scan_range)
   {
-    const auto &begin_k = std::make_tuple(begin_key, GetLength(begin_key), kClosed);
-    const auto &end_k =
-        std::make_tuple(begin_key + scan_range, GetLength(begin_key), !kClosed);  // not use key_len
+    const auto &begin_k = std::make_tuple(begin_key, sizeof(Key), kClosed);
+    const auto &end_k = std::make_tuple(begin_key + scan_range, sizeof(Key), !kClosed);
 
     size_t sum{0};
-    for (auto &&iter = index_->Scan(begin_k, end_k); iter; ++iter) {
+    for (auto &&iter = index_->Scan(begin_k, end_k); iter.HasRecord(); ++iter) {
       sum += iter.GetPayload();
     }
   }
