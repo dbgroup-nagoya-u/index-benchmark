@@ -47,6 +47,9 @@
 #ifdef INDEX_BENCH_BUILD_MASSTREE
 #include "indexes/masstree_wrapper.hpp"
 #endif
+#ifdef INDEX_BENCH_BUILD_ALEXOL
+#include "indexes/alexol_wrapper.hpp"
+#endif
 
 DEFINE_bool(b_pml, false, "Use BTreePML with variable-length data as a benchmark target");
 DEFINE_bool(b_pml_opt, false, "Use BTreePML with fixed-length data as a benchmark target");
@@ -79,6 +82,11 @@ DEFINE_bool(open_bw, false, "OpenBw-Tree is not built as a benchmark target.");
 DEFINE_bool(mass_beta, false, "Use Masstree as a benchmark target");
 #else
 DEFINE_bool(mass_beta, false, "Massree is not built as a benchmark target. ");
+#endif
+#ifdef INDEX_BENCH_BUILD_ALEXOL
+DEFINE_bool(alexol, false, "Use Alex+ as a benchmark target");
+#else
+DEFINE_bool(alexol, false, "Alex+ is not built as a benchmark target.");
 #endif
 
 /*######################################################################################

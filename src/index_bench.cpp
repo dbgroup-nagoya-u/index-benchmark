@@ -196,6 +196,13 @@ ForwardKeyForBench()
   }
 #endif
 
+#ifdef INDEX_BENCH_BUILD_ALEXOL
+  if (FLAGS_alexol) {
+    using Alexol_t = AlexolWrapper<Key, Payload>;
+    run_any = Run<Alexol_t>("Alex+");
+  }
+#endif
+
   if (!run_any) {
     std::cout << "NOTE: benchmark targets are not specified." << std::endl;
   }
