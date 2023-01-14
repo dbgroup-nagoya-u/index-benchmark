@@ -189,19 +189,19 @@ main(int argc, char *argv[])  //
 
   switch (FLAGS_key_size) {
     case k8:
-      ForwardKeyForBench<Key<8>>();
+      ForwardKeyForBench<uint8_t>();
       break;
     case k16:
-      ForwardKeyForBench<Key<16>>();
+      ForwardKeyForBench<uint16_t>();
       break;
     case k32:
-      ForwardKeyForBench<Key<32>>();
+      ForwardKeyForBench<uint32_t>();
       break;
     case k64:
-      ForwardKeyForBench<Key<64>>();
+      ForwardKeyForBench<uint64_t>();
       break;
     case k128:
-      ForwardKeyForBench<Key<128>>();
+      ForwardKeyForBench<uint64_t>();
       break;
     default:
       std::cout << "NOTE: the input key size " << FLAGS_key_size << " is invalid." << std::endl;

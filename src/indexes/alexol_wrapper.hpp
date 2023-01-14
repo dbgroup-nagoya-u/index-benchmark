@@ -38,7 +38,7 @@ class AlexolWrapper
    * Type aliases
    *##################################################################################*/
 
-  using Index_t = alexolInterface<uint64_t, Payload>;
+  using Index_t = alexolInterface<Key, Payload>;
 
  public:
   /*####################################################################################
@@ -52,7 +52,7 @@ class AlexolWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  AlexolWrapper([[maybe_unused]] const size_t worker_num) {}
+  AlexolWrapper([[maybe_unused]] const size_t worker_num) { index_ = std::make_unique<Index_t>(); }
 
   ~AlexolWrapper() = default;
 
@@ -76,6 +76,9 @@ class AlexolWrapper
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {
+    std::vector<std::pair<Key, Payload>> non_const_entries;
+    std::copy(entries.begin(), entries.end(), std::back_inserter(non_const_entries));
+    index_->bulk_load(non_const_entries.data(), static_cast<int>(non_const_entries.size()));
     return true;
   }
 
@@ -87,6 +90,9 @@ class AlexolWrapper
   Read(const Key &key)  //
       -> std::optional<Payload>
   {
+    Payload value{};
+    const auto found = index_->get(key, value);
+    if (found) return value;
     return std::nullopt;
   }
 
@@ -101,7 +107,7 @@ class AlexolWrapper
   void
   FullScan()
   {
-    throw std::runtime_error{"ERROR: the scan operation is not implemented."};
+    throw std::runtime_error{"ERROR: the full scan operation is not implemented."};
   }
 
   auto
@@ -110,7 +116,10 @@ class AlexolWrapper
       const Payload &value)  //
       -> int64_t
   {
-    throw std::runtime_error{"ERROR: the write operation is not implemented."};
+    const auto found = index_->put(key, value);
+    if (found) {
+      index_->update(key, value);
+    }
     return 0;
   }
 
@@ -120,8 +129,8 @@ class AlexolWrapper
       [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
-    throw std::runtime_error{"ERROR: the insert operation is not implemented."};
-    return 1;
+    index_->put(key, value);
+    return 0;
   }
 
   auto
@@ -130,8 +139,8 @@ class AlexolWrapper
       [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
-    throw std::runtime_error{"ERROR: the update operation is not implemented."};
-    return 1;
+    index_->update(key, value);
+    return 0;
   }
 
   auto
