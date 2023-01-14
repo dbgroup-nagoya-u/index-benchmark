@@ -76,8 +76,7 @@ class AlexolWrapper
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {
-    std::vector<std::pair<Key, Payload>> non_const_entries;
-    std::copy(entries.begin(), entries.end(), std::back_inserter(non_const_entries));
+    auto &&non_const_entries = const_cast<std::vector<std::pair<Key, Payload>> &>(entries);
     index_->bulk_load(non_const_entries.data(), static_cast<int>(non_const_entries.size()));
     return true;
   }
