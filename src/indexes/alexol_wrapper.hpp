@@ -116,7 +116,7 @@ class AlexolWrapper
       -> int64_t
   {
     const auto inserted = index_->put(key, value);
-    if (inserted) {
+    if (!inserted) {
       index_->update(key, value);
     }
     return 0;
