@@ -38,14 +38,14 @@ class AlexolWrapper
    * Type aliases
    *##################################################################################*/
 
-  using Index_t = alexolInterface<Key, Payload>;
+  using Index_t = alexolInterface<uint64_t, Payload>;
 
  public:
   /*####################################################################################
    * Public type aliases
    *##################################################################################*/
 
-  using K = Key;
+  using K = uint64_t;
   using V = Payload;
 
   /*####################################################################################
@@ -72,11 +72,11 @@ class AlexolWrapper
 
   constexpr auto
   Bulkload(  //
-      [[maybe_unused]] const std::vector<std::pair<Key, Payload>> &entries,
+      [[maybe_unused]] const std::vector<std::pair<K, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {
-    auto &&non_const_entries = const_cast<std::vector<std::pair<Key, Payload>> &>(entries);
+    auto &&non_const_entries = const_cast<std::vector<std::pair<K, Payload>> &>(entries);
     index_->bulk_load(non_const_entries.data(), static_cast<int>(non_const_entries.size()));
     return true;
   }
@@ -86,7 +86,7 @@ class AlexolWrapper
    *##################################################################################*/
 
   auto
-  Read(const Key &key)  //
+  Read(const K &key)  //
       -> std::optional<Payload>
   {
     Payload value{};
@@ -97,7 +97,7 @@ class AlexolWrapper
 
   void
   Scan(  //
-      [[maybe_unused]] const Key &begin_key,
+      [[maybe_unused]] const K &begin_key,
       [[maybe_unused]] const size_t scan_range)
   {
     throw std::runtime_error{"ERROR: the scan operation is not implemented."};
@@ -111,12 +111,12 @@ class AlexolWrapper
 
   auto
   Write(  //
-      const Key &key,
+      const K &key,
       const Payload &value)  //
       -> int64_t
   {
-    const auto found = index_->put(key, value);
-    if (found) {
+    const auto inserted = index_->put(key, value);
+    if (inserted) {
       index_->update(key, value);
     }
     return 0;
@@ -124,7 +124,7 @@ class AlexolWrapper
 
   auto
   Insert(  //
-      [[maybe_unused]] const Key &key,
+      [[maybe_unused]] const K &key,
       [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
@@ -134,7 +134,7 @@ class AlexolWrapper
 
   auto
   Update(  //
-      [[maybe_unused]] const Key &key,
+      [[maybe_unused]] const K &key,
       [[maybe_unused]] const Payload &value)  //
       -> int64_t
   {
@@ -143,7 +143,7 @@ class AlexolWrapper
   }
 
   auto
-  Delete(const Key &key)  //
+  Delete(const K &key)  //
       -> int64_t
   {
     return 0;
