@@ -222,19 +222,19 @@ main(int argc, char *argv[])  //
 
   switch (FLAGS_key_size) {
     case k8:
-      ForwardKeyForBench<Key<8>>();
+      ForwardKeyForBench<Key<k8>>();
       break;
     case k16:
-      ForwardKeyForBench<Key<16>>();
+      ForwardKeyForBench<Key<k16>>();
       break;
     case k32:
-      ForwardKeyForBench<Key<32>>();
+      ForwardKeyForBench<Key<k32>>();
       break;
     case k64:
-      ForwardKeyForBench<Key<64>>();
+      ForwardKeyForBench<Key<k64>>();
       break;
     case k128:
-      ForwardKeyForBench<Key<128>>();
+      ForwardKeyForBench<Key<k128>>();
       break;
     default:
       break;
