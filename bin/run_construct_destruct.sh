@@ -81,7 +81,7 @@ fi
 ########################################################################################
 
 # set an output file and temporary files
-OUTPUT_FILE="${WORKSPACE_DIR}/out/construct_destruct_${CRITERIA}-wo_assist.csv"
+OUTPUT_FILE="${WORKSPACE_DIR}/out/construct_destruct_${CRITERIA}.csv"
 TMP_OUTPUT="/tmp/index_benchmark-tmp_output-$(id -un).csv"
 TMP_WORKLOAD="/tmp/index_benchmark-tmp_workload-$(id -un).json"
 
