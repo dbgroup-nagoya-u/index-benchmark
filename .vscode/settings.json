@@ -33,6 +33,13 @@
   "cmake.configureOnOpen": true,
   "cmake.buildDirectory": "${workspaceRoot}/build/${buildType}",
   "cmake.generator": "Ninja",
+  "cmake.debugConfig": {
+    "args": [
+      // "--b-osl",
+      // "--workload=${workspaceRoot}/workload/ycsb_e.json",
+      // "--num-thread=8"
+    ]
+  },
   // Markdown settings
   "[markdown]": {
     "editor.tabSize": 4,
