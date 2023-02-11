@@ -101,43 +101,50 @@ class YakushimaWrapper
     return value;
   }
 
-  void
+  auto
   Scan(  //
       Key begin_key,
-      int64_t scan_size)
+      int64_t scan_size)  //
+      -> size_t
   {
     constexpr auto kScanSize = 1024;
+    const auto len = (scan_size > kScanSize) ? kScanSize : scan_size;
     size_t sum{0};
+    size_t count{0};
     thread_local std::vector<std::tuple<std::string, Payload *, size_t>> tuples{kScanSize};
 
-    while (scan_size > 0) {
+    while (true) {
       // scan target tuples
-      const auto len = (scan_size > kScanSize) ? kScanSize : scan_size;
       auto &&end_key = begin_key + len;
       tuples.clear();
       ::yakushima::scan(table_name_,                                                  //
                         ToStrView(begin_key), ::yakushima::scan_endpoint::INCLUSIVE,  //
                         ToStrView(end_key), ::yakushima::scan_endpoint::EXCLUSIVE,    //
                         tuples);
+      if (tuples.empty()) break;
 
       // summarize scan results
       for (const auto &tuple : tuples) {
         sum += *(std::get<1>(tuple));
+        if (++count >= scan_size) return count;
       }
 
-      scan_size -= kScanSize;
       begin_key = std::move(end_key);
     }
+
+    return count;
   }
 
-  void
-  FullScan()
+  auto
+  FullScan()  //
+      -> size_t
   {
     constexpr auto kScanSize = 1024;
 
     Key begin_key{0};
     Key end_key{kScanSize};
     size_t sum{0};
+    size_t count{0};
     std::vector<std::tuple<std::string, Payload *, size_t>> tuples{};
     tuples.reserve(kScanSize);
 
@@ -150,6 +157,7 @@ class YakushimaWrapper
       // summarize scan results
       for (const auto &tuple : tuples) {
         sum += *(std::get<1>(tuple));
+        ++count;
       }
       tuples.clear();
 
@@ -161,6 +169,8 @@ class YakushimaWrapper
                         ToStrView(end_key), ::yakushima::scan_endpoint::INCLUSIVE,    //
                         tuples);
     }
+
+    return count;
   }
 
   auto
