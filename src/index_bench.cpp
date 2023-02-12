@@ -198,14 +198,14 @@ ForwardKeyForBench()
   }
 #endif
 
-#ifdef INDEX_BENCH_BUILD_ALEXOL
-  if (FLAGS_alexol) {
+#ifdef INDEX_BENCH_BUILD_ALEX_OLC
+  if (FLAGS_alex_olc) {
     if (std::is_same_v<K, Key<k8>>) {
       using KEY_FOR_ALEX = uint64_t;
-      using Alexol_t = AlexolWrapper<KEY_FOR_ALEX, V>;
-      run_any = Run<Alexol_t>("Alex+");
+      using AlexOLC_t = AlexOLCWrapper<KEY_FOR_ALEX, V>;
+      run_any = Run<AlexOLC_t>("ALEX based on OLC");
     } else {
-      std::cerr << "ALEX+ cannot deal with not numeric keys, so skipped." << std::endl;
+      std::cerr << "ALEX cannot deal with not numeric keys, so skipped." << std::endl;
     }
   }
 #endif

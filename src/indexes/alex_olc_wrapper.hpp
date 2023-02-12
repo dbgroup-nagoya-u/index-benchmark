@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_INDEXES_ALEXOL_WRAPPER_HPP
-#define INDEX_BENCHMARK_INDEXES_ALEXOL_WRAPPER_HPP
+#ifndef INDEX_BENCHMARK_INDEXES_ALEX_OLC_WRAPPER_HPP
+#define INDEX_BENCHMARK_INDEXES_ALEX_OLC_WRAPPER_HPP
 
 // C++ standard libraries
 #include <algorithm>
@@ -37,7 +37,7 @@
  *####################################################################################*/
 
 template <class Key, class Payload>
-class AlexolWrapper
+class AlexOLCWrapper
 {
   /*####################################################################################
    * Type aliases
@@ -58,9 +58,9 @@ class AlexolWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  AlexolWrapper([[maybe_unused]] const size_t worker_num) { index_ = std::make_unique<Index_t>(); }
+  AlexOLCWrapper([[maybe_unused]] const size_t worker_num) { index_ = std::make_unique<Index_t>(); }
 
-  ~AlexolWrapper() = default;
+  ~AlexOLCWrapper() = default;
 
   /*####################################################################################
    * Public utility functions
@@ -170,4 +170,4 @@ class AlexolWrapper
   std::unique_ptr<Index_t> index_{nullptr};
 };
 
-#endif  // INDEX_BENCHMARK_INDEXES_ALEXOL_WRAPPER_HPP
+#endif  // INDEX_BENCHMARK_INDEXES_ALEX_OLC_WRAPPER_HPP
