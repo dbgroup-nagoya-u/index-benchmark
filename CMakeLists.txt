@@ -159,6 +159,8 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
 #--------------------------------------------------------------------------------------#
 # Build Benchmark
 #--------------------------------------------------------------------------------------#
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(glog REQUIRED libglog)
 
 # define function to add unit tests in the same format
 function(ADD_BENCHMARK BENCHMARK_TARGET)
@@ -180,6 +182,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/external"
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:${JEMALLOC_INCLUDE_DIRS}>
+    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_INCLUDE_DIRS}>
   )
   target_link_libraries(${BENCHMARK_TARGET} PRIVATE
     gflags
@@ -192,6 +195,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     bztree::bztree
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:PkgConfig::JEMALLOC>
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
+    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_LIBRARIES}>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
   )
   target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
@@ -213,7 +217,7 @@ endfunction()
 
 # add executables
 ADD_BENCHMARK("index_bench")
-ADD_BENCHMARK("bulkload_bench")
+# ADD_BENCHMARK("bulkload_bench")
 
 #--------------------------------------------------------------------------------------#
 # Build unit tests if required

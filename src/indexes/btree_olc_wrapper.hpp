@@ -84,18 +84,22 @@ class BTreeOLCWrapper
     return std::nullopt;
   }
 
-  void
+  auto
   Scan(  //
       [[maybe_unused]] const Key &begin_key,
-      [[maybe_unused]] const size_t scan_range)
+      [[maybe_unused]] const size_t scan_range)  //
+      -> size_t
   {
     throw std::runtime_error{"ERROR: the scan operation is not implemented."};
+    return 0;
   }
 
-  void
-  FullScan()
+  auto
+  FullScan()  //
+      -> size_t
   {
     throw std::runtime_error{"ERROR: the scan operation is not implemented."};
+    return 0;
   }
 
   auto

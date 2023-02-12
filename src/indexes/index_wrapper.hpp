@@ -83,27 +83,34 @@ class IndexWrapper
     return index_->Read(key);
   }
 
-  void
+  auto
   Scan(  //
       const Key &begin_key,
-      const size_t scan_range)
+      const size_t scan_size)  //
+      -> size_t
   {
     const auto &begin_k = std::make_tuple(begin_key, sizeof(Key), kClosed);
-    const auto &end_k = std::make_tuple(begin_key + scan_range, sizeof(Key), !kClosed);
 
     size_t sum{0};
-    for (auto &&iter = index_->Scan(begin_k, end_k); iter; ++iter) {
+    size_t count{0};
+    for (auto &&iter = index_->Scan(begin_k); iter && count < scan_size; ++iter, ++count) {
       sum += iter.GetPayload();
     }
+
+    return count;
   }
 
-  void
-  FullScan()
+  auto
+  FullScan()  //
+      -> size_t
   {
     size_t sum{0};
-    for (auto &&iter = index_->Scan(); iter; ++iter) {
+    size_t count{0};
+    for (auto &&iter = index_->Scan(); iter; ++iter, ++count) {
       sum += iter.GetPayload();
     }
+
+    return count;
   }
 
   auto
