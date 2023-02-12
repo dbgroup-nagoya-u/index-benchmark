@@ -32,17 +32,7 @@ find_package(TBB REQUIRED)
 #--------------------------------------------------------------------------------------#
 # Build option for efficient memory allocators
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_OVERRIDE_JEMALLOC "Override entire memory allocation with jemalloc" OFF)
 option(INDEX_BENCH_OVERRIDE_MIMALLOC "Override entire memory allocation with mimalloc" OFF)
-
-if(${INDEX_BENCH_OVERRIDE_JEMALLOC} AND ${INDEX_BENCH_OVERRIDE_MIMALLOC})
-  message(FATAL_ERROR "The benchmarks cannot use multiple memory allocators.")
-endif()
-
-if(${INDEX_BENCH_OVERRIDE_JEMALLOC})
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET jemalloc)
-endif()
 
 if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
   find_package(mimalloc 1.7 REQUIRED)
@@ -184,7 +174,6 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
   target_include_directories(${BENCHMARK_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/external"
-    $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:${JEMALLOC_INCLUDE_DIRS}>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_INCLUDE_DIRS}>
   )
   target_link_libraries(${BENCHMARK_TARGET} PRIVATE
@@ -196,7 +185,6 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     b_tree::b_tree
     bw_tree::bw_tree
     bztree::bztree
-    $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:PkgConfig::JEMALLOC>
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_LIBRARIES}>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>

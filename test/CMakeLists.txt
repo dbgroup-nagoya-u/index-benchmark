@@ -2,29 +2,13 @@
 # Configure GoogleTest
 #--------------------------------------------------------------------------------------#
 
-configure_file(CMakeLists-googletest.txt.in googletest-download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
-if(result)
-  message(FATAL_ERROR "CMake step for googletest failed: ${result}")
-endif()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
-if(result)
-  message(FATAL_ERROR "Build step for googletest failed: ${result}")
-endif()
-
-# Prevent overriding the parent project's compiler/linker
-# settings on Windows
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-# Add googletest directly to our build. This defines
-# the gtest and gtest_main targets.
-add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
-                 ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-                 EXCLUDE_FROM_ALL)
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY "https://github.com/google/googletest.git"
+  GIT_TAG "58d77fa8070e8cec2dc1ed015d66b454c8d78850" # v1.12.1
+)
+FetchContent_MakeAvailable(googletest)
 
 #--------------------------------------------------------------------------------------#
 # Build Unit Tests
@@ -52,7 +36,6 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
   target_include_directories(${INDEX_BENCH_TEST_TARGET} PRIVATE
     "${INDEX_BENCH_SOURCE_DIR}/src"
     "${INDEX_BENCH_SOURCE_DIR}/external"
-    $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:${JEMALLOC_INCLUDE_DIRS}>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_INCLUDE_DIRS}>
   )
   target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
@@ -65,7 +48,6 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     b_tree::b_tree
     bw_tree::bw_tree
     bztree::bztree
-    $<$<BOOL:${INDEX_BENCH_OVERRIDE_JEMALLOC}>:PkgConfig::JEMALLOC>
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_LIBRARIES}>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>

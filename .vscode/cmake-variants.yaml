@@ -7,7 +7,6 @@ buildType:
       long: Include debugging information without optimizations
       buildType: Debug
       settings:
-        INDEX_BENCH_OVERRIDE_JEMALLOC: OFF
         INDEX_BENCH_OVERRIDE_MIMALLOC: OFF
         INDEX_BENCH_BUILD_YAKUSHIMA: OFF
         INDEX_BENCH_BUILD_BTREE_OLC: OFF
@@ -21,7 +20,6 @@ buildType:
       long: Perform optimizations and include debugging informatin
       buildType: RelWithDebInfo
       settings:
-        INDEX_BENCH_OVERRIDE_JEMALLOC: OFF
         INDEX_BENCH_OVERRIDE_MIMALLOC: OFF
         INDEX_BENCH_BUILD_YAKUSHIMA: OFF
         INDEX_BENCH_BUILD_BTREE_OLC: OFF
@@ -35,7 +33,6 @@ buildType:
       long: Perform optimizations and omit debugging informatin
       buildType: Release
       settings:
-        INDEX_BENCH_OVERRIDE_JEMALLOC: OFF
         INDEX_BENCH_OVERRIDE_MIMALLOC: OFF
         INDEX_BENCH_BUILD_YAKUSHIMA: OFF
         INDEX_BENCH_BUILD_BTREE_OLC: OFF
