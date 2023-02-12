@@ -17,6 +17,7 @@
 #ifndef INDEX_BENCHMARK_COMMON_HPP
 #define INDEX_BENCHMARK_COMMON_HPP
 
+// C++ standard libraries
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -27,8 +28,11 @@
 #include <thread>
 #include <vector>
 
-#include "key.hpp"
+// external sources
 #include "nlohmann/json.hpp"
+
+// local sources
+#include "key.hpp"
 
 /*######################################################################################
  * Global enum and constants
@@ -188,6 +192,14 @@ PrepareBulkLoadEntries(  //
   }
 
   return entries;
+}
+
+template <template <class K, class V> class Index>
+constexpr auto
+HasSetUpTearDown()  //
+    -> bool
+{
+  return false;
 }
 
 #endif  // INDEX_BENCHMARK_COMMON_HPP

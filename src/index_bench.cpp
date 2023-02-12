@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
+// external system libraries
 #include <gflags/gflags.h>
 
+// external sources
 #include "benchmark/benchmarker.hpp"
+
+// local sources
 #include "cla_validator.hpp"
 #include "index.hpp"
 #include "workload/operation_engine.hpp"
@@ -45,18 +49,15 @@ DEFINE_validator(workload, &ValidateWorkload);
  * Utility functions
  *####################################################################################*/
 
-template <class Implementation>
+template <class Key, class Payload, class Index_t>
 auto
 Run(  //
     const std::string &target_name,
     const bool force_use_bulkload = false)  //
     -> bool
 {
-  using Key = typename Implementation::K;
-  using Payload = typename Implementation::V;
   using Operation_t = Operation<Key, Payload>;
   using OperationEngine_t = OperationEngine<Key, Payload>;
-  using Index_t = Index<Key, Payload, Implementation>;
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation_t, OperationEngine_t>;
   using Json_t = ::nlohmann::json;
 
@@ -78,8 +79,8 @@ Run(  //
     use_bulkload = true;
   }
   const auto init_thread = (use_all_thread) ? kMaxCoreNum : 1;
-  Index_t index{FLAGS_num_thread + init_thread};
   const auto &entries = PrepareBulkLoadEntries<Key, Payload>(init_size, init_thread);
+  Index_t index{};
   index.Construct(entries, init_thread, use_bulkload);
 
   // run benchmark
@@ -103,38 +104,46 @@ ForwardKeyForBench()
    *----------------------------------------------------------------------------------*/
 
   if (FLAGS_b_pml) {
-    using BTreePML_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreePMLVarLen>;
-    run_any = Run<BTreePML_t>("B+tree based on PML", kUseBulkload);
+    using BTreePML_t = Index<K, V, ::dbgroup::index::b_tree::BTreePMLVarLen>;
+    Run<K, V, BTreePML_t>("B+tree based on PML", kUseBulkload);
+    run_any = true;
   }
 
   if (FLAGS_b_psl) {
-    using BTreePSL_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreePSLVarLen>;
-    run_any = Run<BTreePSL_t>("B+tree based on PSL", kUseBulkload);
+    using BTreePSL_t = Index<K, V, ::dbgroup::index::b_tree::BTreePSLVarLen>;
+    Run<K, V, BTreePSL_t>("B+tree based on PSL", kUseBulkload);
+    run_any = true;
   }
 
   if (FLAGS_b_oml) {
-    using BTreeOML_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreeOMLVarLen>;
-    run_any = Run<BTreeOML_t>("B+tree based on OML");
+    using BTreeOML_t = Index<K, V, ::dbgroup::index::b_tree::BTreeOMLVarLen>;
+    Run<K, V, BTreeOML_t>("B+tree based on OML");
+    run_any = true;
   }
 
   if (FLAGS_b_osl) {
-    using BTreeOSL_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreeOSLVarLen>;
-    run_any = Run<BTreeOSL_t>("B+tree based on OSL");
+    using BTreeOSL_t = Index<K, V, ::dbgroup::index::b_tree::BTreeOSLVarLen>;
+    Run<K, V, BTreeOSL_t>("B+tree based on OSL");
+    run_any = true;
   }
 
   if (FLAGS_bw) {
-    using BwTree_t = IndexWrapper<K, V, ::dbgroup::index::bw_tree::BwTreeVarLen>;
-    run_any = Run<BwTree_t>("Bw-tree");
+    using BwTree_t = Index<K, V, ::dbgroup::index::bw_tree::BwTreeVarLen>;
+    Run<K, V, BwTree_t>("Bw-tree");
+    run_any = true;
   }
 
   if (FLAGS_bz) {
-    using BzInPlace_t = IndexWrapper<K, V, ::dbgroup::index::bztree::BzTree>;
-    run_any = Run<BzInPlace_t>("BzTree in-place mode");
+    using BzInPlace_t = Index<K, V, ::dbgroup::index::bztree::BzTree>;
+    Run<K, V, BzInPlace_t>("BzTree in-place mode");
+    run_any = true;
   }
 
   if (FLAGS_bz_append) {
-    using BzAppend_t = IndexWrapper<K, int64_t, ::dbgroup::index::bztree::BzTree>;
-    run_any = Run<BzAppend_t>("BzTree append mode");
+    using V_FOR_APPEND = int64_t;
+    using BzAppend_t = Index<K, V_FOR_APPEND, ::dbgroup::index::bztree::BzTree>;
+    Run<K, V_FOR_APPEND, BzAppend_t>("BzTree append mode");
+    run_any = true;
   }
 
   /*----------------------------------------------------------------------------------*
@@ -142,28 +151,33 @@ ForwardKeyForBench()
    *----------------------------------------------------------------------------------*/
 
   if (FLAGS_b_pml_opt) {
-    using BTreePMLOpt_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreePMLFixLen>;
-    run_any = Run<BTreePMLOpt_t>("Optimized B+tree based on PML");
+    using BTreePMLOpt_t = Index<K, V, ::dbgroup::index::b_tree::BTreePMLFixLen>;
+    Run<K, V, BTreePMLOpt_t>("Optimized B+tree based on PML", kUseBulkload);
+    run_any = true;
   }
 
   if (FLAGS_b_psl_opt) {
-    using BTreePSLOpt_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreePSLFixLen>;
-    run_any = Run<BTreePSLOpt_t>("Optimized B+tree based on PSL");
+    using BTreePSLOpt_t = Index<K, V, ::dbgroup::index::b_tree::BTreePSLFixLen>;
+    Run<K, V, BTreePSLOpt_t>("Optimized B+tree based on PSL", kUseBulkload);
+    run_any = true;
   }
 
   if (FLAGS_b_oml_opt) {
-    using BTreeOMLOpt_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreeOMLFixLen>;
-    run_any = Run<BTreeOMLOpt_t>("Optimized B+tree based on OML");
+    using BTreeOMLOpt_t = Index<K, V, ::dbgroup::index::b_tree::BTreeOMLFixLen>;
+    Run<K, V, BTreeOMLOpt_t>("Optimized B+tree based on OML");
+    run_any = true;
   }
 
   if (FLAGS_b_osl_opt) {
-    using BTreeOSLOpt_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreeOSLFixLen>;
-    run_any = Run<BTreeOSLOpt_t>("Optimized B+tree based on OSL");
+    using BTreeOSLOpt_t = Index<K, V, ::dbgroup::index::b_tree::BTreeOSLFixLen>;
+    Run<K, V, BTreeOSLOpt_t>("Optimized B+tree based on OSL");
+    run_any = true;
   }
 
   if (FLAGS_bw_opt) {
-    using BwTreeOpt_t = IndexWrapper<K, V, ::dbgroup::index::bw_tree::BwTreeFixLen>;
-    run_any = Run<BwTreeOpt_t>("Optimized Bw-tree");
+    using BwTreeOpt_t = Index<K, V, ::dbgroup::index::bw_tree::BwTreeFixLen>;
+    Run<K, V, BwTreeOpt_t>("Optimized Bw-tree");
+    run_any = true;
   }
 
   /*----------------------------------------------------------------------------------*
@@ -173,28 +187,32 @@ ForwardKeyForBench()
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if (FLAGS_b_olc) {
     using BTreeOLC_t = BTreeOLCWrapper<K, V>;
-    run_any = Run<BTreeOLC_t>("B-tree based on OLC");
+    Run<K, V, BTreeOLC_t>("B-tree based on OLC");
+    run_any = true;
   }
 #endif
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if (FLAGS_open_bw) {
     using OpenBw_t = OpenBwTreeWrapper<K, V>;
-    run_any = Run<OpenBw_t>("OpenBw-Tree");
+    Run<K, V, OpenBw_t>("OpenBw-Tree");
+    run_any = true;
   }
 #endif
 
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
   if (FLAGS_yakushima) {
     using Yakushima_t = YakushimaWrapper<K, V>;
-    run_any = Run<Yakushima_t>("yakushima");
+    Run<K, V, Yakushima_t>("yakushima");
+    run_any = true;
   }
 #endif
 
 #ifdef INDEX_BENCH_BUILD_MASSTREE
   if (FLAGS_mass_beta) {
     using Mass_t = MasstreeWrapper<K, V>;
-    run_any = Run<Mass_t>("masstree-beta");
+    Run<K, V, Mass_t>("masstree-beta");
+    run_any = true;
   }
 #endif
 
@@ -203,10 +221,11 @@ ForwardKeyForBench()
     if (std::is_same_v<K, Key<k8>>) {
       using KEY_FOR_ALEX = uint64_t;
       using AlexOLC_t = AlexOLCWrapper<KEY_FOR_ALEX, V>;
-      run_any = Run<AlexOLC_t>("ALEX based on OLC");
+      Run<K, V, AlexOLC_t>("ALEX based on OLC");
     } else {
       std::cerr << "ALEX cannot deal with not numeric keys, so skipped." << std::endl;
     }
+    run_any = true;
   }
 #endif
 
