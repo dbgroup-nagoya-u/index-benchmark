@@ -175,15 +175,16 @@ class Index
     }
   }
 
-  void
-  Execute(const Operation_t &ops)
+  auto
+  Execute(const Operation_t &ops)  //
+      -> size_t
   {
     switch (ops.type) {
+      case kScan:
+        return index_->Scan(ops.GetKey(), ops.GetPayload());
+
       case kRead:
         index_->Read(ops.GetKey());
-        break;
-      case kScan:
-        index_->Scan(ops.GetKey(), ops.GetPayload());
         break;
       case kFullScan:
         index_->FullScan();
@@ -222,6 +223,8 @@ class Index
         std::string err_msg = "ERROR: an undefined operation is about to be executed.";
         throw std::runtime_error{err_msg};
     }
+
+    return 1;
   }
 
  private:

@@ -60,6 +60,8 @@ Run(  //
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Index_t, Operation_t, OperationEngine_t>;
   using Json_t = ::nlohmann::json;
 
+  constexpr auto kPercentile = "0.01,0.05,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,0.95,0.99";
+
   // create an operation engine
   OperationEngine_t ops_engine{FLAGS_num_thread};
   std::ifstream workload_in{FLAGS_workload};
@@ -82,7 +84,7 @@ Run(  //
 
   // run benchmark
   Bench_t bench{index,       target_name,      ops_engine, FLAGS_num_exec, FLAGS_num_thread,
-                random_seed, FLAGS_throughput, FLAGS_csv,  FLAGS_timeout};
+                random_seed, FLAGS_throughput, FLAGS_csv,  FLAGS_timeout,  kPercentile};
   bench.Run();
 
   return true;

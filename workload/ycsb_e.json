@@ -1,0 +1,19 @@
+{
+  "initialization": {
+    "# of keys": 100000000,
+    "use all cores": true
+  },
+  "workloads": [
+    {
+      "operation ratios": {
+        "scan": 0.95,
+        "write": 0.05
+      },
+      "# of keys": 100000000,
+      "partitioning policy": "none",
+      "access pattern": "random",
+      "skew parameter": 0.0,
+      "scan length": 100
+    }
+  ]
+}

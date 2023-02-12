@@ -113,32 +113,39 @@ class OpenBwTreeWrapper
     return read_results[0];
   }
 
-  void
+  auto
   Scan(  //
       const Key &begin_key,
-      const size_t scan_range)
+      const size_t scan_size)  //
+      -> size_t
   {
-    const auto &&end_key = begin_key + scan_range;
     size_t sum{0};
+    size_t count{0};
 
     ForwardIterator tree_iterator{&index_, begin_key};
-    for (; !tree_iterator.IsEnd(); ++tree_iterator) {
+    for (; !tree_iterator.IsEnd() && count < scan_size; ++tree_iterator, ++count) {
       const auto &[key, value] = *tree_iterator;
-      if (end_key < key) break;
 
       sum += value;
     }
+
+    return count;
   }
 
-  void
-  FullScan()
+  auto
+  FullScan()  //
+      -> size_t
   {
     size_t sum{0};
+    size_t count{0};
+
     ForwardIterator tree_iterator{&index_, Key{0}};
-    for (; !tree_iterator.IsEnd(); ++tree_iterator) {
+    for (; !tree_iterator.IsEnd(); ++tree_iterator, ++count) {
       const auto &[key, value] = *tree_iterator;
       sum += value;
     }
+
+    return count;
   }
 
   auto
