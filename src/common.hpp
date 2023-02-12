@@ -118,11 +118,17 @@ enum KeySize {
   k128 = 128,
 };
 
+constexpr int kSuccess = 0;
+
+constexpr int kFailed = -1;
+
 constexpr size_t kMaxCoreNum = INDEX_BENCH_MAX_CORES;
 
 constexpr size_t kGCInterval = 100000;
 
 constexpr size_t kGCThreadNum = 8;
+
+constexpr size_t kScanSize = 128;
 
 constexpr bool kClosed = true;
 

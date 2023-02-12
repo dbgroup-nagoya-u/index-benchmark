@@ -17,11 +17,15 @@
 #ifndef INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP
 #define INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP
 
+// C++ standard libraries
 #include <optional>
 #include <utility>
 
-#include "common.hpp"
+// external sources
 #include "open_bwtree/BTreeOLC/BTreeOLC.h"
+
+// local sources
+#include "common.hpp"
 
 template <class Key, class Payload>
 class BTreeOLCWrapper
@@ -31,20 +35,139 @@ class BTreeOLCWrapper
    *##################################################################################*/
 
   using BTreeOLC_t = btreeolc::BTree<Key, Payload>;
+  using ScanKey = std::optional<std::tuple<const Key &, size_t, bool>>;
 
  public:
   /*####################################################################################
-   * Public type aliases
+   * Public inner classes
    *##################################################################################*/
 
-  using K = Key;
-  using V = Payload;
+  /**
+   * @brief A class for representing an iterator of scan results.
+   *
+   */
+  class RecordIterator
+  {
+   public:
+    /*##################################################################################
+     * Public constructors and assignment operators
+     *################################################################################*/
+
+    /**
+     * @brief Construct a new object as an initial iterator.
+     *
+     * @param index a pointer to an index.
+     */
+    RecordIterator(  //
+        BTreeOLC_t *index,
+        Key begin_key,
+        Payload *payloads,
+        size_t size)
+        : index_{index}, key_{std::move(begin_key)}, payloads_{payloads}, size_{size}, pos_{0}
+    {
+    }
+
+    RecordIterator(const RecordIterator &) = delete;
+    RecordIterator(RecordIterator &&) = delete;
+
+    auto operator=(const RecordIterator &) -> RecordIterator & = delete;
+    auto operator=(RecordIterator &&obj) -> RecordIterator & = delete;
+
+    /*##################################################################################
+     * Public destructors
+     *################################################################################*/
+
+    /**
+     * @brief Destroy the iterator and a retained node if exist.
+     *
+     */
+    ~RecordIterator() = default;
+
+    /*##################################################################################
+     * Public operators for iterators
+     *################################################################################*/
+
+    /**
+     * @retval true if this iterator indicates a live record.
+     * @retval false otherwise.
+     */
+    explicit operator bool() { return HasRecord(); }
+
+    /**
+     * @brief Forward this iterator.
+     *
+     */
+    constexpr void
+    operator++()
+    {
+      ++pos_;
+    }
+
+    /*##################################################################################
+     * Public getters/setters
+     *################################################################################*/
+
+    /**
+     * @brief Check if there are any records left.
+     *
+     * NOTE: this may call a scanning function internally to get a sibling node.
+     *
+     * @retval true if there are any records or next node left.
+     * @retval false otherwise.
+     */
+    [[nodiscard]] auto
+    HasRecord()  //
+        -> bool
+    {
+      while (true) {
+        if (pos_ < size_) return true;        // records remain in this node
+        if (size_ < kScanSize) return false;  // this node is the end of range-scan
+
+        key_ = key_ + kScanSize;
+        size_ = index_->scan(key_, kScanSize, payloads_);
+      }
+    }
+
+    /**
+     * @return a payload of a current record
+     */
+    [[nodiscard]] auto
+    GetPayload() const  //
+        -> Payload
+    {
+      return payloads_[pos_];
+    }
+
+   private:
+    /*##################################################################################
+     * Internal member variables
+     *################################################################################*/
+
+    /// a pointer to a BwTree for sibling scanning.
+    BTreeOLC_t *index_{nullptr};
+
+    /// the current begin key.
+    Key key_{};
+
+    /// the scanned payloads.
+    Payload *payloads_{nullptr};
+
+    /// the number of payloads.
+    size_t size_{0};
+
+    /// the position of a current record.
+    size_t pos_{0};
+  };
 
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
 
-  explicit BTreeOLCWrapper([[maybe_unused]] const size_t worker_num) {}
+  BTreeOLCWrapper(  //
+      [[maybe_unused]] const size_t gc_interval,
+      [[maybe_unused]] const size_t gc_thread_num)
+  {
+  }
 
   ~BTreeOLCWrapper() = default;
 
@@ -52,23 +175,13 @@ class BTreeOLCWrapper
    * Public utility functions
    *##################################################################################*/
 
-  constexpr void
-  SetUp()
-  {
-  }
-
-  constexpr void
-  TearDown()
-  {
-  }
-
   constexpr auto
   Bulkload(  //
       [[maybe_unused]] const std::vector<std::pair<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
-      -> bool
+      -> int
   {
-    return false;
+    return kFailed;
   }
 
   /*####################################################################################
@@ -85,21 +198,20 @@ class BTreeOLCWrapper
   }
 
   auto
-  Scan(  //
-      [[maybe_unused]] const Key &begin_key,
-      [[maybe_unused]] const size_t scan_range)  //
-      -> size_t
+  Scan(const ScanKey &begin_key = std::nullopt)  //
+      -> RecordIterator
   {
-    throw std::runtime_error{"ERROR: the scan operation is not implemented."};
-    return 0;
-  }
+    thread_local Payload payloads[kScanSize];
 
-  auto
-  FullScan()  //
-      -> size_t
-  {
-    throw std::runtime_error{"ERROR: the scan operation is not implemented."};
-    return 0;
+    if (begin_key) {
+      const auto &[key, key_len, closed] = *begin_key;
+      const auto size = index_.scan(key, kScanSize, payloads);
+      return RecordIterator{&index_, key, payloads, size};
+    }
+
+    Key key{0};
+    const auto size = index_.scan(key, kScanSize, payloads);
+    return RecordIterator{&index_, key, payloads, size};
   }
 
   auto
@@ -108,7 +220,7 @@ class BTreeOLCWrapper
       const Payload &value)
   {
     index_.insert(key, value);
-    return 0;
+    return kSuccess;
   }
 
   auto
@@ -117,7 +229,7 @@ class BTreeOLCWrapper
       [[maybe_unused]] const Payload &value)
   {
     throw std::runtime_error{"ERROR: the insert operation is not implemented."};
-    return 1;
+    return kFailed;
   }
 
   auto
@@ -126,14 +238,14 @@ class BTreeOLCWrapper
       [[maybe_unused]] const Payload &value)
   {
     throw std::runtime_error{"ERROR: the update operation is not implemented."};
-    return 1;
+    return kFailed;
   }
 
   auto
   Delete([[maybe_unused]] const Key &key)
   {
     throw std::runtime_error{"ERROR: the delete operation is not implemented."};
-    return 1;
+    return kFailed;
   }
 
  private:

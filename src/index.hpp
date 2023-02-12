@@ -169,7 +169,7 @@ class Index
       const bool use_bulkload)
   {
     // if the target index has a bulkload function, use it
-    if (use_bulkload && (index_->Bulkload(entries, thread_num) == 0)) return;
+    if (use_bulkload && (index_->Bulkload(entries, thread_num) == kSuccess)) return;
 
     // otherwise, construct an index with one-by-one writing
     auto f = [&](ConstIter_t iter, const ConstIter_t &end_it) {

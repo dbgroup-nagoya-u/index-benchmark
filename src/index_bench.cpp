@@ -186,7 +186,7 @@ ForwardKeyForBench()
 
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if (FLAGS_b_olc) {
-    using BTreeOLC_t = BTreeOLCWrapper<K, V>;
+    using BTreeOLC_t = Index<K, V, BTreeOLCWrapper>;
     Run<K, V, BTreeOLC_t>("B-tree based on OLC");
     run_any = true;
   }
