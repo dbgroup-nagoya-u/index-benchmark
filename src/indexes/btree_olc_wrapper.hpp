@@ -34,7 +34,7 @@ class BTreeOLCWrapper
    * Type aliases
    *##################################################################################*/
 
-  using BTreeOLC_t = btreeolc::BTree<Key, Payload>;
+  using Index_t = btreeolc::BTree<Key, Payload>;
   using ScanKey = std::optional<std::tuple<const Key &, size_t, bool>>;
 
  public:
@@ -59,7 +59,7 @@ class BTreeOLCWrapper
      * @param index a pointer to an index.
      */
     RecordIterator(  //
-        BTreeOLC_t *index,
+        Index_t *index,
         Key begin_key,
         Payload *payloads,
         size_t size)
@@ -132,7 +132,7 @@ class BTreeOLCWrapper
      *################################################################################*/
 
     /// a pointer to a BwTree for sibling scanning.
-    BTreeOLC_t *index_{nullptr};
+    Index_t *index_{nullptr};
 
     /// the current begin key.
     Key key_{};
@@ -241,7 +241,7 @@ class BTreeOLCWrapper
    * Internal member variables
    *##################################################################################*/
 
-  BTreeOLC_t index_{};
+  Index_t index_{};
 };
 
 #endif  // INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP

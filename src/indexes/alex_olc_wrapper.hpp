@@ -45,20 +45,123 @@ class AlexOLCWrapper
 
   using Index_t = alexol::
       Alex<Key, Payload, alexol::AlexCompare, std::allocator<std::pair<Key, Payload>>, false>;
+  using ScanKey = std::optional<std::tuple<const Key &, size_t, bool>>;
 
  public:
   /*####################################################################################
-   * Public type aliases
+   * Public inner classes
    *##################################################################################*/
 
-  using K = Key;
-  using V = Payload;
+  /**
+   * @brief A class for representing an iterator of scan results.
+   *
+   */
+  class RecordIterator
+  {
+   public:
+    /*##################################################################################
+     * Public constructors and assignment operators
+     *################################################################################*/
+
+    /**
+     * @brief Construct a new object as an initial iterator.
+     *
+     * @param index a pointer to an index.
+     */
+    RecordIterator(  //
+        Index_t *index,
+        std::pair<Key, Payload> *records,
+        size_t size)
+        : index_{index}, records_{records}, size_{size}, pos_{0}
+    {
+    }
+
+    RecordIterator(const RecordIterator &) = delete;
+    RecordIterator(RecordIterator &&) = delete;
+
+    auto operator=(const RecordIterator &) -> RecordIterator & = delete;
+    auto operator=(RecordIterator &&obj) -> RecordIterator & = delete;
+
+    /*##################################################################################
+     * Public destructors
+     *################################################################################*/
+
+    /**
+     * @brief Destroy the iterator and a retained node if exist.
+     *
+     */
+    ~RecordIterator() = default;
+
+    /*##################################################################################
+     * Public operators for iterators
+     *################################################################################*/
+
+    /**
+     * @retval true if this iterator indicates a live record.
+     * @retval false otherwise.
+     */
+    explicit operator bool()
+    {
+      while (true) {
+        if (pos_ < size_) return true;        // records remain in this node
+        if (size_ < kScanSize) return false;  // this node is the end of range-scan
+
+        const auto &next_key = records_[kScanSize - 1].first + 1;
+        size_ = index_->range_scan_by_size(next_key, kScanSize, records_);
+      }
+    }
+
+    /**
+     * @brief Forward this iterator.
+     *
+     */
+    constexpr void
+    operator++()
+    {
+      ++pos_;
+    }
+
+    /*##################################################################################
+     * Public getters/setters
+     *################################################################################*/
+
+    /**
+     * @return a payload of a current record
+     */
+    [[nodiscard]] auto
+    GetPayload() const  //
+        -> Payload
+    {
+      return records_[pos_].second;
+    }
+
+   private:
+    /*##################################################################################
+     * Internal member variables
+     *################################################################################*/
+
+    /// a pointer to a BwTree for sibling scanning.
+    Index_t *index_{nullptr};
+
+    /// the scanned records.
+    std::pair<Key, Payload> *records_{nullptr};
+
+    /// the number of records.
+    size_t size_{0};
+
+    /// the position of a current record.
+    size_t pos_{0};
+  };
 
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
 
-  AlexOLCWrapper([[maybe_unused]] const size_t worker_num) { index_ = std::make_unique<Index_t>(); }
+  AlexOLCWrapper(  //
+      [[maybe_unused]] const size_t gc_interval,
+      [[maybe_unused]] const size_t gc_thread_num)
+  {
+  }
 
   ~AlexOLCWrapper() = default;
 
@@ -66,21 +169,10 @@ class AlexOLCWrapper
    * Public utility functions
    *##################################################################################*/
 
-  void
-  SetUp()
-  {
-  }
-
-  void
-  TearDown()
-  {
-  }
-
   constexpr auto
   Bulkload(  //
-      const std::vector<std::pair<K, Payload>> &entries,
-      [[maybe_unused]] const size_t thread_num)  //
-      -> bool
+      const std::vector<std::pair<Key, Payload>> &entries,
+      [[maybe_unused]] const size_t thread_num)
   {
     // switch buffer to ignore messages
     auto *tmp_cout_buf = std::cout.rdbuf();
@@ -88,12 +180,12 @@ class AlexOLCWrapper
     std::cout.rdbuf(out_null.rdbuf());
 
     // call bulkload API of ALEX
-    auto &&non_const_entries = const_cast<std::vector<std::pair<K, Payload>> &>(entries);
-    index_->bulk_load(non_const_entries.data(), static_cast<int>(non_const_entries.size()));
+    auto &&non_const_entries = const_cast<std::vector<std::pair<Key, Payload>> &>(entries);
+    index_.bulk_load(non_const_entries.data(), static_cast<int>(non_const_entries.size()));
 
     // reset output buffer
     std::cout.rdbuf(tmp_cout_buf);
-    return true;
+    return kSuccess;
   }
 
   /*####################################################################################
@@ -101,65 +193,61 @@ class AlexOLCWrapper
    *##################################################################################*/
 
   auto
-  Read(const K &key)  //
+  Read(const Key &key)  //
       -> std::optional<Payload>
   {
     Payload value{};
-    if (index_->get_payload(key, &value)) return value;
+    if (index_.get_payload(key, &value)) return value;
     return std::nullopt;
   }
 
   auto
-  Scan(  //
-      [[maybe_unused]] const K &begin_key,
-      [[maybe_unused]] const size_t scan_range)  //
-      -> size_t
+  Scan(const ScanKey &begin_key = std::nullopt)  //
+      -> RecordIterator
   {
-    throw std::runtime_error{"ERROR: the scan operation is not implemented."};
-    return 0;
-  }
+    thread_local std::pair<Key, Payload> records[kScanSize];
+    auto *ptr = static_cast<std::pair<Key, Payload> *>(records);
 
-  auto
-  FullScan()  //
-      -> size_t
-  {
-    throw std::runtime_error{"ERROR: the full scan operation is not implemented."};
-    return 0;
+    if (begin_key) {
+      const auto &[key, key_len, closed] = *begin_key;
+      const size_t size = index_.range_scan_by_size(key, kScanSize, ptr);
+      return RecordIterator{&index_, ptr, size};
+    }
+
+    Key key{0};
+    const size_t size = index_.range_scan_by_size(key, kScanSize, ptr);
+    return RecordIterator{&index_, ptr, size};
   }
 
   auto
   Write(  //
-      const K &key,
-      const Payload &value)  //
-      -> int64_t
+      const Key &key,
+      const Payload &value)
   {
-    if (index_->insert(key, value)) return 0;
-    return (index_->update(key, value)) ? 0 : 1;
+    if (index_.insert(key, value)) return kSuccess;
+    return (index_.update(key, value)) ? kSuccess : kFailed;
   }
 
   auto
   Insert(  //
-      const K &key,
-      const Payload &value)  //
-      -> int64_t
+      const Key &key,
+      const Payload &value)
   {
-    return (index_->insert(key, value)) ? 0 : 1;
+    return (index_.insert(key, value)) ? kSuccess : kFailed;
   }
 
   auto
   Update(  //
-      const K &key,
-      const Payload &value)  //
-      -> int64_t
+      const Key &key,
+      const Payload &value)
   {
-    return (index_->update(key, value)) ? 0 : 1;
+    return (index_.update(key, value)) ? kSuccess : kFailed;
   }
 
   auto
-  Delete(const K &key)  //
-      -> int64_t
+  Delete(const Key &key)
   {
-    return (index_->erase(key) > 0) ? 0 : 1;
+    return (index_.erase(key) > 0) ? kSuccess : kFailed;
   }
 
  private:
@@ -167,7 +255,7 @@ class AlexOLCWrapper
    * Internal member variables
    *##################################################################################*/
 
-  std::unique_ptr<Index_t> index_{nullptr};
+  Index_t index_{};
 };
 
 #endif  // INDEX_BENCHMARK_INDEXES_ALEX_OLC_WRAPPER_HPP

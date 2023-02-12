@@ -220,8 +220,8 @@ ForwardKeyForBench()
   if (FLAGS_alex_olc) {
     if (std::is_same_v<K, Key<k8>>) {
       using KEY_FOR_ALEX = uint64_t;
-      using AlexOLC_t = AlexOLCWrapper<KEY_FOR_ALEX, V>;
-      Run<K, V, AlexOLC_t>("ALEX based on OLC");
+      using AlexOLC_t = Index<KEY_FOR_ALEX, V, AlexOLCWrapper>;
+      Run<KEY_FOR_ALEX, V, AlexOLC_t>("ALEX based on OLC");
     } else {
       std::cerr << "ALEX cannot deal with not numeric keys, so skipped." << std::endl;
     }

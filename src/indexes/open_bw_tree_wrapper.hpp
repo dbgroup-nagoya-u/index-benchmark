@@ -58,8 +58,8 @@ class OpenBwTreeWrapper
    * Type aliases
    *##################################################################################*/
 
-  using BwTree_t = wangziqi2013::bwtree::BwTree<Key, Payload>;
-  using ForwardIterator = typename BwTree_t::ForwardIterator;
+  using Index_t = wangziqi2013::bwtree::BwTree<Key, Payload>;
+  using ForwardIterator = typename Index_t::ForwardIterator;
   using ScanKey = std::optional<std::tuple<const Key &, size_t, bool>>;
 
  public:
@@ -84,7 +84,7 @@ class OpenBwTreeWrapper
      * @param index a pointer to an index.
      */
     RecordIterator(  //
-        BwTree_t *index,
+        Index_t *index,
         std::optional<Key> begin_key = std::nullopt)
         : index_{index}
     {
@@ -151,7 +151,7 @@ class OpenBwTreeWrapper
      *################################################################################*/
 
     /// a pointer to a BwTree for sibling scanning.
-    BwTree_t *index_{nullptr};
+    Index_t *index_{nullptr};
 
     /// the current begin key.
     ForwardIterator iter_{};
@@ -266,7 +266,7 @@ class OpenBwTreeWrapper
   /// a thread id for each worker thread
   static thread_local inline size_t open_bw_thread_id_ = 0;
 
-  BwTree_t index_{};
+  Index_t index_{};
 };
 
 template <>
