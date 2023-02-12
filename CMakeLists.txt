@@ -209,7 +209,6 @@ endfunction()
 
 # add executables
 ADD_BENCHMARK("index_bench")
-# ADD_BENCHMARK("bulkload_bench")
 
 #--------------------------------------------------------------------------------------#
 # Build unit tests if required
