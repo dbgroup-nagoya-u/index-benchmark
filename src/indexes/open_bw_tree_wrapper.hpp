@@ -17,13 +17,18 @@
 #ifndef INDEX_BENCHMARK_INDEXES_OPEN_BW_TREE_HPP
 #define INDEX_BENCHMARK_INDEXES_OPEN_BW_TREE_HPP
 
+// C++ standard libraries
 #include <atomic>
 #include <optional>
 #include <utility>
 #include <vector>
 
-#include "common.hpp"
+// external sources
 #include "open_bwtree/BwTree/bwtree.h"
+
+// local sources
+#include "common.hpp"
+#include "key.hpp"
 
 /*######################################################################################
  * Specification for OpenBw-Tree
@@ -55,20 +60,113 @@ class OpenBwTreeWrapper
 
   using BwTree_t = wangziqi2013::bwtree::BwTree<Key, Payload>;
   using ForwardIterator = typename BwTree_t::ForwardIterator;
+  using ScanKey = std::optional<std::tuple<const Key &, size_t, bool>>;
 
  public:
   /*####################################################################################
-   * Public type aliases
+   * Public inner classes
    *##################################################################################*/
 
-  using K = Key;
-  using V = Payload;
+  /**
+   * @brief A class for representing an iterator of scan results.
+   *
+   */
+  class RecordIterator
+  {
+   public:
+    /*##################################################################################
+     * Public constructors and assignment operators
+     *################################################################################*/
+
+    /**
+     * @brief Construct a new object as an initial iterator.
+     *
+     * @param index a pointer to an index.
+     */
+    RecordIterator(  //
+        BwTree_t *index,
+        std::optional<Key> begin_key = std::nullopt)
+        : index_{index}
+    {
+      if (begin_key) {
+        iter_ = ForwardIterator{index_, *begin_key};
+      } else {
+        iter_ = index_->Begin();
+      }
+    }
+
+    RecordIterator(const RecordIterator &) = delete;
+    RecordIterator(RecordIterator &&) = delete;
+
+    auto operator=(const RecordIterator &) -> RecordIterator & = delete;
+    auto operator=(RecordIterator &&obj) -> RecordIterator & = delete;
+
+    /*##################################################################################
+     * Public destructors
+     *################################################################################*/
+
+    /**
+     * @brief Destroy the iterator and a retained node if exist.
+     *
+     */
+    ~RecordIterator() = default;
+
+    /*##################################################################################
+     * Public operators for iterators
+     *################################################################################*/
+
+    /**
+     * @retval true if this iterator indicates a live record.
+     * @retval false otherwise.
+     */
+    explicit operator bool() { return !iter_.IsEnd(); }
+
+    /**
+     * @brief Forward this iterator.
+     *
+     */
+    constexpr void
+    operator++()
+    {
+      ++iter_;
+    }
+
+    /*##################################################################################
+     * Public getters/setters
+     *################################################################################*/
+
+    /**
+     * @return a payload of a current record
+     */
+    [[nodiscard]] auto
+    GetPayload()  //
+        -> Payload
+    {
+      return iter_->second;
+    }
+
+   private:
+    /*##################################################################################
+     * Internal member variables
+     *################################################################################*/
+
+    /// a pointer to a BwTree for sibling scanning.
+    BwTree_t *index_{nullptr};
+
+    /// the current begin key.
+    ForwardIterator iter_{};
+  };
 
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
 
-  explicit OpenBwTreeWrapper(const size_t worker_num) { index_.UpdateThreadLocal(worker_num + 1); }
+  OpenBwTreeWrapper(  //
+      [[maybe_unused]] const size_t gc_interval,
+      [[maybe_unused]] const size_t gc_thread_num)
+  {
+    index_.UpdateThreadLocal(2 * kMaxCoreNum + 1);
+  }
 
   ~OpenBwTreeWrapper() = default;
 
@@ -93,9 +191,9 @@ class OpenBwTreeWrapper
   Bulkload(  //
       [[maybe_unused]] const std::vector<std::pair<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
-      -> bool
+      -> int
   {
-    return false;
+    return kFailed;
   }
 
   /*####################################################################################
@@ -106,7 +204,7 @@ class OpenBwTreeWrapper
   Read(const Key &key)  //
       -> std::optional<Payload>
   {
-    std::vector<Payload> read_results;
+    std::vector<Payload> read_results{};
     index_.GetValue(key, read_results);
 
     if (read_results.empty()) return std::nullopt;
@@ -114,75 +212,47 @@ class OpenBwTreeWrapper
   }
 
   auto
-  Scan(  //
-      const Key &begin_key,
-      const size_t scan_size)  //
-      -> size_t
+  Scan(const ScanKey &begin_key = std::nullopt)  //
+      -> RecordIterator
   {
-    size_t sum{0};
-    size_t count{0};
-
-    ForwardIterator tree_iterator{&index_, begin_key};
-    for (; !tree_iterator.IsEnd() && count < scan_size; ++tree_iterator, ++count) {
-      const auto &[key, value] = *tree_iterator;
-
-      sum += value;
+    if (begin_key) {
+      const auto &[key, key_len, closed] = *begin_key;
+      return RecordIterator{&index_, key};
     }
-
-    return count;
-  }
-
-  auto
-  FullScan()  //
-      -> size_t
-  {
-    size_t sum{0};
-    size_t count{0};
-
-    ForwardIterator tree_iterator{&index_, Key{0}};
-    for (; !tree_iterator.IsEnd(); ++tree_iterator, ++count) {
-      const auto &[key, value] = *tree_iterator;
-      sum += value;
-    }
-
-    return count;
+    return RecordIterator{&index_};
   }
 
   auto
   Write(  //
       const Key &key,
-      const Payload &value)  //
-      -> int64_t
+      const Payload &value)
   {
     index_.Upsert(key, value);
-    return 0;
+    return kSuccess;
   }
 
   auto
   Insert(  //
       const Key &key,
-      const Payload &value)  //
-      -> int64_t
+      const Payload &value)
   {
-    return !index_.Insert(key, value);
+    return (index_.Insert(key, value)) ? kSuccess : kFailed;
   }
 
   auto
   Update(  //
       [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Payload &value)  //
-      -> int64_t
+      [[maybe_unused]] const Payload &value)
   {
     throw std::runtime_error{"ERROR: the update operation is not implemented."};
-    return 1;
+    return kFailed;
   }
 
   auto
-  Delete(const Key &key)  //
-      -> int64_t
+  Delete(const Key &key)
   {
     // a delete operation in Open-Bw-tree requrires a key-value pair
-    return !index_.Delete(key, Payload{key.GetValue()});
+    return (index_.Delete(key, Payload{key.GetValue()})) ? kSuccess : kFailed;
   }
 
  private:
@@ -198,5 +268,67 @@ class OpenBwTreeWrapper
 
   BwTree_t index_{};
 };
+
+template <>
+constexpr auto
+HasSetUpTearDown<OpenBwTreeWrapper>()  //
+    -> bool
+{
+  return true;
+}
+
+namespace std
+{
+template <>
+struct hash<Key<8>> {
+  auto
+  operator()(const Key<8> &key) const  //
+      -> size_t
+  {
+    return std::hash<size_t>{}(key.GetValue());
+  }
+};
+
+template <>
+struct hash<Key<16>> {
+  auto
+  operator()(const Key<16> &key) const  //
+      -> size_t
+  {
+    return std::hash<size_t>{}(key.GetValue());
+  }
+};
+
+template <>
+struct hash<Key<32>> {
+  auto
+  operator()(const Key<32> &key) const  //
+      -> size_t
+  {
+    return std::hash<size_t>{}(key.GetValue());
+  }
+};
+
+template <>
+struct hash<Key<64>> {
+  auto
+  operator()(const Key<64> &key) const  //
+      -> size_t
+  {
+    return std::hash<size_t>{}(key.GetValue());
+  }
+};
+
+template <>
+struct hash<Key<128>> {
+  auto
+  operator()(const Key<128> &key) const  //
+      -> size_t
+  {
+    return std::hash<size_t>{}(key.GetValue());
+  }
+};
+
+}  // namespace std
 
 #endif  // INDEX_BENCHMARK_INDEXES_OPEN_BW_TREE_HPP

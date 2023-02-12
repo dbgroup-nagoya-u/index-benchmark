@@ -91,7 +91,16 @@ class BTreeOLCWrapper
      * @retval true if this iterator indicates a live record.
      * @retval false otherwise.
      */
-    explicit operator bool() { return HasRecord(); }
+    explicit operator bool()
+    {
+      while (true) {
+        if (pos_ < size_) return true;        // records remain in this node
+        if (size_ < kScanSize) return false;  // this node is the end of range-scan
+
+        key_ = key_ + kScanSize;
+        size_ = index_->scan(key_, kScanSize, payloads_);
+      }
+    }
 
     /**
      * @brief Forward this iterator.
@@ -106,27 +115,6 @@ class BTreeOLCWrapper
     /*##################################################################################
      * Public getters/setters
      *################################################################################*/
-
-    /**
-     * @brief Check if there are any records left.
-     *
-     * NOTE: this may call a scanning function internally to get a sibling node.
-     *
-     * @retval true if there are any records or next node left.
-     * @retval false otherwise.
-     */
-    [[nodiscard]] auto
-    HasRecord()  //
-        -> bool
-    {
-      while (true) {
-        if (pos_ < size_) return true;        // records remain in this node
-        if (size_ < kScanSize) return false;  // this node is the end of range-scan
-
-        key_ = key_ + kScanSize;
-        size_ = index_->scan(key_, kScanSize, payloads_);
-      }
-    }
 
     /**
      * @return a payload of a current record

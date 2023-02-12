@@ -194,7 +194,7 @@ ForwardKeyForBench()
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if (FLAGS_open_bw) {
-    using OpenBw_t = OpenBwTreeWrapper<K, V>;
+    using OpenBw_t = Index<K, V, OpenBwTreeWrapper>;
     Run<K, V, OpenBw_t>("OpenBw-Tree");
     run_any = true;
   }
