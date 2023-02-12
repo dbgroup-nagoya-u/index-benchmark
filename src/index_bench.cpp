@@ -90,12 +90,12 @@ Run(  //
   return true;
 }
 
-template <class Key>
+template <class K>
 void
 ForwardKeyForBench()
 {
   // run benchmark for each implementaton
-  using Payload = uint64_t;
+  using V = uint64_t;
   auto run_any = false;  // check any indexes are specified as benchmarking targets
 
   /*----------------------------------------------------------------------------------*
@@ -103,37 +103,37 @@ ForwardKeyForBench()
    *----------------------------------------------------------------------------------*/
 
   if (FLAGS_b_pml) {
-    using BTreePML_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePMLVarLen>;
+    using BTreePML_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreePMLVarLen>;
     run_any = Run<BTreePML_t>("B+tree based on PML", kUseBulkload);
   }
 
   if (FLAGS_b_psl) {
-    using BTreePSL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLVarLen>;
+    using BTreePSL_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreePSLVarLen>;
     run_any = Run<BTreePSL_t>("B+tree based on PSL", kUseBulkload);
   }
 
   if (FLAGS_b_oml) {
-    using BTreeOML_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOMLVarLen>;
+    using BTreeOML_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreeOMLVarLen>;
     run_any = Run<BTreeOML_t>("B+tree based on OML");
   }
 
   if (FLAGS_b_osl) {
-    using BTreeOSL_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOSLVarLen>;
+    using BTreeOSL_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreeOSLVarLen>;
     run_any = Run<BTreeOSL_t>("B+tree based on OSL");
   }
 
   if (FLAGS_bw) {
-    using BwTree_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeVarLen>;
+    using BwTree_t = IndexWrapper<K, V, ::dbgroup::index::bw_tree::BwTreeVarLen>;
     run_any = Run<BwTree_t>("Bw-tree");
   }
 
   if (FLAGS_bz) {
-    using BzInPlace_t = IndexWrapper<Key, Payload, ::dbgroup::index::bztree::BzTree>;
+    using BzInPlace_t = IndexWrapper<K, V, ::dbgroup::index::bztree::BzTree>;
     run_any = Run<BzInPlace_t>("BzTree in-place mode");
   }
 
   if (FLAGS_bz_append) {
-    using BzAppend_t = IndexWrapper<Key, int64_t, ::dbgroup::index::bztree::BzTree>;
+    using BzAppend_t = IndexWrapper<K, int64_t, ::dbgroup::index::bztree::BzTree>;
     run_any = Run<BzAppend_t>("BzTree append mode");
   }
 
@@ -142,27 +142,27 @@ ForwardKeyForBench()
    *----------------------------------------------------------------------------------*/
 
   if (FLAGS_b_pml_opt) {
-    using BTreePMLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePMLFixLen>;
+    using BTreePMLOpt_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreePMLFixLen>;
     run_any = Run<BTreePMLOpt_t>("Optimized B+tree based on PML");
   }
 
   if (FLAGS_b_psl_opt) {
-    using BTreePSLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreePSLFixLen>;
+    using BTreePSLOpt_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreePSLFixLen>;
     run_any = Run<BTreePSLOpt_t>("Optimized B+tree based on PSL");
   }
 
   if (FLAGS_b_oml_opt) {
-    using BTreeOMLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOMLFixLen>;
+    using BTreeOMLOpt_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreeOMLFixLen>;
     run_any = Run<BTreeOMLOpt_t>("Optimized B+tree based on OML");
   }
 
   if (FLAGS_b_osl_opt) {
-    using BTreeOSLOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::b_tree::BTreeOSLFixLen>;
+    using BTreeOSLOpt_t = IndexWrapper<K, V, ::dbgroup::index::b_tree::BTreeOSLFixLen>;
     run_any = Run<BTreeOSLOpt_t>("Optimized B+tree based on OSL");
   }
 
   if (FLAGS_bw_opt) {
-    using BwTreeOpt_t = IndexWrapper<Key, Payload, ::dbgroup::index::bw_tree::BwTreeFixLen>;
+    using BwTreeOpt_t = IndexWrapper<K, V, ::dbgroup::index::bw_tree::BwTreeFixLen>;
     run_any = Run<BwTreeOpt_t>("Optimized Bw-tree");
   }
 
@@ -172,36 +172,41 @@ ForwardKeyForBench()
 
 #ifdef INDEX_BENCH_BUILD_BTREE_OLC
   if (FLAGS_b_olc) {
-    using BTreeOLC_t = BTreeOLCWrapper<Key, Payload>;
+    using BTreeOLC_t = BTreeOLCWrapper<K, V>;
     run_any = Run<BTreeOLC_t>("B-tree based on OLC");
   }
 #endif
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
   if (FLAGS_open_bw) {
-    using OpenBw_t = OpenBwTreeWrapper<Key, Payload>;
+    using OpenBw_t = OpenBwTreeWrapper<K, V>;
     run_any = Run<OpenBw_t>("OpenBw-Tree");
   }
 #endif
 
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
   if (FLAGS_yakushima) {
-    using Yakushima_t = YakushimaWrapper<Key, Payload>;
+    using Yakushima_t = YakushimaWrapper<K, V>;
     run_any = Run<Yakushima_t>("yakushima");
   }
 #endif
 
 #ifdef INDEX_BENCH_BUILD_MASSTREE
   if (FLAGS_mass_beta) {
-    using Mass_t = MasstreeWrapper<Key, Payload>;
+    using Mass_t = MasstreeWrapper<K, V>;
     run_any = Run<Mass_t>("masstree-beta");
   }
 #endif
 
 #ifdef INDEX_BENCH_BUILD_ALEXOL
   if (FLAGS_alexol) {
-    using Alexol_t = AlexolWrapper<Key, Payload>;
-    run_any = Run<Alexol_t>("Alex+");
+    if (std::is_same_v<K, Key<k8>>) {
+      using KEY_FOR_ALEX = uint64_t;
+      using Alexol_t = AlexolWrapper<KEY_FOR_ALEX, V>;
+      run_any = Run<Alexol_t>("Alex+");
+    } else {
+      std::cerr << "ALEX+ cannot deal with not numeric keys, so skipped." << std::endl;
+    }
   }
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Database Group, Nagoya University
+ * Copyright 2023 Database Group, Nagoya University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,19 @@
 #ifndef INDEX_BENCHMARK_INDEXES_ALEXOL_WRAPPER_HPP
 #define INDEX_BENCHMARK_INDEXES_ALEXOL_WRAPPER_HPP
 
+// C++ standard libraries
 #include <algorithm>
 #include <atomic>
+#include <iostream>
 #include <iterator>
 #include <optional>
 #include <string>
 #include <utility>
 
-#include "GRE/src/competitor/alexol/alex.h"
+// external sources
+#include "GRE/src/competitor/alexol/src/alex.h"
+
+// local sources
 #include "common.hpp"
 
 /*######################################################################################
@@ -38,14 +43,15 @@ class AlexolWrapper
    * Type aliases
    *##################################################################################*/
 
-  using Index_t = alexolInterface<uint64_t, Payload>;
+  using Index_t = alexol::
+      Alex<Key, Payload, alexol::AlexCompare, std::allocator<std::pair<Key, Payload>>, false>;
 
  public:
   /*####################################################################################
    * Public type aliases
    *##################################################################################*/
 
-  using K = uint64_t;
+  using K = Key;
   using V = Payload;
 
   /*####################################################################################
@@ -72,12 +78,21 @@ class AlexolWrapper
 
   constexpr auto
   Bulkload(  //
-      [[maybe_unused]] const std::vector<std::pair<K, Payload>> &entries,
+      const std::vector<std::pair<K, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
       -> bool
   {
+    // switch buffer to ignore messages
+    auto *tmp_cout_buf = std::cout.rdbuf();
+    std::ofstream out_null{"/dev/null"};
+    std::cout.rdbuf(out_null.rdbuf());
+
+    // call bulkload API of ALEX
     auto &&non_const_entries = const_cast<std::vector<std::pair<K, Payload>> &>(entries);
     index_->bulk_load(non_const_entries.data(), static_cast<int>(non_const_entries.size()));
+
+    // reset output buffer
+    std::cout.rdbuf(tmp_cout_buf);
     return true;
   }
 
@@ -90,23 +105,26 @@ class AlexolWrapper
       -> std::optional<Payload>
   {
     Payload value{};
-    const auto found = index_->get(key, value);
-    if (found) return value;
+    if (index_->get_payload(key, &value)) return value;
     return std::nullopt;
   }
 
-  void
+  auto
   Scan(  //
       [[maybe_unused]] const K &begin_key,
-      [[maybe_unused]] const size_t scan_range)
+      [[maybe_unused]] const size_t scan_range)  //
+      -> size_t
   {
     throw std::runtime_error{"ERROR: the scan operation is not implemented."};
+    return 0;
   }
 
-  void
-  FullScan()
+  auto
+  FullScan()  //
+      -> size_t
   {
     throw std::runtime_error{"ERROR: the full scan operation is not implemented."};
+    return 0;
   }
 
   auto
@@ -115,44 +133,40 @@ class AlexolWrapper
       const Payload &value)  //
       -> int64_t
   {
-    const auto inserted = index_->put(key, value);
-    if (!inserted) {
-      index_->update(key, value);
-    }
-    return 0;
+    if (index_->insert(key, value)) return 0;
+    return (index_->update(key, value)) ? 0 : 1;
   }
 
   auto
   Insert(  //
-      [[maybe_unused]] const K &key,
-      [[maybe_unused]] const Payload &value)  //
+      const K &key,
+      const Payload &value)  //
       -> int64_t
   {
-    index_->put(key, value);
-    return 0;
+    return (index_->insert(key, value)) ? 0 : 1;
   }
 
   auto
   Update(  //
-      [[maybe_unused]] const K &key,
-      [[maybe_unused]] const Payload &value)  //
+      const K &key,
+      const Payload &value)  //
       -> int64_t
   {
-    index_->update(key, value);
-    return 0;
+    return (index_->update(key, value)) ? 0 : 1;
   }
 
   auto
   Delete(const K &key)  //
       -> int64_t
   {
-    return 0;
+    return (index_->erase(key) > 0) ? 0 : 1;
   }
 
  private:
   /*####################################################################################
    * Internal member variables
    *##################################################################################*/
+
   std::unique_ptr<Index_t> index_{nullptr};
 };
 
