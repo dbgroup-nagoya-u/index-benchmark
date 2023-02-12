@@ -25,3 +25,6 @@
 [submodule "external/b-tree"]
 	path = external/b-tree
 	url = git@github.com:dbgroup-nagoya-u/b-tree.git
+[submodule "external/GRE"]
+	path = external/GRE
+	url = git@github.com:gre4index/GRE.git

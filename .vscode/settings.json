@@ -55,6 +55,7 @@
   "plantuml.exportSubFolder": false,
   // local dictionary
   "cSpell.words": [
+    "ALEXOL",
     "alignas",
     "btreeolc",
     "bwtree",

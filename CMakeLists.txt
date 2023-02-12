@@ -17,6 +17,7 @@ project(
 set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
 set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
+set(ALEXOL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/GRE")
 
 #--------------------------------------------------------------------------------------#
 # Use gflags to manage CLI options
@@ -54,6 +55,7 @@ option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OF
 option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_ALEX_OLC "Build AlexOL as a benchmarking target" OFF)
 
 #--------------------------------------------------------------------------------------#
 # Configure cpp-utility
@@ -177,6 +179,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:-mcx16>
+    $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:-march=native>
   )
   target_include_directories(${BENCHMARK_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
@@ -206,6 +209,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
     $<$<AND:$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>,$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">>:BWTREE_NODEBUG>
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:INDEX_BENCH_BUILD_ALEX_OLC>
   )
 
   if(${INDEX_BENCH_BUILD_MASSTREE})
