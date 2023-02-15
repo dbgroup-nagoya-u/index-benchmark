@@ -200,18 +200,18 @@ ForwardKeyForBench()
   }
 #endif
 
-#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-  if (FLAGS_yakushima) {
-    using Yakushima_t = Index<K, V, YakushimaWrapper>;
-    Run<K, V, Yakushima_t>("yakushima");
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if (FLAGS_mass_beta) {
+    using Mass_t = Index<K, V, MasstreeWrapper>;
+    Run<K, V, Mass_t>("masstree-beta");
     run_any = true;
   }
 #endif
 
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-  if (FLAGS_mass_beta) {
-    using Mass_t = MasstreeWrapper<K, V>;
-    Run<K, V, Mass_t>("masstree-beta");
+#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
+  if (FLAGS_yakushima) {
+    using Yakushima_t = Index<K, V, YakushimaWrapper>;
+    Run<K, V, Yakushima_t>("yakushima");
     run_any = true;
   }
 #endif

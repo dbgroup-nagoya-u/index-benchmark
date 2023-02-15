@@ -180,9 +180,9 @@ class YakushimaWrapper
   Bulkload(  //
       [[maybe_unused]] const std::vector<std::pair<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
-      -> bool
+      -> int
   {
-    return false;
+    return kFailed;
   }
 
   /*####################################################################################
