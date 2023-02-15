@@ -208,13 +208,7 @@ class AlexOLCWrapper
     thread_local std::pair<Key, Payload> records[kScanSize];
     auto *ptr = static_cast<std::pair<Key, Payload> *>(records);
 
-    if (begin_key) {
-      const auto &[key, key_len, closed] = *begin_key;
-      const size_t size = index_.range_scan_by_size(key, kScanSize, ptr);
-      return RecordIterator{&index_, ptr, size};
-    }
-
-    Key key{0};
+    auto &&key = (begin_key) ? std::get<0>(*begin_key) : Key{0};
     const size_t size = index_.range_scan_by_size(key, kScanSize, ptr);
     return RecordIterator{&index_, ptr, size};
   }

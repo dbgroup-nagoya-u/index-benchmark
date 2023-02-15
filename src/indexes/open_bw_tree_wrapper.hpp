@@ -215,10 +215,7 @@ class OpenBwTreeWrapper
   Scan(const ScanKey &begin_key = std::nullopt)  //
       -> RecordIterator
   {
-    if (begin_key) {
-      const auto &[key, key_len, closed] = *begin_key;
-      return RecordIterator{&index_, key};
-    }
+    if (begin_key) return RecordIterator{&index_, std::get<0>(*begin_key)};
     return RecordIterator{&index_};
   }
 

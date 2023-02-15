@@ -191,13 +191,7 @@ class BTreeOLCWrapper
   {
     thread_local Payload payloads[kScanSize];
 
-    if (begin_key) {
-      const auto &[key, key_len, closed] = *begin_key;
-      const auto size = index_.scan(key, kScanSize, payloads);
-      return RecordIterator{&index_, key, payloads, size};
-    }
-
-    Key key{0};
+    auto &&key = (begin_key) ? std::get<0>(*begin_key) : Key{0};
     const auto size = index_.scan(key, kScanSize, payloads);
     return RecordIterator{&index_, key, payloads, size};
   }
