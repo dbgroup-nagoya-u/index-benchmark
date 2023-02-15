@@ -104,6 +104,7 @@ class YakushimaWrapper
                           key, ::yakushima::scan_endpoint::EXCLUSIVE,  //
                           kDummyKey, ::yakushima::scan_endpoint::INF,  //
                           *records_, nullptr, kScanSize);
+        pos_ = 0;
       }
     }
 

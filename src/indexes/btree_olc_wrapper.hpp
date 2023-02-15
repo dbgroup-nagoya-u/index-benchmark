@@ -63,7 +63,7 @@ class BTreeOLCWrapper
         Key begin_key,
         Payload *payloads,
         size_t size)
-        : index_{index}, key_{std::move(begin_key)}, payloads_{payloads}, size_{size}, pos_{0}
+        : index_{index}, key_{std::move(begin_key)}, payloads_{payloads}, size_{size}
     {
     }
 
@@ -99,6 +99,7 @@ class BTreeOLCWrapper
 
         key_ = key_ + kScanSize;
         size_ = index_->scan(key_, kScanSize, payloads_);
+        pos_ = 0;
       }
     }
 

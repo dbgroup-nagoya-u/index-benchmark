@@ -72,7 +72,7 @@ class AlexOLCWrapper
         Index_t *index,
         std::pair<Key, Payload> *records,
         size_t size)
-        : index_{index}, records_{records}, size_{size}, pos_{0}
+        : index_{index}, records_{records}, size_{size}
     {
     }
 
@@ -108,6 +108,7 @@ class AlexOLCWrapper
 
         const auto &next_key = records_[kScanSize - 1].first + 1;
         size_ = index_->range_scan_by_size(next_key, kScanSize, records_);
+        pos_ = 0;
       }
     }
 
