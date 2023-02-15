@@ -202,7 +202,7 @@ ForwardKeyForBench()
 
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
   if (FLAGS_yakushima) {
-    using Yakushima_t = YakushimaWrapper<K, V>;
+    using Yakushima_t = Index<K, V, YakushimaWrapper>;
     Run<K, V, Yakushima_t>("yakushima");
     run_any = true;
   }
@@ -250,18 +250,18 @@ main(int argc, char *argv[])  //
     case k8:
       ForwardKeyForBench<Key<k8>>();
       break;
-    case k16:
-      ForwardKeyForBench<Key<k16>>();
-      break;
-    case k32:
-      ForwardKeyForBench<Key<k32>>();
-      break;
-    case k64:
-      ForwardKeyForBench<Key<k64>>();
-      break;
-    case k128:
-      ForwardKeyForBench<Key<k128>>();
-      break;
+    // case k16:
+    //   ForwardKeyForBench<Key<k16>>();
+    //   break;
+    // case k32:
+    //   ForwardKeyForBench<Key<k32>>();
+    //   break;
+    // case k64:
+    //   ForwardKeyForBench<Key<k64>>();
+    //   break;
+    // case k128:
+    //   ForwardKeyForBench<Key<k128>>();
+    //   break;
     default:
       break;
   }
