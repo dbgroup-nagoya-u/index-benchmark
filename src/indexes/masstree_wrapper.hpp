@@ -101,10 +101,10 @@ class MasstreeWrapper
      * @param index a pointer to an index.
      */
     RecordIterator(  //
-        Query_t *index,
         Table_t *table,
-        Json_t &&json_arr)
-        : index_{index}, table_{table}, json_arr_{json_arr}
+        Key &&key,
+        std::vector<Payload> &payloads)
+        : table_{table}, payloads_{payloads}, key_{key}
     {
     }
 
@@ -135,13 +135,14 @@ class MasstreeWrapper
     explicit operator bool()
     {
       while (true) {
-        const size_t elem_num = json_arr_.size() - 2;
-        if (pos_ < elem_num) return true;              // records remain in this node
-        if ((elem_num / 2) < kScanSize) return false;  // this node is the end of range-scan
+        const size_t size = payloads_.size();
+        if (pos_ < size) return true;        // records remain in this node
+        if (size < kScanSize) return false;  // this node is the end of range-scan
 
-        json_arr_ = Json_t::array(0, 0, json_arr_[pos_].as_s(), kScanSize);
-        index_->run_scan(table_->table(), json_arr_, *thread_info_);
-        pos_ = 2;
+        key_ = key_ + kScanSize;
+        Scanner scanner{kScanSize, payloads_};
+        table_->table().scan(ToStr(key_), true, scanner, *thread_info_);
+        pos_ = 0;
       }
     }
 
@@ -152,7 +153,7 @@ class MasstreeWrapper
     constexpr void
     operator++()
     {
-      pos_ += 2;
+      ++pos_;
     }
 
     /*##################################################################################
@@ -166,9 +167,7 @@ class MasstreeWrapper
     GetPayload() const  //
         -> Payload
     {
-      Payload payload{};
-      memcpy(&payload, json_arr_[pos_ + 1].as_s().data(), sizeof(Payload));
-      return payload;
+      return payloads_.at(pos_);
     }
 
    private:
@@ -176,15 +175,68 @@ class MasstreeWrapper
      * Internal member variables
      *################################################################################*/
 
-    Query_t *index_{nullptr};
-
     Table_t *table_{nullptr};
 
-    /// the scanned records.
-    Json_t json_arr_{};
+    /// the scanned payloads.
+    std::vector<Payload> &payloads_;
 
     /// the position of a current record.
-    size_t pos_{2};
+    size_t pos_{0};
+
+    /// the current scan key.
+    Key key_{};
+  };
+
+  class Scanner
+  {
+   public:
+    /*##################################################################################
+     * Public constructors and assignment operators
+     *################################################################################*/
+
+    Scanner(  //
+        const size_t scan_size,
+        std::vector<Payload> &payloads)
+        : num_remain_(scan_size), payloads_(payloads)
+    {
+      payloads.clear();
+    }
+
+    /*##################################################################################
+     * Public utilities
+     *################################################################################*/
+
+    template <typename SS, typename K>
+    void
+    visit_leaf(const SS &, const K &, const threadinfo &)
+    {
+      // do nothing for single-version scanning
+    }
+
+    auto
+    visit_value(  //
+        Str_t,
+        row_type *value,
+        threadinfo &)  //
+        -> bool
+    {
+      if (row_is_marker(value)) return true;
+
+      Payload payload{};
+      memcpy(&payload, value->col(0).data(), sizeof(Payload));
+      payloads_.emplace_back(std::move(payload));
+
+      return (--num_remain_) > 0;
+    }
+
+   private:
+    /*##################################################################################
+     * Internal member variables
+     *################################################################################*/
+
+    int64_t num_remain_{0};
+
+    std::vector<Payload> &payloads_;
   };
 
   /*####################################################################################
@@ -247,11 +299,13 @@ class MasstreeWrapper
   Scan(const ScanKey &begin_key = std::nullopt)  //
       -> RecordIterator
   {
-    const auto &key = (begin_key) ? std::get<0>(*begin_key) : Key{0};
-    auto &&json_arr = Json_t::array(0, 0, ToStr(key), kScanSize);
-    index_.run_scan(table_.table(), json_arr, *thread_info_);
+    thread_local std::vector<Payload> payloads{kScanSize};
 
-    return RecordIterator{&index_, &table_, std::move(json_arr)};
+    auto key = (begin_key) ? std::get<0>(*begin_key) : Key{0};
+    Scanner scanner{kScanSize, payloads};
+    table_.table().scan(ToStr(key), true, scanner, *thread_info_);
+
+    return RecordIterator{&table_, std::move(key), payloads};
   }
 
   auto
