@@ -17,11 +17,15 @@
 #ifndef INDEX_BENCHMARK_KEY_HPP
 #define INDEX_BENCHMARK_KEY_HPP
 
+// C++ standard libraries
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <functional>
+
+namespace dbgroup
+{
 
 template <size_t kKeyLen>
 class Key
@@ -129,5 +133,7 @@ class Key
 
   uint8_t key_[kKeyLen]{};
 };
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_KEY_HPP

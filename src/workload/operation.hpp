@@ -17,7 +17,11 @@
 #ifndef INDEX_BENCHMARK_WORKLOAD_OPERATION_HPP
 #define INDEX_BENCHMARK_WORKLOAD_OPERATION_HPP
 
+// local sources
 #include "common.hpp"
+
+namespace dbgroup
+{
 
 /**
  * @brief A class to represent index read/write operations.
@@ -83,5 +87,7 @@ struct Operation {
   /// a target data of this operation
   uint32_t value{};
 };
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_WORKLOAD_OPERATION_HPP

@@ -27,6 +27,9 @@
 // local sources
 #include "common.hpp"
 
+namespace dbgroup
+{
+
 template <class Key, class Payload>
 class BTreeOLCWrapper
 {
@@ -238,5 +241,7 @@ class BTreeOLCWrapper
 
   Index_t index_{};
 };
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP

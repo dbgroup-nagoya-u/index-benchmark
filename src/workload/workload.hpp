@@ -17,12 +17,19 @@
 #ifndef INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP
 #define INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP
 
+// C++ standard libraries
 #include <random>
 #include <variant>
 
-#include "common.hpp"
+// external sources
 #include "nlohmann/json.hpp"
 #include "random/zipf.hpp"
+
+// local sources
+#include "common.hpp"
+
+namespace dbgroup
+{
 
 /**
  * @brief A class for representing a certain phase in workloads.
@@ -229,5 +236,7 @@ class Workload
 
   size_t scan_length_{1000};
 };
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP

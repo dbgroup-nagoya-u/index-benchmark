@@ -30,6 +30,9 @@
 // local sources
 #include "common.hpp"
 
+namespace dbgroup
+{
+
 template <class Key, class Payload>
 class YakushimaWrapper
 {
@@ -305,5 +308,7 @@ HasSetUpTearDown<YakushimaWrapper>()  //
 {
   return true;
 }
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_INDEXES_YAKUSHIMA_WRAPPER_HPP

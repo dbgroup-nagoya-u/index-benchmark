@@ -49,6 +49,9 @@ DEFINE_validator(workload, &ValidateWorkload);
  * Utility functions
  *####################################################################################*/
 
+namespace dbgroup
+{
+
 template <class Key, class Payload, class Index_t>
 auto
 Run(  //
@@ -93,7 +96,7 @@ Run(  //
 
 template <class K>
 void
-ForwardKeyForBench()
+RunWithMultipleIndexes()
 {
   // run benchmark for each implementaton
   using V = uint64_t;
@@ -234,6 +237,32 @@ ForwardKeyForBench()
   }
 }
 
+void
+RunWithSelectedKey()
+{
+  switch (FLAGS_key_size) {
+    case k8:
+      RunWithMultipleIndexes<Key<k8>>();
+      break;
+    case k16:
+      RunWithMultipleIndexes<Key<k16>>();
+      break;
+    case k32:
+      RunWithMultipleIndexes<Key<k32>>();
+      break;
+    case k64:
+      RunWithMultipleIndexes<Key<k64>>();
+      break;
+    case k128:
+      RunWithMultipleIndexes<Key<k128>>();
+      break;
+    default:
+      break;
+  }
+}
+
+}  // namespace dbgroup
+
 /*######################################################################################
  * Main function
  *####################################################################################*/
@@ -246,25 +275,7 @@ main(int argc, char *argv[])  //
   gflags::SetUsageMessage("measures throughput/latency for thread-safe index implementations.");
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  switch (FLAGS_key_size) {
-    case k8:
-      ForwardKeyForBench<Key<k8>>();
-      break;
-    // case k16:
-    //   ForwardKeyForBench<Key<k16>>();
-    //   break;
-    // case k32:
-    //   ForwardKeyForBench<Key<k32>>();
-    //   break;
-    // case k64:
-    //   ForwardKeyForBench<Key<k64>>();
-    //   break;
-    // case k128:
-    //   ForwardKeyForBench<Key<k128>>();
-    //   break;
-    default:
-      break;
-  }
+  dbgroup::RunWithSelectedKey();
 
   return 0;
 }

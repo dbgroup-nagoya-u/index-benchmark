@@ -34,6 +34,9 @@
 // local sources
 #include "key.hpp"
 
+namespace dbgroup
+{
+
 /*######################################################################################
  * Global enum and constants
  *####################################################################################*/
@@ -207,5 +210,7 @@ HasSetUpTearDown()  //
 {
   return false;
 }
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_COMMON_HPP

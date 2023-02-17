@@ -47,6 +47,9 @@ std::atomic<size_t> BwTreeBase::total_thread_num = 1;
 
 }  // namespace wangziqi2013::bwtree
 
+namespace dbgroup
+{
+
 /*######################################################################################
  * Class definition
  *####################################################################################*/
@@ -274,12 +277,14 @@ HasSetUpTearDown<OpenBwTreeWrapper>()  //
   return true;
 }
 
+}  // namespace dbgroup
+
 namespace std
 {
 template <>
-struct hash<Key<8>> {
+struct hash<::dbgroup::Key<8>> {
   auto
-  operator()(const Key<8> &key) const  //
+  operator()(const ::dbgroup::Key<8> &key) const  //
       -> size_t
   {
     return std::hash<size_t>{}(key.GetValue());
@@ -287,9 +292,9 @@ struct hash<Key<8>> {
 };
 
 template <>
-struct hash<Key<16>> {
+struct hash<::dbgroup::Key<16>> {
   auto
-  operator()(const Key<16> &key) const  //
+  operator()(const ::dbgroup::Key<16> &key) const  //
       -> size_t
   {
     return std::hash<size_t>{}(key.GetValue());
@@ -297,9 +302,9 @@ struct hash<Key<16>> {
 };
 
 template <>
-struct hash<Key<32>> {
+struct hash<::dbgroup::Key<32>> {
   auto
-  operator()(const Key<32> &key) const  //
+  operator()(const ::dbgroup::Key<32> &key) const  //
       -> size_t
   {
     return std::hash<size_t>{}(key.GetValue());
@@ -307,9 +312,9 @@ struct hash<Key<32>> {
 };
 
 template <>
-struct hash<Key<64>> {
+struct hash<::dbgroup::Key<64>> {
   auto
-  operator()(const Key<64> &key) const  //
+  operator()(const ::dbgroup::Key<64> &key) const  //
       -> size_t
   {
     return std::hash<size_t>{}(key.GetValue());
@@ -317,9 +322,9 @@ struct hash<Key<64>> {
 };
 
 template <>
-struct hash<Key<128>> {
+struct hash<::dbgroup::Key<128>> {
   auto
-  operator()(const Key<128> &key) const  //
+  operator()(const ::dbgroup::Key<128> &key) const  //
       -> size_t
   {
     return std::hash<size_t>{}(key.GetValue());

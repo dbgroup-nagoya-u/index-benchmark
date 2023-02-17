@@ -109,6 +109,9 @@ DEFINE_bool(alex_olc, false, "Use OLC based ALEX as a benchmark target");
 DEFINE_bool(alex_olc, false, "OLC based Alex is not built as a benchmark target.");
 #endif
 
+namespace dbgroup
+{
+
 /*######################################################################################
  * Class definition
  *####################################################################################*/
@@ -282,5 +285,7 @@ class Index
   /// an actual target implementation
   std::unique_ptr<Index_t> index_{nullptr};
 };
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_INDEX_HPP

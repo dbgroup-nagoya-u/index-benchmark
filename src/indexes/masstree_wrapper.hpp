@@ -62,6 +62,9 @@ volatile bool recovering = false;
 ///
 kvtimestamp_t initial_timestamp;
 
+namespace dbgroup
+{
+
 /*######################################################################################
  * Class definition
  *####################################################################################*/
@@ -379,5 +382,7 @@ HasSetUpTearDown<MasstreeWrapper>()  //
 {
   return true;
 }
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_INDEXES_MASSTREE_WRAPPER_HPP

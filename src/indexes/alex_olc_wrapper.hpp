@@ -32,6 +32,9 @@
 // local sources
 #include "common.hpp"
 
+namespace dbgroup
+{
+
 /*######################################################################################
  * Class definition
  *####################################################################################*/
@@ -252,5 +255,7 @@ class AlexOLCWrapper
 
   Index_t index_{};
 };
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_INDEXES_ALEX_OLC_WRAPPER_HPP
