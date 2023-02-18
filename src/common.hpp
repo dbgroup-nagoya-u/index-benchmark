@@ -80,8 +80,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(IndexOperation,
 enum AccessPattern {
   kUndefinedAccessPattern = -1,
   kRandom,
-  kSequential,
-  kSeqReverse,
+  kAscending,
+  kDescending,
 };
 
 // mapping for access pattern strings
@@ -89,8 +89,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(AccessPattern,
                              {
                                  {kUndefinedAccessPattern, nullptr},
                                  {kRandom, "random"},
-                                 {kSequential, "sequential"},
-                                 {kSeqReverse, "reverse"},
+                                 {kAscending, "ascending"},
+                                 {kDescending, "descending"},
                              })
 
 enum Partitioning {

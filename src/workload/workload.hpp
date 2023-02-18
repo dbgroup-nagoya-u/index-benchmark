@@ -203,9 +203,9 @@ class Workload
     uint32_t key_id{};
     if (access_pattern_ == kRandom) {
       key_id = std::visit([&](auto &dist) { return dist(rand_engine); }, key_dist);
-    } else if (access_pattern_ == kSequential) {
+    } else if (access_pattern_ == kAscending) {
       key_id = i % key_num;
-    } else {  // access_pattern_ == kSeqReverse
+    } else {  // access_pattern_ == kDescending
       key_id = key_num - 1 - (i % key_num);
     }
 
