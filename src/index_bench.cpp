@@ -219,6 +219,14 @@ RunWithMultipleIndexes()
   }
 #endif
 
+#ifdef INDEX_BENCH_BUILD_ART_OLC
+  if (FLAGS_art_olc) {
+    using ArtOLC_t = Index<K, V, ArtOLCWrapper>;
+    Run<K, V, ArtOLC_t>("ART based on OLC");
+    run_any = true;
+  }
+#endif
+
 #ifdef INDEX_BENCH_BUILD_ALEX_OLC
   if (FLAGS_alex_olc) {
     if (std::is_same_v<K, Key<k8>>) {

@@ -14,10 +14,7 @@ project(
 )
 
 # define source directories
-set(INDEX_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(OPEN_BWTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/src")
 set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
-set(ALEXOL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/GRE")
 
 #--------------------------------------------------------------------------------------#
 # Use gflags to manage CLI options
@@ -45,7 +42,8 @@ option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OF
 option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_ALEX_OLC "Build AlexOL as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_ART_OLC "Build ARTOLC as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_ALEX_OLC "Build AlexOLC as a benchmarking target" OFF)
 
 #--------------------------------------------------------------------------------------#
 # Configure cpp-utility
@@ -142,6 +140,18 @@ set(INDEX_BENCH_MASSTREE_LIBS
 )
 
 #--------------------------------------------------------------------------------------#
+# Configure ART based on OLC
+#--------------------------------------------------------------------------------------#
+
+if(${INDEX_BENCH_BUILD_ART_OLC})
+  set(ART_OLC_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/ARTOLC")
+  set(ART_OLC_SOURCES
+    "${ART_OLC_SOURCE_DIR}/Epoche.cpp"
+    "${ART_OLC_SOURCE_DIR}/Tree.cpp"
+  )
+endif()
+
+#--------------------------------------------------------------------------------------#
 # Configure nlohmann_json
 #--------------------------------------------------------------------------------------#
 
@@ -157,7 +167,8 @@ pkg_check_modules(glog REQUIRED libglog)
 # define function to add unit tests in the same format
 function(ADD_BENCHMARK BENCHMARK_TARGET)
   add_executable(${BENCHMARK_TARGET}
-    "${INDEX_BENCH_SOURCE_DIR}/src/${BENCHMARK_TARGET}.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/${BENCHMARK_TARGET}.cpp"
+    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:${ART_OLC_SOURCES}>
   )
   target_compile_features(${BENCHMARK_TARGET} PRIVATE
     "cxx_std_17"
@@ -178,7 +189,6 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
   )
   target_link_libraries(${BENCHMARK_TARGET} PRIVATE
     gflags
-    TBB::tbb
     nlohmann_json::nlohmann_json
     cpp_utility::cpp_utility
     cpp_bench::cpp_bench
@@ -186,8 +196,9 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     bw_tree::bw_tree
     bztree::bztree
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
-    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_LIBRARIES}>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
+    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_LIBRARIES}>
+    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:TBB::tbb>
   )
   target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
     INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
@@ -197,6 +208,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
     $<$<AND:$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>,$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">>:BWTREE_NODEBUG>
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:INDEX_BENCH_BUILD_ART_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:INDEX_BENCH_BUILD_ALEX_OLC>
   )
 

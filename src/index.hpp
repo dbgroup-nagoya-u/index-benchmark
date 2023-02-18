@@ -99,6 +99,17 @@ DEFINE_bool(yakushima, false, "yakushima is not built as a benchmark target.");
 #endif
 
 /*------------------------------------------------------------------------------------*
+ * Adaptive radix tres.
+ *------------------------------------------------------------------------------------*/
+
+#ifdef INDEX_BENCH_BUILD_ART_OLC
+#include "indexes/art_olc_wrapper.hpp"
+DEFINE_bool(art_olc, false, "Use OLC based ART as a benchmark target");
+#else
+DEFINE_bool(art_olc, false, "OLC based ART is not built as a benchmark target.");
+#endif
+
+/*------------------------------------------------------------------------------------*
  * Learned indexes
  *------------------------------------------------------------------------------------*/
 
