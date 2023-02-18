@@ -14,24 +14,6 @@ project(
 )
 
 #--------------------------------------------------------------------------------------#
-# Use gflags to manage CLI options
-#--------------------------------------------------------------------------------------#
-find_package(gflags REQUIRED)
-
-#--------------------------------------------------------------------------------------#
-# Use Intel oneTBB for parallel sort
-#--------------------------------------------------------------------------------------#
-find_package(TBB REQUIRED)
-
-#--------------------------------------------------------------------------------------#
-# Build option for efficient memory allocators
-#--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_OVERRIDE_MIMALLOC "Override entire memory allocation with mimalloc" OFF)
-if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
-  find_package(mimalloc 1.7 REQUIRED)
-endif()
-
-#--------------------------------------------------------------------------------------#
 # Build option for target indexes
 #--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
@@ -42,8 +24,7 @@ option(INDEX_BENCH_BUILD_ART_OLC "Build ARTOLC as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_ALEX_OLC "Build AlexOLC as a benchmarking target" OFF)
 
 set(INDEX_BENCH_COMPARE_WITH_SOTA OFF)
-if (
-  ${INDEX_BENCH_BUILD_BTREE_OLC}
+if(${INDEX_BENCH_BUILD_BTREE_OLC}
   OR ${INDEX_BENCH_BUILD_OPEN_BWTREE}
   OR ${INDEX_BENCH_BUILD_MASSTREE}
   OR ${INDEX_BENCH_BUILD_YAKUSHIMA}
@@ -53,16 +34,6 @@ if (
   message("[${PROJECT_NAME}] Use unsigned integer keys for comparison with the state-of-the-art indexes.")
   set(INDEX_BENCH_COMPARE_WITH_SOTA ON)
 endif()
-
-#--------------------------------------------------------------------------------------#
-# Configure cpp-utility
-#--------------------------------------------------------------------------------------#
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
-
-#--------------------------------------------------------------------------------------#
-# Configure benchmarker
-#--------------------------------------------------------------------------------------#
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 
 #--------------------------------------------------------------------------------------#
 # Configurations for target indexes
@@ -93,19 +64,71 @@ else()
   message(WARNING "[${PROJECT_NAME}] The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORES explicitly.")
 endif()
 
+set(INDEX_BENCH_USE_SIMD OFF)
+if(${INDEX_BENCH_BUILD_ART_OLC} OR ${INDEX_BENCH_BUILD_ALEX_OLC})
+  set(INDEX_BENCH_USE_SIMD ON)
+endif()
+
+#--------------------------------------------------------------------------------------#
+# Use gflags to manage CLI options
+#--------------------------------------------------------------------------------------#
+
+find_package(gflags REQUIRED)
+
+#--------------------------------------------------------------------------------------#
+# Build option for efficient memory allocators
+#--------------------------------------------------------------------------------------#
+
+option(INDEX_BENCH_OVERRIDE_MIMALLOC "Override entire memory allocation with mimalloc" OFF)
+if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
+  find_package(mimalloc 1.7 REQUIRED)
+endif()
+
+#--------------------------------------------------------------------------------------#
+# Configure Intel oneAPI Toolkits
+#--------------------------------------------------------------------------------------#
+
+set(INDEX_BENCH_USE_TBB OFF)
+if(${INDEX_BENCH_BUILD_YAKUSHIMA} OR ${INDEX_BENCH_BUILD_ART_OLC} OR ${INDEX_BENCH_BUILD_ALEX_OLC})
+  set(INDEX_BENCH_USE_TBB ON)
+  find_package(TBB REQUIRED)
+endif()
+
+#--------------------------------------------------------------------------------------#
+# Configure cpp-utility
+#--------------------------------------------------------------------------------------#
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
+
+#--------------------------------------------------------------------------------------#
+# Configure benchmarker
+#--------------------------------------------------------------------------------------#
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
+
+#--------------------------------------------------------------------------------------#
+# Configure nlohmann_json
+#--------------------------------------------------------------------------------------#
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
+
 #--------------------------------------------------------------------------------------#
 # Configure B-tree
 #--------------------------------------------------------------------------------------#
+
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/b-tree")
 
 #--------------------------------------------------------------------------------------#
 # Configure Bw-tree
 #--------------------------------------------------------------------------------------#
+
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bw-tree")
 
 #--------------------------------------------------------------------------------------#
 # Configure BzTree
 #--------------------------------------------------------------------------------------#
+
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 #--------------------------------------------------------------------------------------#
@@ -165,13 +188,6 @@ if(${INDEX_BENCH_BUILD_ART_OLC})
 endif()
 
 #--------------------------------------------------------------------------------------#
-# Configure nlohmann_json
-#--------------------------------------------------------------------------------------#
-
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
-
-#--------------------------------------------------------------------------------------#
 # Build Benchmark
 #--------------------------------------------------------------------------------------#
 find_package(PkgConfig REQUIRED)
@@ -192,8 +208,8 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
+    $<$<BOOL:${INDEX_BENCH_USE_SIMD}>:-march=native>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:-mcx16>
-    $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:-march=native>
   )
   target_include_directories(${BENCHMARK_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
@@ -209,18 +225,17 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     bw_tree::bw_tree
     bztree::bztree
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
+    $<$<BOOL:${INDEX_BENCH_USE_TBB}>:TBB::tbb>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_LIBRARIES}>
-    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:TBB::tbb>
   )
   target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
     INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
-    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
     $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
-    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
-    $<$<AND:$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>,$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">>:BWTREE_NODEBUG>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:BWTREE_NODEBUG>
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
     $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:INDEX_BENCH_BUILD_ART_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:INDEX_BENCH_BUILD_ALEX_OLC>
     $<$<BOOL:${INDEX_BENCH_COMPARE_WITH_SOTA}>:INDEX_BENCH_COMPARE_WITH_SOTA>
