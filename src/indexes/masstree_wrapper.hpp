@@ -23,6 +23,9 @@
 #include <string>
 #include <utility>
 
+// external system libraries
+#include <byteswap.h>
+
 // external sources
 #include "masstree/clp.h"
 #include "masstree/config.h"
@@ -349,12 +352,13 @@ class MasstreeWrapper
    * Internal utility functions
    *##################################################################################*/
 
-  template <class T>
-  static constexpr auto
-  ToStr(const T &data)  //
+  static auto
+  ToStr(const uint64_t &key)  //
       -> Str_t
   {
-    return Str_t{reinterpret_cast<const char *>(&data), sizeof(T)};
+    thread_local uint64_t swapped{};
+    swapped = bswap_64(key);
+    return Str_t{reinterpret_cast<const char *>(&swapped), sizeof(uint64_t)};
   }
 
   /*####################################################################################

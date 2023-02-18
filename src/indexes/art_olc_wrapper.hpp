@@ -41,7 +41,7 @@ class ArtOLCWrapper
 
   using Index_t = ::ART_OLC::Tree;
   using ThreadInfo_t = ::ART::ThreadInfo;
-  using Key_t = ::Key;  // ART's key type
+  using ArtKey = ::Key;  // ART's key type
   using ScanKey = std::optional<std::tuple<const K &, size_t, bool>>;
 
  public:
@@ -106,7 +106,7 @@ class ArtOLCWrapper
         auto &&ti = index_->getThreadInfo();
         const uint32_t next_tid = tuple_ids_[kScanSize - 1U] + 1U;
         K k{next_tid};
-        Key_t cont_key{};
+        ArtKey cont_key{};
         size_ = 0;
         index_->lookupRange(ToArtKey(k), kEndKey, cont_key, tuple_ids_, kScanSize, size_, ti);
         pos_ = 0;
@@ -202,7 +202,7 @@ class ArtOLCWrapper
 
     auto &&ti = index_.getThreadInfo();
     const auto &key = (begin_key) ? std::get<0>(*begin_key) : K{0};
-    Key_t cont_key{};
+    ArtKey cont_key{};
     size_t rec_num = 0;
     index_.lookupRange(ToArtKey(key), kEndKey, cont_key, tuple_ids_, kScanSize, rec_num, ti);
 
@@ -215,7 +215,7 @@ class ArtOLCWrapper
       [[maybe_unused]] const Payload &value)
   {
     auto &&ti = index_.getThreadInfo();
-    index_.insert(ToArtKey(key), key.GetValue(), ti);
+    index_.insert(ToArtKey(key), key, ti);
     return kSuccess;
   }
 
@@ -241,7 +241,7 @@ class ArtOLCWrapper
   Delete(const K &key)
   {
     auto &&ti = index_.getThreadInfo();
-    index_.remove(ToArtKey(key), key.GetValue(), ti);
+    index_.remove(ToArtKey(key), key, ti);
     return kSuccess;
   }
 
@@ -250,27 +250,23 @@ class ArtOLCWrapper
    * Internal constants
    *##################################################################################*/
 
-  static const inline Key_t kEndKey{std::numeric_limits<uint64_t>::max()};
+  static const inline ArtKey kEndKey{std::numeric_limits<uint64_t>::max()};
 
   /*####################################################################################
    * Internal utility functions
    *##################################################################################*/
 
   static void
-  LoadKey(TID tid, Key_t &key)
+  LoadKey(TID tid, ArtKey &key)
   {
-    thread_local K k{};
-    k = K{static_cast<uint32_t>(tid)};
-    key.set(reinterpret_cast<const char *>(&k), sizeof(K));
+    key.setInt(tid);
   }
 
   static constexpr auto
   ToArtKey(const K &k)  //
-      -> Key_t
+      -> ArtKey
   {
-    Key_t key{};
-    key.set(reinterpret_cast<const char *>(&k), sizeof(K));
-    return key;
+    return ArtKey{k};
   }
 
   /*####################################################################################

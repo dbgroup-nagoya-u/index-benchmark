@@ -229,13 +229,8 @@ RunWithMultipleIndexes()
 
 #ifdef INDEX_BENCH_BUILD_ALEX_OLC
   if (FLAGS_alex_olc) {
-    if (std::is_same_v<K, Key<k8>>) {
-      using KEY_FOR_ALEX = uint64_t;
-      using AlexOLC_t = Index<KEY_FOR_ALEX, V, AlexOLCWrapper>;
-      Run<KEY_FOR_ALEX, V, AlexOLC_t>("ALEX based on OLC");
-    } else {
-      std::cerr << "ALEX cannot deal with not numeric keys, so skipped." << std::endl;
-    }
+    using AlexOLC_t = Index<K, V, AlexOLCWrapper>;
+    Run<K, V, AlexOLC_t>("ALEX based on OLC");
     run_any = true;
   }
 #endif
@@ -248,24 +243,28 @@ RunWithMultipleIndexes()
 void
 RunWithSelectedKey()
 {
-  switch (FLAGS_key_size) {
-    case k8:
-      RunWithMultipleIndexes<Key<k8>>();
-      break;
-    case k16:
-      RunWithMultipleIndexes<Key<k16>>();
-      break;
-    case k32:
-      RunWithMultipleIndexes<Key<k32>>();
-      break;
-    case k64:
-      RunWithMultipleIndexes<Key<k64>>();
-      break;
-    case k128:
-      RunWithMultipleIndexes<Key<k128>>();
-      break;
-    default:
-      break;
+  if constexpr (kUseIntegerKeys) {
+    RunWithMultipleIndexes<uint64_t>();
+  } else {
+    switch (FLAGS_key_size) {
+      case k8:
+        RunWithMultipleIndexes<Key<k8>>();
+        break;
+      case k16:
+        RunWithMultipleIndexes<Key<k16>>();
+        break;
+      case k32:
+        RunWithMultipleIndexes<Key<k32>>();
+        break;
+      case k64:
+        RunWithMultipleIndexes<Key<k64>>();
+        break;
+      case k128:
+        RunWithMultipleIndexes<Key<k128>>();
+        break;
+      default:
+        break;
+    }
   }
 }
 

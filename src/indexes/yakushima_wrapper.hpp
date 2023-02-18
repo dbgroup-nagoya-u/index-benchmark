@@ -24,6 +24,9 @@
 #include <utility>
 #include <vector>
 
+// external system libraries
+#include <byteswap.h>
+
 // external sources
 #include "yakushima/include/kvs.h"
 
@@ -274,20 +277,13 @@ class YakushimaWrapper
    * Internal utility functions
    *##################################################################################*/
 
-  template <class T>
-  static constexpr auto
-  ToStrView(const T &data)  //
+  static auto
+  ToStrView(const uint64_t &key)  //
       -> std::string_view
   {
-    return std::string_view{reinterpret_cast<const char *>(&data), sizeof(T)};
-  }
-
-  template <class T>
-  static constexpr auto
-  ToKey(const std::string_view &data)  //
-      -> T
-  {
-    return *(reinterpret_cast<const T *>(data.data()));
+    thread_local uint64_t swapped{};
+    swapped = bswap_64(key);
+    return std::string_view{reinterpret_cast<const char *>(&swapped), sizeof(uint64_t)};
   }
 
   /*####################################################################################

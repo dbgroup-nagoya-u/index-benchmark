@@ -249,10 +249,10 @@ class OpenBwTreeWrapper
   }
 
   auto
-  Delete(const Key &key)
+  Delete( [[maybe_unused]] const Key &key)
   {
-    // a delete operation in Open-Bw-tree requrires a key-value pair
-    return (index_.Delete(key, Payload{key.GetValue()})) ? kSuccess : kFailed;
+    throw std::runtime_error{"ERROR: the update operation is not implemented."};
+    return kFailed;
   }
 
  private:

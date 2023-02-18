@@ -137,6 +137,12 @@ constexpr bool kClosed = true;
 
 constexpr bool kUseBulkload = true;
 
+#ifdef INDEX_BENCH_COMPARE_WITH_SOTA
+constexpr bool kUseIntegerKeys = true;
+#else
+constexpr bool kUseIntegerKeys = false;
+#endif
+
 constexpr double kEpsilon = 0.001;
 
 /*######################################################################################

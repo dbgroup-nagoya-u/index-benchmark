@@ -13,9 +13,6 @@ project(
   LANGUAGES "CXX"
 )
 
-# define source directories
-set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
-
 #--------------------------------------------------------------------------------------#
 # Use gflags to manage CLI options
 #--------------------------------------------------------------------------------------#
@@ -30,7 +27,6 @@ find_package(TBB REQUIRED)
 # Build option for efficient memory allocators
 #--------------------------------------------------------------------------------------#
 option(INDEX_BENCH_OVERRIDE_MIMALLOC "Override entire memory allocation with mimalloc" OFF)
-
 if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
   find_package(mimalloc 1.7 REQUIRED)
 endif()
@@ -38,12 +34,25 @@ endif()
 #--------------------------------------------------------------------------------------#
 # Build option for target indexes
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_ART_OLC "Build ARTOLC as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_ALEX_OLC "Build AlexOLC as a benchmarking target" OFF)
+
+set(INDEX_BENCH_COMPARE_WITH_SOTA OFF)
+if (
+  ${INDEX_BENCH_BUILD_BTREE_OLC}
+  OR ${INDEX_BENCH_BUILD_OPEN_BWTREE}
+  OR ${INDEX_BENCH_BUILD_MASSTREE}
+  OR ${INDEX_BENCH_BUILD_YAKUSHIMA}
+  OR ${INDEX_BENCH_BUILD_ART_OLC}
+  OR ${INDEX_BENCH_BUILD_ALEX_OLC}
+)
+  message("[${PROJECT_NAME}] Use unsigned integer keys for comparison with the state-of-the-art indexes.")
+  set(INDEX_BENCH_COMPARE_WITH_SOTA ON)
+endif()
 
 #--------------------------------------------------------------------------------------#
 # Configure cpp-utility
@@ -59,14 +68,17 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 # Configurations for target indexes
 #--------------------------------------------------------------------------------------#
 
-set(INDEX_BENCH_PAGE_SIZE "" CACHE STRING "The default page size in bytes.")
-if(NOT "${INDEX_BENCH_PAGE_SIZE}" STREQUAL "")
+set(INDEX_BENCH_PAGE_SIZE "1024" CACHE STRING "The default page size in bytes.")
+if(NOT "${INDEX_BENCH_PAGE_SIZE}" STREQUAL "" AND NOT "${INDEX_BENCH_COMPARE_WITH_SOTA}")
+  message("[${PROJECT_NAME}] Set the page size of the reproduced B+trees to ${INDEX_BENCH_PAGE_SIZE}.")
+  set(B_TREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
   set(BW_TREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
   set(BZTREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
 endif()
 
 set(INDEX_BENCH_MAX_DELTA_RECORD_NUM "" CACHE STRING "The maximum number of delta records if used.")
 if(NOT "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" STREQUAL "")
+  message("[${PROJECT_NAME}] Set the maximum number of delta records of the reproduced B+trees to ${INDEX_BENCH_MAX_DELTA_RECORD_NUM}.")
   set(BW_TREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
   set(BZTREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
 endif()
@@ -75,10 +87,10 @@ include(ProcessorCount)
 ProcessorCount(TMP_PROC_COUNT)
 if(NOT TMP_PROC_COUNT EQUAL 0)
   set(INDEX_BENCH_MAX_CORES "${TMP_PROC_COUNT}" CACHE STRING "The number of logical cores.")
-  message("The detected # of cores: ${INDEX_BENCH_MAX_CORES}")
+  message("[${PROJECT_NAME}] The detected number of cores: ${INDEX_BENCH_MAX_CORES}")
 else()
   set(INDEX_BENCH_MAX_CORES "128" CACHE STRING "The number of logical cores.")
-  message(WARNING "The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORES explicitly.")
+  message(WARNING "[${PROJECT_NAME}] The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORES explicitly.")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -100,6 +112,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 # Configure Masstree
 #--------------------------------------------------------------------------------------#
 
+set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
 if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
   execute_process(
     COMMAND ./bootstrap.sh
@@ -210,6 +223,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
     $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:INDEX_BENCH_BUILD_ART_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:INDEX_BENCH_BUILD_ALEX_OLC>
+    $<$<BOOL:${INDEX_BENCH_COMPARE_WITH_SOTA}>:INDEX_BENCH_COMPARE_WITH_SOTA>
   )
 
   if(${INDEX_BENCH_BUILD_MASSTREE})
