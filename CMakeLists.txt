@@ -123,7 +123,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 #--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_B_TREE_OLC})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_b_tree_olc.txt.in")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/b_tree_olc.cmake")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -131,7 +131,7 @@ endif()
 #--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_open_bw_tree.txt.in")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/open_bw_tree.cmake")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -139,7 +139,7 @@ endif()
 #--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_MASSTREE})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_masstree.txt.in")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/masstree.cmake")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -147,7 +147,7 @@ endif()
 #--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_YAKUSHIMA})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_yakushima.txt.in")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/yakushima.cmake")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -155,7 +155,7 @@ endif()
 #--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_ART_OLC})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_art_olc.txt.in")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/art_olc.cmake")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -163,7 +163,7 @@ endif()
 #--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_HYDRALIST})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_hydralist.txt.in")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/hydralist.cmake")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -171,7 +171,7 @@ endif()
 #--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_ALEX_OLC})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_alex_olc.txt.in")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/alex_olc.cmake")
 endif()
 
 #--------------------------------------------------------------------------------------#
