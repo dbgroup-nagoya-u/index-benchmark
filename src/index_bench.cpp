@@ -227,6 +227,14 @@ RunWithMultipleIndexes()
   }
 #endif
 
+#ifdef INDEX_BENCH_BUILD_HYDRALIST
+  if (FLAGS_hydralist) {
+    using HydraList_t = Index<K, V, HydraListWrapper>;
+    Run<K, V, HydraList_t>("HydraList");
+    run_any = true;
+  }
+#endif
+
 #ifdef INDEX_BENCH_BUILD_ALEX_OLC
   if (FLAGS_alex_olc) {
     using AlexOLC_t = Index<K, V, AlexOLCWrapper>;

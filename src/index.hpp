@@ -109,6 +109,13 @@ DEFINE_bool(art_olc, false, "Use OLC based ART as a benchmark target");
 DEFINE_bool(art_olc, false, "OLC based ART is not built as a benchmark target.");
 #endif
 
+#ifdef INDEX_BENCH_BUILD_HYDRALIST
+#include "indexes/hydralist_wrapper.hpp"
+DEFINE_bool(hydralist, false, "Use HydraList as a benchmark target");
+#else
+DEFINE_bool(hydralist, false, "HydraList is not built as a benchmark target.");
+#endif
+
 /*------------------------------------------------------------------------------------*
  * Learned indexes
  *------------------------------------------------------------------------------------*/

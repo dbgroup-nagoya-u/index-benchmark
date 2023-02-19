@@ -28,3 +28,6 @@
 [submodule "external/GRE"]
 	path = external/GRE
 	url = git@github.com:gre4index/GRE.git
+[submodule "external/hydralist"]
+	path = external/hydralist
+	url = https://github.com/cosmoss-jigu/hydralist.git

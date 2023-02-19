@@ -21,6 +21,7 @@ option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_ART_OLC "Build ARTOLC as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_HYDRALIST "Build HydraList as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_ALEX_OLC "Build AlexOLC as a benchmarking target" OFF)
 
 set(INDEX_BENCH_COMPARE_WITH_SOTA OFF)
@@ -29,6 +30,7 @@ if(${INDEX_BENCH_BUILD_BTREE_OLC}
   OR ${INDEX_BENCH_BUILD_MASSTREE}
   OR ${INDEX_BENCH_BUILD_YAKUSHIMA}
   OR ${INDEX_BENCH_BUILD_ART_OLC}
+  OR ${INDEX_BENCH_BUILD_HYDRALIST}
   OR ${INDEX_BENCH_BUILD_ALEX_OLC}
 )
   message("[${PROJECT_NAME}] Use unsigned integer keys for comparison with the state-of-the-art indexes.")
@@ -89,7 +91,11 @@ endif()
 #--------------------------------------------------------------------------------------#
 
 set(INDEX_BENCH_USE_TBB OFF)
-if(${INDEX_BENCH_BUILD_YAKUSHIMA} OR ${INDEX_BENCH_BUILD_ART_OLC} OR ${INDEX_BENCH_BUILD_ALEX_OLC})
+if(${INDEX_BENCH_BUILD_YAKUSHIMA}
+  OR ${INDEX_BENCH_BUILD_ART_OLC}
+  OR ${INDEX_BENCH_BUILD_HYDRALIST}
+  OR ${INDEX_BENCH_BUILD_ALEX_OLC}
+)
   set(INDEX_BENCH_USE_TBB ON)
   find_package(TBB REQUIRED)
 endif()
@@ -188,6 +194,14 @@ if(${INDEX_BENCH_BUILD_ART_OLC})
 endif()
 
 #--------------------------------------------------------------------------------------#
+# Configure HydraList
+#--------------------------------------------------------------------------------------#
+
+if(${INDEX_BENCH_BUILD_HYDRALIST})
+  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_hydralist.txt.in")
+endif()
+
+#--------------------------------------------------------------------------------------#
 # Build Benchmark
 #--------------------------------------------------------------------------------------#
 find_package(PkgConfig REQUIRED)
@@ -228,6 +242,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<BOOL:${INDEX_BENCH_USE_TBB}>:TBB::tbb>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_LIBRARIES}>
+    $<$<BOOL:${INDEX_BENCH_BUILD_HYDRALIST}>:hydralist::hydralist>
   )
   target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
     INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
@@ -237,6 +252,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
     $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:INDEX_BENCH_BUILD_ART_OLC>
+    $<$<BOOL:${INDEX_BENCH_BUILD_HYDRALIST}>:INDEX_BENCH_BUILD_HYDRALIST>
     $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:INDEX_BENCH_BUILD_ALEX_OLC>
     $<$<BOOL:${INDEX_BENCH_COMPARE_WITH_SOTA}>:INDEX_BENCH_COMPARE_WITH_SOTA>
   )
