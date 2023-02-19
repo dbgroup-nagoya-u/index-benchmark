@@ -24,28 +24,11 @@
 #include <vector>
 
 // external sources
-#include "open_bwtree/BwTree/bwtree.h"
+#include "bwtree.h"
 
 // local sources
 #include "common.hpp"
 #include "key.hpp"
-
-/*######################################################################################
- * Specification for OpenBw-Tree
- *####################################################################################*/
-
-namespace wangziqi2013::bwtree
-{
-/// disable OpenBw-Tree's debug logs
-bool print_flag = false;
-
-/// initialize GC ID for each thread
-thread_local int BwTreeBase::gc_id = 0;
-
-/// initialize the counter of the total number of entering threads
-std::atomic<size_t> BwTreeBase::total_thread_num = 1;
-
-}  // namespace wangziqi2013::bwtree
 
 namespace dbgroup
 {
@@ -249,7 +232,7 @@ class OpenBwTreeWrapper
   }
 
   auto
-  Delete( [[maybe_unused]] const Key &key)
+  Delete([[maybe_unused]] const Key &key)
   {
     throw std::runtime_error{"ERROR: the update operation is not implemented."};
     return kFailed;
@@ -278,59 +261,5 @@ HasSetUpTearDown<OpenBwTreeWrapper>()  //
 }
 
 }  // namespace dbgroup
-
-namespace std
-{
-template <>
-struct hash<::dbgroup::Key<8>> {
-  auto
-  operator()(const ::dbgroup::Key<8> &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<::dbgroup::Key<16>> {
-  auto
-  operator()(const ::dbgroup::Key<16> &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<::dbgroup::Key<32>> {
-  auto
-  operator()(const ::dbgroup::Key<32> &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<::dbgroup::Key<64>> {
-  auto
-  operator()(const ::dbgroup::Key<64> &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-template <>
-struct hash<::dbgroup::Key<128>> {
-  auto
-  operator()(const ::dbgroup::Key<128> &key) const  //
-      -> size_t
-  {
-    return std::hash<size_t>{}(key.GetValue());
-  }
-};
-
-}  // namespace std
 
 #endif  // INDEX_BENCHMARK_INDEXES_OPEN_BW_TREE_HPP

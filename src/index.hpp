@@ -48,8 +48,8 @@ DEFINE_bool(b_oml_opt, false, "Use BTreeOML with fixed-length data as a benchmar
 DEFINE_bool(b_osl, false, "Use BTreeOSL with variable-length data as a benchmark target");
 DEFINE_bool(b_osl_opt, false, "Use BTreeOSL with fixed-length data as a benchmark target");
 
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
-#include "indexes/btree_olc_wrapper.hpp"
+#ifdef INDEX_BENCH_BUILD_B_TREE_OLC
+#include "indexes/b_tree_olc_wrapper.hpp"
 DEFINE_bool(b_olc, false, "Use OLC based B-tree as a benchmark target");
 #else
 DEFINE_bool(b_olc, false, "OLC based B-tree is not built as a benchmark target.");

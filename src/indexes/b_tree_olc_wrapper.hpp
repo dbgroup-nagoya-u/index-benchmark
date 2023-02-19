@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP
-#define INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP
+#ifndef INDEX_BENCHMARK_INDEXES_B_TREE_OLC_WRAPPER_HPP
+#define INDEX_BENCHMARK_INDEXES_B_TREE_OLC_WRAPPER_HPP
 
 // C++ standard libraries
 #include <optional>
 #include <utility>
 
 // external sources
-#include "open_bwtree/BTreeOLC/BTreeOLC.h"
+#include "BTreeOLC.h"
 
 // local sources
 #include "common.hpp"
@@ -244,4 +244,4 @@ class BTreeOLCWrapper
 
 }  // namespace dbgroup
 
-#endif  // INDEX_BENCHMARK_INDEXES_BTREE_OLC_WRAPPER_HPP
+#endif  // INDEX_BENCHMARK_INDEXES_B_TREE_OLC_WRAPPER_HPP

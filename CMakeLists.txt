@@ -16,7 +16,7 @@ project(
 #--------------------------------------------------------------------------------------#
 # Build option for target indexes
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_BTREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_B_TREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OFF)
@@ -25,7 +25,7 @@ option(INDEX_BENCH_BUILD_HYDRALIST "Build HydraList as a benchmarking target" OF
 option(INDEX_BENCH_BUILD_ALEX_OLC "Build AlexOLC as a benchmarking target" OFF)
 
 set(INDEX_BENCH_COMPARE_WITH_SOTA OFF)
-if(${INDEX_BENCH_BUILD_BTREE_OLC}
+if(${INDEX_BENCH_BUILD_B_TREE_OLC}
   OR ${INDEX_BENCH_BUILD_OPEN_BWTREE}
   OR ${INDEX_BENCH_BUILD_MASSTREE}
   OR ${INDEX_BENCH_BUILD_YAKUSHIMA}
@@ -66,11 +66,6 @@ else()
   message(WARNING "[${PROJECT_NAME}] The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORES explicitly.")
 endif()
 
-set(INDEX_BENCH_USE_SIMD OFF)
-if(${INDEX_BENCH_BUILD_ART_OLC} OR ${INDEX_BENCH_BUILD_ALEX_OLC})
-  set(INDEX_BENCH_USE_SIMD ON)
-endif()
-
 #--------------------------------------------------------------------------------------#
 # Use gflags to manage CLI options
 #--------------------------------------------------------------------------------------#
@@ -84,20 +79,6 @@ find_package(gflags REQUIRED)
 option(INDEX_BENCH_OVERRIDE_MIMALLOC "Override entire memory allocation with mimalloc" OFF)
 if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
   find_package(mimalloc 1.7 REQUIRED)
-endif()
-
-#--------------------------------------------------------------------------------------#
-# Configure Intel oneAPI Toolkits
-#--------------------------------------------------------------------------------------#
-
-set(INDEX_BENCH_USE_TBB OFF)
-if(${INDEX_BENCH_BUILD_YAKUSHIMA}
-  OR ${INDEX_BENCH_BUILD_ART_OLC}
-  OR ${INDEX_BENCH_BUILD_HYDRALIST}
-  OR ${INDEX_BENCH_BUILD_ALEX_OLC}
-)
-  set(INDEX_BENCH_USE_TBB ON)
-  find_package(TBB REQUIRED)
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -138,59 +119,35 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bw-tree")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 #--------------------------------------------------------------------------------------#
+# Configure OpenBw-tree
+#--------------------------------------------------------------------------------------#
+
+if(${INDEX_BENCH_BUILD_B_TREE_OLC})
+  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_b_tree_olc.txt.in")
+endif()
+
+#--------------------------------------------------------------------------------------#
+# Configure OpenBw-tree
+#--------------------------------------------------------------------------------------#
+
+if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
+  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_open_bw_tree.txt.in")
+endif()
+
+#--------------------------------------------------------------------------------------#
 # Configure Masstree
 #--------------------------------------------------------------------------------------#
 
-set(MASSTREE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/masstree")
-if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
-  execute_process(
-    COMMAND ./bootstrap.sh
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
-  )
-  if(result)
-    message(FATAL_ERROR "Bootstrap step for Masstree failed: ${result}")
-  endif()
-  execute_process(
-    COMMAND ./configure --disable-assertions
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
-  )
-  if(result)
-    message(FATAL_ERROR "Configure step for Masstree failed: ${result}")
-  endif()
-  execute_process(
-    COMMAND make -j
-    RESULT_VARIABLE result
-    WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
-  )
-  if(result)
-    message(FATAL_ERROR "Build step for Masstree failed: ${result}")
-  endif()
+if(${INDEX_BENCH_BUILD_MASSTREE})
+  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_masstree.txt.in")
 endif()
-
-set(INDEX_BENCH_MASSTREE_LIBS
-  "${MASSTREE_SOURCE_DIR}/misc.o"
-  "${MASSTREE_SOURCE_DIR}/checkpoint.o"
-  "${MASSTREE_SOURCE_DIR}/query_masstree.o"
-  "${MASSTREE_SOURCE_DIR}/value_string.o"
-  "${MASSTREE_SOURCE_DIR}/value_array.o"
-  "${MASSTREE_SOURCE_DIR}/value_versioned_array.o"
-  "${MASSTREE_SOURCE_DIR}/string_slice.o"
-  "${MASSTREE_SOURCE_DIR}/kvio.o"
-  "${MASSTREE_SOURCE_DIR}/libjson.a"
-)
 
 #--------------------------------------------------------------------------------------#
 # Configure ART based on OLC
 #--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_ART_OLC})
-  set(ART_OLC_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/open_bwtree/ARTOLC")
-  set(ART_OLC_SOURCES
-    "${ART_OLC_SOURCE_DIR}/Epoche.cpp"
-    "${ART_OLC_SOURCE_DIR}/Tree.cpp"
-  )
+  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_art_olc.txt.in")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -199,6 +156,14 @@ endif()
 
 if(${INDEX_BENCH_BUILD_HYDRALIST})
   include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_hydralist.txt.in")
+endif()
+
+#--------------------------------------------------------------------------------------#
+# Configure ALEX based on OLC
+#--------------------------------------------------------------------------------------#
+
+if(${INDEX_BENCH_BUILD_ALEX_OLC})
+  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_alex_olc.txt.in")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -211,7 +176,6 @@ pkg_check_modules(glog REQUIRED libglog)
 function(ADD_BENCHMARK BENCHMARK_TARGET)
   add_executable(${BENCHMARK_TARGET}
     "${CMAKE_CURRENT_SOURCE_DIR}/src/${BENCHMARK_TARGET}.cpp"
-    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:${ART_OLC_SOURCES}>
   )
   target_compile_features(${BENCHMARK_TARGET} PRIVATE
     "cxx_std_17"
@@ -222,8 +186,17 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
-    $<$<BOOL:${INDEX_BENCH_USE_SIMD}>:-march=native>
-    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:-mcx16>
+  )
+  target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
+    INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
+    $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:INDEX_BENCH_BUILD_B_TREE_OLC>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
+    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
+    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:INDEX_BENCH_BUILD_ART_OLC>
+    $<$<BOOL:${INDEX_BENCH_BUILD_HYDRALIST}>:INDEX_BENCH_BUILD_HYDRALIST>
+    $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:INDEX_BENCH_BUILD_ALEX_OLC>
+    $<$<BOOL:${INDEX_BENCH_COMPARE_WITH_SOTA}>:INDEX_BENCH_COMPARE_WITH_SOTA>
   )
   target_include_directories(${BENCHMARK_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
@@ -239,29 +212,14 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     bw_tree::bw_tree
     bztree::bztree
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
-    $<$<BOOL:${INDEX_BENCH_USE_TBB}>:TBB::tbb>
-    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:atomic>
+    $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:open_bw::b_tree_olc>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:open_bw::bw_tree>
+    $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:masstree::masstree>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_LIBRARIES}>
+    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:open_bw::art_olc>
     $<$<BOOL:${INDEX_BENCH_BUILD_HYDRALIST}>:hydralist::hydralist>
+    $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:GRE::alex_olc>
   )
-  target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
-    INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
-    $<$<BOOL:${INDEX_BENCH_BUILD_BTREE_OLC}>:INDEX_BENCH_BUILD_BTREE_OLC>
-    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
-    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:BWTREE_NODEBUG>
-    $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
-    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
-    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:INDEX_BENCH_BUILD_ART_OLC>
-    $<$<BOOL:${INDEX_BENCH_BUILD_HYDRALIST}>:INDEX_BENCH_BUILD_HYDRALIST>
-    $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:INDEX_BENCH_BUILD_ALEX_OLC>
-    $<$<BOOL:${INDEX_BENCH_COMPARE_WITH_SOTA}>:INDEX_BENCH_COMPARE_WITH_SOTA>
-  )
-
-  if(${INDEX_BENCH_BUILD_MASSTREE})
-    target_link_libraries(${BENCHMARK_TARGET} PRIVATE
-      ${INDEX_BENCH_MASSTREE_LIBS}
-    )
-  endif()
 endfunction()
 
 # add executables

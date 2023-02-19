@@ -27,7 +27,7 @@
 #include <utility>
 
 // external sources
-#include "GRE/src/competitor/alexol/src/alex.h"
+#include "alex.h"
 
 // local sources
 #include "common.hpp"

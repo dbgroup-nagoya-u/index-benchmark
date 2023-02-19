@@ -18,13 +18,12 @@
 #define INDEX_BENCHMARK_INDEXES_ART_OLC_WRAPPER_HPP
 
 // C++ standard libraries
-#include <functional>
 #include <optional>
 #include <utility>
 
 // external sources
-#include "open_bwtree/ARTOLC/Key.h"
-#include "open_bwtree/ARTOLC/Tree.h"
+#include "Key.h"
+#include "Tree.h"
 
 // local sources
 #include "common.hpp"
