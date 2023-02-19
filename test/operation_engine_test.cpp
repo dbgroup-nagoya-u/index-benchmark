@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
+// the corresponding header
 #include "workload/operation_engine.hpp"
 
+// external sources
 #include "gtest/gtest.h"
+
+namespace dbgroup
+{
 
 /*######################################################################################
  * Global constants
@@ -149,3 +154,5 @@ TEST_F(OperationEngineFixture, MultiplePhasesWorkloadGenerateValidOperations)
   }
   EXPECT_EQ(counter, kOpsNumPerThread);
 }
+
+}  // namespace dbgroup

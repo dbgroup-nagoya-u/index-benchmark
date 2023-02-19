@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
+// the corresponding header
 #include "key.hpp"
 
+// C++ standard libraries
 #include <algorithm>
 #include <random>
 #include <vector>
 
+// external sources
 #include "gtest/gtest.h"
+
+namespace dbgroup
+{
 
 /*######################################################################################
  * Classes for templated testing
@@ -157,3 +163,5 @@ TYPED_TEST(KeyFixture, PlusOperatorsReturnIncrementedKeys)
 {  //
   TestFixture::VerifyPlusOperator();
 }
+
+}  // namespace dbgroup
