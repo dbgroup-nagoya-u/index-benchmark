@@ -18,13 +18,13 @@ if(NOT TARGET open_bw::bw_tree)
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
   )
-  target_compile_definitions(open_bw_tree PRIVATE
+  target_compile_definitions(open_bw_tree PUBLIC
     BWTREE_NODEBUG
   )
   target_include_directories(open_bw_tree PUBLIC
     "${OPEN_BW_TREE_SOURCE_DIR}"
   )
-  target_link_libraries(open_bw_tree PRIVATE
+  target_link_libraries(open_bw_tree PUBLIC
     pthread
     atomic
   )

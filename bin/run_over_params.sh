@@ -11,6 +11,7 @@ CRITERIA="throughput"
 IS_THROUGHPUT="t"
 NUMA_NODES=""
 WORKSPACE_DIR=$(cd $(dirname ${BASH_SOURCE:-${0}})/.. && pwd)
+OUTPUT_FILE=""
 
 usage() {
   cat 1>&2 << EOS
@@ -26,6 +27,7 @@ Options:
   -t: Use throughput as a performance criteria (default: true).
   -l: Use latency as a performance criteria (default: false). Note that this
       option will overwrites the "-t" option.
+  -o: Set a file path to write the benchmarking results.
   -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
   -h: Show this messsage and exit.
 EOS
@@ -36,12 +38,14 @@ EOS
 # Parse options
 ########################################################################################
 
-while getopts tln:h OPT
+while getopts tlo:n:h OPT
 do
   case ${OPT} in
     t) CRITERIA="throughput"; IS_THROUGHPUT="t"
       ;;
     l) CRITERIA="latency"; IS_THROUGHPUT="f"
+      ;;
+    o) OUTPUT_FILE="${OPTARG}"
       ;;
     n) NUMA_NODES=${OPTARG}
       ;;
@@ -81,7 +85,9 @@ fi
 ########################################################################################
 
 # set an output file and temporary files
-OUTPUT_FILE="${WORKSPACE_DIR}/out/over_params_${CRITERIA}.csv"
+if [ -z "${OUTPUT_FILE}" ]; then
+  OUTPUT_FILE="${WORKSPACE_DIR}/out/over_params_${CRITERIA}.csv"
+fi
 TMP_OUTPUT="/tmp/index_benchmark-tmp_output-$(id -un).csv"
 TMP_WORKLOAD="/tmp/index_benchmark-tmp_workload-$(id -un).json"
 
@@ -115,7 +121,7 @@ for INDEX_SIZE in ${INDEX_SIZE_CANDIDATES}; do
     {
       "operation ratios": {
         "${R_OPS}": ${R_RATIO},
-        "write": ${W_RATIO}
+        "${WRITE_OPS}": ${W_RATIO}
       },
       "# of keys": ${INDEX_SIZE},
       "partitioning policy": "none",
@@ -137,6 +143,7 @@ EOF
                   "--key-size" ${KEY_SIZE} \
                   "--num-exec" ${OPERATION_COUNT} \
                   "--num-thread" ${THREAD_NUM} \
+                  "--timeout" ${BENCH_TIME_OUT} \
                   >> ${TMP_OUTPUT}
               done
 
