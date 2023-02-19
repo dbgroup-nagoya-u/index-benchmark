@@ -28,7 +28,7 @@
 #include <byteswap.h>
 
 // external sources
-#include "yakushima/include/kvs.h"
+#include "kvs.h"
 
 // local sources
 #include "common.hpp"

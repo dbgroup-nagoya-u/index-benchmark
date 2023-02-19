@@ -143,6 +143,14 @@ if(${INDEX_BENCH_BUILD_MASSTREE})
 endif()
 
 #--------------------------------------------------------------------------------------#
+# Configure Masstree
+#--------------------------------------------------------------------------------------#
+
+if(${INDEX_BENCH_BUILD_YAKUSHIMA})
+  include("${CMAKE_CURRENT_SOURCE_DIR}/src/indexes/CMakeLists_yakushima.txt.in")
+endif()
+
+#--------------------------------------------------------------------------------------#
 # Configure ART based on OLC
 #--------------------------------------------------------------------------------------#
 
@@ -169,8 +177,6 @@ endif()
 #--------------------------------------------------------------------------------------#
 # Build Benchmark
 #--------------------------------------------------------------------------------------#
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(glog REQUIRED libglog)
 
 # define function to add unit tests in the same format
 function(ADD_BENCHMARK BENCHMARK_TARGET)
@@ -200,8 +206,6 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
   )
   target_include_directories(${BENCHMARK_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/external"
-    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_INCLUDE_DIRS}>
   )
   target_link_libraries(${BENCHMARK_TARGET} PRIVATE
     gflags
@@ -215,7 +219,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:open_bw::b_tree_olc>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:open_bw::bw_tree>
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:masstree::masstree>
-    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:${glog_LIBRARIES}>
+    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:tsurugi::yakushima>
     $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:open_bw::art_olc>
     $<$<BOOL:${INDEX_BENCH_BUILD_HYDRALIST}>:hydralist::hydralist>
     $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:GRE::alex_olc>

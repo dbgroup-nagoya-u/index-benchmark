@@ -85,6 +85,7 @@
     "kvtimestamp",
     "lcdf",
     "libgflags",
+    "libglog",
     "libjson",
     "libnuma",
     "libtbb",
