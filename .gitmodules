@@ -19,9 +19,6 @@
 [submodule "external/cpp-benchmark"]
 	path = external/cpp-benchmark
 	url = https://github.com/dbgroup-nagoya-u/cpp-benchmark.git
-[submodule "external/yakushima"]
-	path = external/yakushima
-	url = git@github.com:project-tsurugi/yakushima.git
 [submodule "external/b-tree"]
 	path = external/b-tree
 	url = git@github.com:dbgroup-nagoya-u/b-tree.git
