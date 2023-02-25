@@ -41,7 +41,7 @@ endif()
 # Configurations for target indexes
 #--------------------------------------------------------------------------------------#
 
-set(INDEX_BENCH_PAGE_SIZE "1024" CACHE STRING "The default page size in bytes.")
+set(INDEX_BENCH_PAGE_SIZE "" CACHE STRING "The default page size in bytes.")
 if(NOT "${INDEX_BENCH_PAGE_SIZE}" STREQUAL "" AND NOT "${INDEX_BENCH_COMPARE_WITH_SOTA}")
   message("[${PROJECT_NAME}] Set the page size of the reproduced B+trees to ${INDEX_BENCH_PAGE_SIZE}.")
   set(B_TREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
@@ -82,15 +82,10 @@ if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
 endif()
 
 #--------------------------------------------------------------------------------------#
-# Configure cpp-utility
+# Configure our libraries
 #--------------------------------------------------------------------------------------#
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
-
-#--------------------------------------------------------------------------------------#
-# Configure benchmarker
-#--------------------------------------------------------------------------------------#
-
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 
 #--------------------------------------------------------------------------------------#
@@ -101,74 +96,40 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
 
 #--------------------------------------------------------------------------------------#
-# Configure B-tree
+# Configure reproduced B+trees
 #--------------------------------------------------------------------------------------#
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/b-tree")
-
-#--------------------------------------------------------------------------------------#
-# Configure Bw-tree
-#--------------------------------------------------------------------------------------#
-
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bw-tree")
-
-#--------------------------------------------------------------------------------------#
-# Configure BzTree
-#--------------------------------------------------------------------------------------#
-
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 
 #--------------------------------------------------------------------------------------#
-# Configure OpenBw-tree
+# Configure the state-of-the-art indexes
 #--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_B_TREE_OLC})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/b_tree_olc.cmake")
 endif()
 
-#--------------------------------------------------------------------------------------#
-# Configure OpenBw-tree
-#--------------------------------------------------------------------------------------#
-
 if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/open_bw_tree.cmake")
 endif()
-
-#--------------------------------------------------------------------------------------#
-# Configure Masstree
-#--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_MASSTREE})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/masstree.cmake")
 endif()
 
-#--------------------------------------------------------------------------------------#
-# Configure Masstree
-#--------------------------------------------------------------------------------------#
-
 if(${INDEX_BENCH_BUILD_YAKUSHIMA})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/yakushima.cmake")
 endif()
-
-#--------------------------------------------------------------------------------------#
-# Configure ART based on OLC
-#--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_ART_OLC})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/art_olc.cmake")
 endif()
 
-#--------------------------------------------------------------------------------------#
-# Configure HydraList
-#--------------------------------------------------------------------------------------#
-
 if(${INDEX_BENCH_BUILD_HYDRALIST})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/hydralist.cmake")
 endif()
-
-#--------------------------------------------------------------------------------------#
-# Configure ALEX based on OLC
-#--------------------------------------------------------------------------------------#
 
 if(${INDEX_BENCH_BUILD_ALEX_OLC})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/alex_olc.cmake")
@@ -208,13 +169,13 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
   )
   target_link_libraries(${BENCHMARK_TARGET} PRIVATE
+    dbgroup::cpp_utility
+    dbgroup::cpp_bench
+    dbgroup::b_tree
+    dbgroup::bw_tree
+    dbgroup::bztree
     gflags
     nlohmann_json::nlohmann_json
-    cpp_utility::cpp_utility
-    cpp_bench::cpp_bench
-    b_tree::b_tree
-    bw_tree::bw_tree
-    bztree::bztree
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:open_bw::b_tree_olc>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:open_bw::bw_tree>

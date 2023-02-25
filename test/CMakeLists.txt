@@ -48,14 +48,14 @@ function(ADD_INDEX_BENCH_TEST INDEX_BENCH_TEST_TARGET)
     "${PROJECT_SOURCE_DIR}/src"
   )
   target_link_libraries(${INDEX_BENCH_TEST_TARGET} PRIVATE
-    GTest::gtest_main
+    dbgroup::cpp_utility
+    dbgroup::cpp_bench
+    dbgroup::b_tree
+    dbgroup::bw_tree
+    dbgroup::bztree
     gflags
+    GTest::gtest_main
     nlohmann_json::nlohmann_json
-    cpp_utility::cpp_utility
-    cpp_bench::cpp_bench
-    b_tree::b_tree
-    bw_tree::bw_tree
-    bztree::bztree
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:open_bw::b_tree_olc>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:open_bw::bw_tree>
