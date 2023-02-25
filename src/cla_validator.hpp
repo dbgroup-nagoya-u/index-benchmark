@@ -32,7 +32,7 @@ ValidateNonZero(  //
 {
   if (value != 0) return true;
 
-  std::cout << "A value must be not zero for " << flagname << std::endl;
+  std::cerr << "A value must be not zero for " << flagname << std::endl;
   return false;
 }
 
@@ -42,9 +42,21 @@ ValidateKeySize(  //
     const uint64_t value)  //
     -> bool
 {
-  if (value == 8 || value == 16 || value == 32 || value == 64 || value == 128) return true;
+  if (value == 8) return true;
 
-  std::cout << "The specified key size is invalid (only 8, 16, 32, 64, and 128 are allowed)."
+  if (dbgroup::kUseIntegerKeys) {
+    std::cerr << "The key size is invalid (only 8 is allowed for comparing with the SOTA indexes)."
+              << std::endl;
+    return false;
+  }
+
+  if (!dbgroup::kBuildLongKeys) {
+    std::cerr << "The key size is invalid (long keys have not been built)." << std::endl;
+    return false;
+  }
+
+  if (value == 16 || value == 32 || value == 64 || value == 128) return true;
+  std::cerr << "The specified key size is invalid (only 8, 16, 32, 64, and 128 are allowed)."
             << std::endl;
   return false;
 }
@@ -59,7 +71,7 @@ ValidateRandomSeed(  //
 
   for (size_t i = 0; i < seed.size(); ++i) {
     if (!std::isdigit(seed[i])) {
-      std::cout << "A random seed must be unsigned integer type" << std::endl;
+      std::cerr << "A random seed must be unsigned integer type" << std::endl;
       return false;
     }
   }
@@ -73,13 +85,13 @@ ValidateWorkload(  //
     -> bool
 {
   if (workload.empty()) {
-    std::cout << "A workload file is not specified." << std::endl;
+    std::cerr << "A workload file is not specified." << std::endl;
     return false;
   }
 
   const auto abs_path = std::filesystem::absolute(workload);
   if (!std::filesystem::exists(abs_path)) {
-    std::cout << "The specified file does not exist." << std::endl;
+    std::cerr << "The specified file does not exist." << std::endl;
     return false;
   }
 

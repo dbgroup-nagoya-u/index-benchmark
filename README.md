@@ -14,6 +14,14 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 
 ### Build Options
 
+#### Utility Options
+
+- `INDEX_BENCH_BUILD_LONG_KEYS`: build keys with sizes of 16/32/64/128 bytes if `ON` (default: `OFF`).
+- `INDEX_BENCH_PAGE_SIZE`: set the default page size for B+trees in bytes if needed.
+    - Our B+trees use 1,024 bytes as default.
+- `INDEX_BENCH_MAX_DELTA_RECORD_NUM`: set the maximum number of delta records if needed.
+    - NOTE: our Bw-tree and BzTree use different defaults, so please refer to each repository.
+
 #### Memory Allocation
 
 - `INDEX_BENCH_OVERRIDE_MIMALLOC`: override entire memory allocation with mimalloc if `ON` (default: `OFF`).
@@ -24,6 +32,8 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 - `INDEX_BENCH_BUILD_OPEN_BWTREE`: build a benchmarker with OpenBw-Tree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_MASSTREE`: build a benchmarker with Masstree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_YAKUSHIMA`: build a benchmarker with yakushima if `ON` (default: `OFF`).
+- `INDEX_BENCH_BUILD_ART_OLC`: build a benchmarker with OLC based ART if `ON` (default: `OFF`).
+- `INDEX_BENCH_BUILD_HYDRALIST`: build a benchmarker with HydraList if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_ALEX_OLC`: build a benchmarker with OLC based ALEX if `ON` (default: `OFF`).
 
 ### Build Options for Unit Testing

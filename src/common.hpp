@@ -137,6 +137,12 @@ constexpr bool kClosed = true;
 
 constexpr bool kUseBulkload = true;
 
+#ifdef INDEX_BENCH_BUILD_LONG_KEYS
+constexpr bool kBuildLongKeys = true;
+#else
+constexpr bool kBuildLongKeys = false;
+#endif
+
 #ifdef INDEX_BENCH_COMPARE_WITH_SOTA
 constexpr bool kUseIntegerKeys = true;
 #else

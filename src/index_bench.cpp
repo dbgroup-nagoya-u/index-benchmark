@@ -253,6 +253,8 @@ RunWithSelectedKey()
 {
   if constexpr (kUseIntegerKeys) {
     RunWithMultipleIndexes<uint64_t>();
+  } else if constexpr (!kBuildLongKeys) {
+    RunWithMultipleIndexes<Key<k8>>();
   } else {
     switch (FLAGS_key_size) {
       case k8:

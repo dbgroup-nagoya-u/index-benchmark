@@ -41,6 +41,8 @@ endif()
 # Configurations for target indexes
 #--------------------------------------------------------------------------------------#
 
+option(INDEX_BENCH_BUILD_LONG_KEYS "Build keys with sizes of 16/32/64/128 bytes." OFF)
+
 set(INDEX_BENCH_PAGE_SIZE "" CACHE STRING "The default page size in bytes.")
 if(NOT "${INDEX_BENCH_PAGE_SIZE}" STREQUAL "" AND NOT "${INDEX_BENCH_COMPARE_WITH_SOTA}")
   message("[${PROJECT_NAME}] Set the page size of the reproduced B+trees to ${INDEX_BENCH_PAGE_SIZE}.")
@@ -156,6 +158,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
   )
   target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
     INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
+    $<$<BOOL:${INDEX_BENCH_BUILD_LONG_KEYS}>:INDEX_BENCH_BUILD_LONG_KEYS>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:INDEX_BENCH_BUILD_B_TREE_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
