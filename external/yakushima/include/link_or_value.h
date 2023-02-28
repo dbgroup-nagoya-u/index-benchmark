@@ -81,7 +81,9 @@ public:
         return usage;
     }
 
-    [[nodiscard]] bool get_need_delete_value() const { return need_delete_; }
+    [[nodiscard]] bool get_need_delete_value() const {
+        return value_.get_need_delete_value();
+    }
 
     [[nodiscard]] base_node* get_next_layer() const {
         return loadAcquireN(next_layer_);
@@ -206,7 +208,7 @@ public:
 
     void set_value_length(const value_length_type len) { value_.set_len(len); }
 
-    void set_need_delete(const bool tf) { need_delete_ = tf; }
+    void set_need_delete(const bool tf) { value_.set_need_delete(tf); }
 
 private:
     /**
@@ -218,13 +220,6 @@ private:
     base_node* next_layer_{nullptr};
 
     value value_{};
-
-    /**
-   * @attention
-   * This variable is read/write concurrently.
-   * This variable is updated at initialization and destruction.
-   */
-    bool need_delete_{false};
 };
 
 } // namespace yakushima
