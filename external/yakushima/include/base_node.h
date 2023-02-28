@@ -17,6 +17,9 @@
 
 namespace yakushima {
 
+using memory_usage_stack =
+        std::vector<std::tuple<std::size_t, std::size_t, std::size_t>>;
+
 class base_node { // NOLINT
 public:
     class key_tuple {
@@ -80,7 +83,8 @@ public:
     /**
      * @return The total memory usage of this node.
      */
-    virtual std::size_t usage() const = 0;
+    virtual void mem_usage(std::size_t level,
+                           memory_usage_stack& mem_stat) const = 0;
 
     void display_base() {
         std::cout << "base_node::display_base" << std::endl;

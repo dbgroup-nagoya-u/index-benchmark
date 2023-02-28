@@ -151,12 +151,20 @@ public:
     /**
      * @return The total memory usage of this node.
      */
-    [[nodiscard]] std::size_t usage() const override {
-        std::size_t usage = sizeof(interior_node);
-        for (auto i = 0; i < n_keys_ + 1; ++i) {
-            usage += get_child_at(i)->usage();
+    void mem_usage(std::size_t level,
+                   memory_usage_stack& mem_stat) const override {
+        if (mem_stat.size() <= level) { mem_stat.emplace_back(0, 0, 0); }
+        auto& [node_num, used, reserved] = mem_stat.at(level);
+
+        const auto n_keys = n_keys_ + 1UL;
+        reserved += sizeof(interior_node);
+        used += sizeof(interior_node) -
+                ((child_length - n_keys) * sizeof(base_node*));
+
+        const auto next_level = level + 1;
+        for (std::size_t i = 0; i < n_keys; ++i) {
+            get_child_at(i)->mem_usage(next_level, mem_stat);
         }
-        return usage;
     }
 
     [[nodiscard]] n_keys_body_type get_n_keys() {

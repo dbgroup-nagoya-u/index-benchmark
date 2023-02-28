@@ -74,11 +74,16 @@ public:
     /**
      * @return The total memory usage of this record.
      */
-    [[nodiscard]] std::size_t usage() const {
+    void mem_usage(std::size_t level, memory_usage_stack& mem_stat) const {
         const auto* next = get_next_layer();
-        auto usage = get_value_length();
-        usage += (next == nullptr) ? 0 : next->usage();
-        return usage;
+        if (next != nullptr) {
+            next->mem_usage(level + 1, mem_stat);
+        } else {
+            const auto val_len = get_value_length();
+            auto& [node_num, used, reserved] = mem_stat.at(level);
+            used += val_len;
+            reserved += val_len;
+        }
     }
 
     [[nodiscard]] bool get_need_delete_value() const {

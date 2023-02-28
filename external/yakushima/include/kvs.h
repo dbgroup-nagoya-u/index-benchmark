@@ -42,11 +42,8 @@ namespace yakushima {
  * @param [in] storage_name
  * @return The total memory usage of the given storage.
  */
-[[maybe_unused]] static std::size_t usage(std::string_view storage_name) {
-    tree_instance* ti{};
-    if (status::OK != storage::find_storage(storage_name, &ti)) { return 0; }
-    return ti->load_root_ptr()->usage();
-}
+[[maybe_unused]] static memory_usage_stack
+mem_usage(std::string_view storage_name);
 
 /**
  * @brief Create storage
