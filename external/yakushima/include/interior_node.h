@@ -22,7 +22,7 @@
 namespace yakushima {
 
 class alignas(kCacheLineSize) interior_node final // NOLINT
-    : public base_node {                           // NOLINT
+    : public base_node {                          // NOLINT
 public:
     /**
    * @details The structure is "ptr, key, ptr, key, ..., ptr".
@@ -148,11 +148,22 @@ public:
         }
     }
 
+    /**
+     * @return The total memory usage of this node.
+     */
+    [[nodiscard]] std::size_t usage() const override {
+        std::size_t usage = sizeof(interior_node);
+        for (auto i = 0; i < n_keys_ + 1; ++i) {
+            usage += get_child_at(i)->usage();
+        }
+        return usage;
+    }
+
     [[nodiscard]] n_keys_body_type get_n_keys() {
         return n_keys_.load(std::memory_order_acquire);
     }
 
-    [[nodiscard]] base_node* get_child_at(std::size_t index) {
+    [[nodiscard]] base_node* get_child_at(std::size_t index) const {
         return loadAcquireN(children.at(index));
     }
 

@@ -71,6 +71,16 @@ public:
                   << static_cast<std::size_t>(get_value_align()) << std::endl;
     }
 
+    /**
+     * @return The total memory usage of this record.
+     */
+    [[nodiscard]] std::size_t usage() const {
+        const auto* next = get_next_layer();
+        auto usage = get_value_length();
+        usage += (next == nullptr) ? 0 : next->usage();
+        return usage;
+    }
+
     [[nodiscard]] bool get_need_delete_value() const { return need_delete_; }
 
     [[nodiscard]] base_node* get_next_layer() const {

@@ -200,6 +200,20 @@ public:
     }
 
     /**
+     * @return The total memory usage of this node.
+     */
+    [[nodiscard]] std::size_t usage() const override {
+        std::size_t usage = sizeof(border_node);
+        std::size_t cnk = get_permutation_cnk();
+        for (std::size_t i = 0; i < cnk; ++i) {
+            std::size_t index = permutation_.get_index_of_rank(i);
+            usage += lv_.at(index).usage();
+        }
+
+        return usage;
+    }
+
+    /**
       * @details display function for analysis and debug.
       */
     void display() override {

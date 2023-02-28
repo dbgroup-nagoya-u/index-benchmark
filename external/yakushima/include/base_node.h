@@ -77,6 +77,11 @@ public:
    */
     virtual void display() = 0;
 
+    /**
+     * @return The total memory usage of this node.
+     */
+    virtual std::size_t usage() const = 0;
+
     void display_base() {
         std::cout << "base_node::display_base" << std::endl;
         version_.display();

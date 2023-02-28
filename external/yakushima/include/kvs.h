@@ -39,6 +39,16 @@ namespace yakushima {
 [[maybe_unused]] static status destroy(); // NOLINT
 
 /**
+ * @param [in] storage_name
+ * @return The total memory usage of the given storage.
+ */
+[[maybe_unused]] static std::size_t usage(std::string_view storage_name) {
+    tree_instance* ti{};
+    if (status::OK != storage::find_storage(storage_name, &ti)) { return 0; }
+    return ti->load_root_ptr()->usage();
+}
+
+/**
  * @brief Create storage
  * @param [in] storage_name
  * @attention Do not treat DDL operations in parallel with DML operations.
