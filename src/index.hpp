@@ -295,6 +295,25 @@ class Index
     return 1;
   }
 
+  auto
+  CheckMemoryUsage()  //
+      -> std::pair<size_t, size_t>
+  {
+    size_t actual_size = 0;
+    size_t virtual_size = 0;
+
+    const auto &stat_data = index_->CollectStatisticalData();
+    for (size_t level = 0; level < stat_data.size(); ++level) {
+      const auto &[node_num, act, vir] = stat_data.at(level);
+      actual_size += act;
+      virtual_size += vir;
+
+      std::cout << level << "," << node_num << "," << act << "," << vir << std::endl;
+    }
+
+    return {actual_size, virtual_size};
+  }
+
  private:
   /*####################################################################################
    * Internal member variables
