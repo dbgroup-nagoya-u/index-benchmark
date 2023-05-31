@@ -65,6 +65,7 @@
     "ctest",
     "DBUILD",
     "DCMAKE",
+    "devel",
     "DHOMEGROWN",
     "DINDEX",
     "DMWCAS",
@@ -74,6 +75,7 @@
     "gflags",
     "GLOG",
     "gtest",
+    "helpon",
     "istr",
     "JEMALLOC",
     "kvepoch",
@@ -109,6 +111,7 @@
     "wangziqi",
     "Wextra",
     "yakushima",
+    "ycsb",
     "zipf"
   ],
   "files.associations": {
