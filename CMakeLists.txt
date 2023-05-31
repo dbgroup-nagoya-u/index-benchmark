@@ -16,13 +16,21 @@ project(
 #--------------------------------------------------------------------------------------#
 # Build option for target indexes
 #--------------------------------------------------------------------------------------#
-option(INDEX_BENCH_BUILD_B_TREE_OLC "Build optimistic-locking based B-tree as a benchmarking target" OFF)
+
+option(INDEX_BENCH_BUILD_LONG_KEYS "Build keys with sizes of 16/32/64/128 bytes." OFF)
+option(INDEX_BENCH_BUILD_OPTIMIZED_B_TREES "Build the optimized B+trees for fixed-length keys." OFF)
+
+#--------------------------------------------------------------------------------------#
+# Build option for optional indexes
+#--------------------------------------------------------------------------------------#
+
+option(INDEX_BENCH_BUILD_B_TREE_OLC "Build B+tree with OLC as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_YAKUSHIMA "Build yakushima as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_ART_OLC "Build ARTOLC as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_YAKUSHIMA "Build Yakushima as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_ART_OLC "Build ART with OLC as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_HYDRALIST "Build HydraList as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_ALEX_OLC "Build AlexOLC as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_ALEX_OLC "Build Alex with OLC as a benchmarking target" OFF)
 
 set(INDEX_BENCH_COMPARE_WITH_SOTA OFF)
 if(${INDEX_BENCH_BUILD_B_TREE_OLC}
@@ -33,30 +41,13 @@ if(${INDEX_BENCH_BUILD_B_TREE_OLC}
   OR ${INDEX_BENCH_BUILD_HYDRALIST}
   OR ${INDEX_BENCH_BUILD_ALEX_OLC}
 )
-  message("[${PROJECT_NAME}] Use unsigned integer keys for comparison with the state-of-the-art indexes.")
+  message("[${PROJECT_NAME}] Use 8-bytes unsigned integer keys for comparison among the state-of-the-art indexes.")
   set(INDEX_BENCH_COMPARE_WITH_SOTA ON)
 endif()
 
 #--------------------------------------------------------------------------------------#
 # Configurations for target indexes
 #--------------------------------------------------------------------------------------#
-
-option(INDEX_BENCH_BUILD_LONG_KEYS "Build keys with sizes of 16/32/64/128 bytes." OFF)
-
-set(INDEX_BENCH_PAGE_SIZE "" CACHE STRING "The default page size in bytes.")
-if(NOT "${INDEX_BENCH_PAGE_SIZE}" STREQUAL "" AND NOT "${INDEX_BENCH_COMPARE_WITH_SOTA}")
-  message("[${PROJECT_NAME}] Set the page size of the reproduced B+trees to ${INDEX_BENCH_PAGE_SIZE}.")
-  set(B_TREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
-  set(BW_TREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
-  set(BZTREE_PAGE_SIZE "${INDEX_BENCH_PAGE_SIZE}" CACHE STRING "" FORCE)
-endif()
-
-set(INDEX_BENCH_MAX_DELTA_RECORD_NUM "" CACHE STRING "The maximum number of delta records if used.")
-if(NOT "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" STREQUAL "")
-  message("[${PROJECT_NAME}] Set the maximum number of delta records of the reproduced B+trees to ${INDEX_BENCH_MAX_DELTA_RECORD_NUM}.")
-  set(BW_TREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
-  set(BZTREE_MAX_DELTA_RECORD_NUM "${INDEX_BENCH_MAX_DELTA_RECORD_NUM}" CACHE STRING "" FORCE)
-endif()
 
 include(ProcessorCount)
 ProcessorCount(TMP_PROC_COUNT)
@@ -98,7 +89,7 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
 
 #--------------------------------------------------------------------------------------#
-# Configure reproduced B+trees
+# Configure our B+trees
 #--------------------------------------------------------------------------------------#
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/b-tree")
@@ -159,6 +150,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
   target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
     INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
     $<$<BOOL:${INDEX_BENCH_BUILD_LONG_KEYS}>:INDEX_BENCH_BUILD_LONG_KEYS>
+    $<$<BOOL:${INDEX_BENCH_BUILD_OPTIMIZED_B_TREES}>:INDEX_BENCH_BUILD_OPTIMIZED_B_TREES>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:INDEX_BENCH_BUILD_B_TREE_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>

@@ -39,20 +39,21 @@
 
 #include "b_tree/b_tree.hpp"
 
-DEFINE_bool(b_pml, false, "Use BTreePML with variable-length data as a benchmark target");
-DEFINE_bool(b_pml_opt, false, "Use BTreePML with fixed-length data as a benchmark target");
-DEFINE_bool(b_psl, false, "Use BTreePSL with variable-length data as a benchmark target");
-DEFINE_bool(b_psl_opt, false, "Use BTreePSL with fixed-length data as a benchmark target");
-DEFINE_bool(b_oml, false, "Use BTreeOML with variable-length data as a benchmark target");
-DEFINE_bool(b_oml_opt, false, "Use BTreeOML with fixed-length data as a benchmark target");
-DEFINE_bool(b_osl, false, "Use BTreeOSL with variable-length data as a benchmark target");
-DEFINE_bool(b_osl_opt, false, "Use BTreeOSL with fixed-length data as a benchmark target");
+DEFINE_bool(b_pml, false, "Use BTreePML as a benchmark target");
+DEFINE_bool(b_psl, false, "Use BTreePSL as a benchmark target");
+DEFINE_bool(b_oml, false, "Use BTreeOML as a benchmark target");
+DEFINE_bool(b_osl, false, "Use BTreeOSL as a benchmark target");
+
+#ifdef INDEX_BENCH_BUILD_OPTIMIZED_B_TREES
+DEFINE_bool(b_pml_opt, false, "Use optimized BTreePML for fixed-length data as a benchmark target");
+DEFINE_bool(b_psl_opt, false, "Use optimized BTreePSL for fixed-length data as a benchmark target");
+DEFINE_bool(b_oml_opt, false, "Use optimized BTreeOML for fixed-length data as a benchmark target");
+DEFINE_bool(b_osl_opt, false, "Use optimized BTreeOSL for fixed-length data as a benchmark target");
+#endif
 
 #ifdef INDEX_BENCH_BUILD_B_TREE_OLC
 #include "indexes/b_tree_olc_wrapper.hpp"
 DEFINE_bool(b_olc, false, "Use OLC based B-tree as a benchmark target");
-#else
-DEFINE_bool(b_olc, false, "OLC based B-tree is not built as a benchmark target.");
 #endif
 
 /*------------------------------------------------------------------------------------*
@@ -61,14 +62,15 @@ DEFINE_bool(b_olc, false, "OLC based B-tree is not built as a benchmark target."
 
 #include "bw_tree/bw_tree.hpp"
 
-DEFINE_bool(bw, false, "Use Bw-tree with variable-length data as a benchmark target");
-DEFINE_bool(bw_opt, false, "Use Bw-tree with fixed-length data as a benchmark target");
+DEFINE_bool(bw, false, "Use Bw-tree as a benchmark target");
+
+#ifdef INDEX_BENCH_BUILD_OPTIMIZED_B_TREES
+DEFINE_bool(bw_opt, false, "Use optimized Bw-tree for fixed-length data as a benchmark target");
+#endif
 
 #ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
 #include "indexes/open_bw_tree_wrapper.hpp"
 DEFINE_bool(open_bw, false, "Use Open-BwTree as a benchmark target");
-#else
-DEFINE_bool(open_bw, false, "OpenBw-Tree is not built as a benchmark target.");
 #endif
 
 /*------------------------------------------------------------------------------------*
@@ -87,15 +89,11 @@ DEFINE_bool(bz_append, false, "Use BzTree with append based update as a benchmar
 #ifdef INDEX_BENCH_BUILD_MASSTREE
 #include "indexes/masstree_wrapper.hpp"
 DEFINE_bool(mass_beta, false, "Use Masstree as a benchmark target");
-#else
-DEFINE_bool(mass_beta, false, "Massree is not built as a benchmark target. ");
 #endif
 
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
 #include "indexes/yakushima_wrapper.hpp"
 DEFINE_bool(yakushima, false, "Use yakushima as a benchmark target");
-#else
-DEFINE_bool(yakushima, false, "yakushima is not built as a benchmark target.");
 #endif
 
 /*------------------------------------------------------------------------------------*
@@ -105,15 +103,11 @@ DEFINE_bool(yakushima, false, "yakushima is not built as a benchmark target.");
 #ifdef INDEX_BENCH_BUILD_ART_OLC
 #include "indexes/art_olc_wrapper.hpp"
 DEFINE_bool(art_olc, false, "Use OLC based ART as a benchmark target");
-#else
-DEFINE_bool(art_olc, false, "OLC based ART is not built as a benchmark target.");
 #endif
 
 #ifdef INDEX_BENCH_BUILD_HYDRALIST
 #include "indexes/hydralist_wrapper.hpp"
 DEFINE_bool(hydralist, false, "Use HydraList as a benchmark target");
-#else
-DEFINE_bool(hydralist, false, "HydraList is not built as a benchmark target.");
 #endif
 
 /*------------------------------------------------------------------------------------*
@@ -123,8 +117,6 @@ DEFINE_bool(hydralist, false, "HydraList is not built as a benchmark target.");
 #ifdef INDEX_BENCH_BUILD_ALEX_OLC
 #include "indexes/alex_olc_wrapper.hpp"
 DEFINE_bool(alex_olc, false, "Use OLC based ALEX as a benchmark target");
-#else
-DEFINE_bool(alex_olc, false, "OLC based Alex is not built as a benchmark target.");
 #endif
 
 namespace dbgroup

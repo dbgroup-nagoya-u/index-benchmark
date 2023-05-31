@@ -2,14 +2,39 @@
 
 [![Ubuntu-20.04](https://github.com/dbgroup-nagoya-u/index-benchmark/actions/workflows/unit_tests.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/index-benchmark/actions/workflows/unit_tests.yaml)
 
+- [Build](#build)
+    - [Prerequisites](#prerequisites)
+    - [Build Options](#build-options)
+    - [Build Options for Unit Testing](#build-options-for-unit-testing)
+    - [Build and Run Unit Tests](#build-and-run-unit-tests)
+- [Usage](#usage)
+
 ## Build
 
 ### Prerequisites
 
 ```bash
-sudo apt update && sudo apt install -y build-essential cmake libgflags-dev libtbb-dev
+sudo apt update && sudo apt install -y build-essential cmake libgflags-dev
 cd <path_to_your_workspace>
-git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
+git clone --recursive https://github.com/dbgroup-nagoya-u/index-benchmark.git
+```
+
+#### Using An Efficient Memory Allocator
+
+We optionally use [mimalloc](https://github.com/microsoft/mimalloc) for efficient memory allocation. If you want to use this feature in benchmarking, please [install mimalloc](https://github.com/microsoft/mimalloc#macos-linux-bsd-etc) in advance.
+
+#### Preparation for Existing Implementations
+
+Some existing indexes use [Intel OneAPI Base Toolkit](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html) (i.e., Threading Building Blocks), so please [prepare Intel OneAPI Base Toolkit](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html?operatingsystem=linux&distributions=aptpackagemanager) in advance if you want to compare the state-of-the-art indexes. If you prefer to install oneTBB separately, you can use the following targets instead of `intel-basekit`:
+
+```bash
+sudo apt install intel-oneapi-tbb-devel
+```
+
+You also need the following packages for Yakushima (`libgoogle-glog-dev`) and HydraList (`libnuma-dev`).
+
+```bash
+sudo apt install libgoogle-glog-dev libnuma-dev
 ```
 
 ### Build Options
@@ -17,10 +42,7 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/index-benchmark.git
 #### Utility Options
 
 - `INDEX_BENCH_BUILD_LONG_KEYS`: build keys with sizes of 16/32/64/128 bytes if `ON` (default: `OFF`).
-- `INDEX_BENCH_PAGE_SIZE`: set the default page size for B+trees in bytes if needed.
-    - Our B+trees use 1,024 bytes as default.
-- `INDEX_BENCH_MAX_DELTA_RECORD_NUM`: set the maximum number of delta records if needed.
-    - NOTE: our Bw-tree and BzTree use different defaults, so please refer to each repository.
+- `INDEX_BENCH_BUILD_OPTIMIZED_B_TREES`: build the optimized B+trees for fixed-length keys if `ON` (default: `OFF`).
 
 #### Memory Allocation
 
@@ -55,20 +77,25 @@ ctest -C Release
 The following command displays available CLI options:
 
 ```bash
-./index_bench --helpshort
-./bulkload_bench --helpshort
+./build/index_bench --helpshort
 ```
 
-For example, if you want to measure throughput with 8 threads, execute the following command:
+The following command displays available indexes:
 
 ```bash
-./index_bench --throughput=t --num-thread 8
+./build/index_bench --helpon=index
 ```
 
-If you want to measure latency with skewed keys (keys are generated according to Zipf's law), execute the following command:
+For example, if you want to measure Bw-tree's throughput in the YCSB-C workload with 8 threads, execute the following command:
 
 ```bash
-./index_bench --throughput=f --skew-parameter 1.0
+./build/index_bench --bw --num-thread 8 --workload "workload/ycsb_c.json"
+```
+
+If you want to measure latency, use `--throughput=f` flag:
+
+```bash
+./build/index_bench --bw --num-thread 8 --workload "workload/ycsb_c.json" --throughput=f
 ```
 
 We prepare scripts in `bin` directory to measure performance with a variety of parameters. You can set parameters for benchmarking by `config/bench.env`.

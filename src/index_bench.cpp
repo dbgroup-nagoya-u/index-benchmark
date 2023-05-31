@@ -31,19 +31,24 @@
 
 DEFINE_uint64(num_exec, 10000000, "The number of executions of each worker");
 DEFINE_uint64(num_thread, 1, "The number of worker threads");
-DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
 DEFINE_uint64(timeout, 10, "Seconds to timeout");
 DEFINE_string(seed, "", "A random seed to control reproducibility");
-DEFINE_string(workload, "", "The path to a JSON file that contains a target workload");
+DEFINE_string(workload,
+              "workload/ycsb_a.json",
+              "The path to a JSON file that contains a target workload");
 DEFINE_bool(csv, false, "Output benchmark results as CSV format");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency");
 
 DEFINE_validator(num_exec, &ValidateNonZero);
 DEFINE_validator(num_thread, &ValidateNonZero);
-DEFINE_validator(key_size, &ValidateKeySize);
 DEFINE_validator(timeout, &ValidateNonZero);
 DEFINE_validator(seed, &ValidateRandomSeed);
 DEFINE_validator(workload, &ValidateWorkload);
+
+#ifdef INDEX_BENCH_BUILD_LONG_KEYS
+DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
+DEFINE_validator(key_size, &ValidateKeySize);
+#endif
 
 /*######################################################################################
  * Utility functions
@@ -153,6 +158,7 @@ RunWithMultipleIndexes()
    * B+tree implementations optimized for fixed-length data
    *----------------------------------------------------------------------------------*/
 
+#ifdef INDEX_BENCH_BUILD_OPTIMIZED_B_TREES
   if (FLAGS_b_pml_opt) {
     using BTreePMLOpt_t = Index<K, V, ::dbgroup::index::b_tree::BTreePMLFixLen>;
     Run<K, V, BTreePMLOpt_t>("Optimized B+tree based on PML", kUseBulkload);
@@ -182,6 +188,7 @@ RunWithMultipleIndexes()
     Run<K, V, BwTreeOpt_t>("Optimized Bw-tree");
     run_any = true;
   }
+#endif
 
   /*----------------------------------------------------------------------------------*
    * Other thread-safe index implementations
@@ -253,9 +260,8 @@ RunWithSelectedKey()
 {
   if constexpr (kUseIntegerKeys) {
     RunWithMultipleIndexes<uint64_t>();
-  } else if constexpr (!kBuildLongKeys) {
-    RunWithMultipleIndexes<VarLenData<k8>>();
   } else {
+#ifdef INDEX_BENCH_BUILD_LONG_KEYS
     switch (FLAGS_key_size) {
       case k8:
         RunWithMultipleIndexes<VarLenData<k8>>();
@@ -275,6 +281,9 @@ RunWithSelectedKey()
       default:
         break;
     }
+#else
+    RunWithMultipleIndexes<VarLenData<k8>>();
+#endif
   }
 }
 
