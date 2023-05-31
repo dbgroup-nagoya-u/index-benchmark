@@ -95,7 +95,12 @@ class Key
    * Internal constants
    *##################################################################################*/
 
-  static constexpr size_t kKeySeedSize = sizeof(uint32_t);
+  static constexpr size_t kWordSize = 8;
+  static constexpr size_t kSeedSize = sizeof(uint32_t);
+  static constexpr size_t kSeedBitNum = 8;
+  static constexpr size_t kPartLen = kKeyLen / kSeedSize;
+  static constexpr size_t kCopyLen = (kPartLen <= kWordSize) ? kPartLen : kWordSize;
+  static constexpr size_t kCopyNum = kPartLen / kWordSize;
 
   /*####################################################################################
    * Internal utilities
@@ -104,11 +109,21 @@ class Key
   void
   ExtendToKey(const uint32_t val)
   {
-    constexpr size_t kCopyLen = kKeyLen / kKeySeedSize;
-
     const auto *arr = reinterpret_cast<const uint8_t *>(&val);
-    for (size_t i = 0, j = kKeyLen - kCopyLen; i < kKeySeedSize; ++i, j -= kCopyLen) {
-      memset(&(key_[j]), arr[i], kCopyLen);
+    for (size_t i = 0, j = kKeyLen - kCopyLen; i < kSeedSize; ++i) {
+      if constexpr (kCopyNum <= 1) {
+        memset(&(key_[j]), arr[i], kCopyLen);
+        j -= kCopyLen;
+      } else {
+        constexpr size_t kMaskBitSize = kSeedBitNum / kCopyNum;
+        constexpr uint8_t kBitMask = ~(~0UL << kMaskBitSize);
+
+        auto mask = kBitMask;
+        for (size_t k = 0; k < kCopyNum; ++k, j -= kCopyLen) {
+          memset(&(key_[j]), arr[i] & mask, kCopyLen);
+          mask <<= kMaskBitSize;
+        }
+      }
     }
   }
 
@@ -116,12 +131,17 @@ class Key
   CompressKey() const  //
       -> uint32_t
   {
-    constexpr size_t kCopyLen = kKeyLen / kKeySeedSize;
-
     uint32_t val{0};
     auto *arr = reinterpret_cast<uint8_t *>(&val);
-    for (size_t i = 0, j = kKeyLen - kCopyLen; i < kKeySeedSize; ++i, j -= kCopyLen) {
-      arr[i] = key_[j];
+    for (size_t i = 0, j = kKeyLen - kCopyLen; i < kSeedSize; ++i) {
+      if constexpr (kCopyNum <= 1) {
+        arr[i] = key_[j];
+        j -= kCopyLen;
+      } else {
+        for (size_t k = 0; k < kCopyNum; ++k, j -= kCopyLen) {
+          arr[i] |= key_[j];
+        }
+      }
     }
 
     return val;
