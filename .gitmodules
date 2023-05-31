@@ -1,6 +1,6 @@
 [submodule "external/bztree"]
 	path = external/bztree
-	url = git@github.com:dbgroup-nagoya-u/bztree.git
+	url = https://github.com/dbgroup-nagoya-u/bztree.git
 [submodule "external/cpp-utility"]
 	path = external/cpp-utility
 	url = https://github.com/dbgroup-nagoya-u/cpp-utility.git
@@ -15,13 +15,13 @@
 	url = https://github.com/nlohmann/json.git
 [submodule "external/bw-tree"]
 	path = external/bw-tree
-	url = git@github.com:dbgroup-nagoya-u/bw-tree.git
+	url = https://github.com/dbgroup-nagoya-u/bw-tree.git
 [submodule "external/cpp-benchmark"]
 	path = external/cpp-benchmark
 	url = https://github.com/dbgroup-nagoya-u/cpp-benchmark.git
 [submodule "external/b-tree"]
 	path = external/b-tree
-	url = git@github.com:dbgroup-nagoya-u/b-tree.git
+	url = https://github.com/dbgroup-nagoya-u/b-tree.git
 [submodule "external/GRE"]
 	path = external/GRE
 	url = git@github.com:gre4index/GRE.git
