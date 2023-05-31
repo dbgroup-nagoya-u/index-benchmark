@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION "3.8")
+cmake_minimum_required(VERSION "3.11")
 
 # decline in-source build
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
@@ -10,7 +10,7 @@ project(
   index_bench
   VERSION "0.1.0"
   DESCRIPTION "A benchmark for thread-safe index implementations."
-  LANGUAGES "CXX"
+  LANGUAGES "CXX" "C"
 )
 
 #--------------------------------------------------------------------------------------#

@@ -1,4 +1,16 @@
-set(ALEX_OLC_SOURCE_DIR "${PROJECT_SOURCE_DIR}/external/GRE/src/competitor/alexol")
+message(NOTICE "[alex_olc] Prepare ALEX+.")
+#--------------------------------------------------------------------------------------#
+# Configure ALEX+
+#--------------------------------------------------------------------------------------#
+
+include(FetchContent)
+FetchContent_Declare(
+  alex
+  GIT_REPOSITORY "https://github.com/gre4index/GRE.git"
+  GIT_TAG "e807edcef51df6732f07f94d4c797fb3897519ba" # latest at May 31, 2023
+)
+FetchContent_Populate(alex)
+set(ALEX_OLC_SOURCE_DIR "${alex_SOURCE_DIR}/src/competitor/alexol")
 
 #--------------------------------------------------------------------------------------#
 # Build targets
@@ -19,3 +31,5 @@ if(NOT TARGET GRE::alex_olc)
     TBB::tbb
   )
 endif()
+
+message(NOTICE "[alex_olc] Preparation completed.")

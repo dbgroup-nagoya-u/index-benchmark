@@ -1,26 +1,34 @@
-set(MASSTREE_SOURCE_DIR "${PROJECT_SOURCE_DIR}/external/masstree")
-
+message(NOTICE "[mass_beta] Prepare Masstree.")
 #--------------------------------------------------------------------------------------#
-# Configurations
+# Configure Masstree
 #--------------------------------------------------------------------------------------#
 
-if(${INDEX_BENCH_BUILD_MASSTREE} AND NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
+include(FetchContent)
+FetchContent_Declare(
+  masstree
+  GIT_REPOSITORY "https://github.com/kohler/masstree-beta.git"
+  GIT_TAG "92593a96f61ab33089e44f177181206d173f0db5" # latest at May 31, 2023
+)
+FetchContent_Populate(masstree)
+set(MASSTREE_SOURCE_DIR "${masstree_SOURCE_DIR}")
+
+if(NOT EXISTS "${MASSTREE_SOURCE_DIR}/config.h")
   execute_process(
     COMMAND ./bootstrap.sh
     WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
   )
-  message(NOTICE "[masstree] Bootstrap has finished.")
+  message(NOTICE "[mass_beta] Bootstrap has finished.")
 
   execute_process(
     COMMAND ./configure --disable-assertions
     WORKING_DIRECTORY ${MASSTREE_SOURCE_DIR}
   )
-  message(NOTICE "[masstree] Configuration has finished.")
+  message(NOTICE "[mass_beta] Configuration has finished.")
 
   execute_process(
     COMMAND bash "-c" "sed -i '18i #include \"config.h\"' ${MASSTREE_SOURCE_DIR}/compiler.hh"
   )
-  message(NOTICE "[masstree] The header config.h has been added.")
+  message(NOTICE "[mass_beta] The header config.h has been added.")
 endif()
 
 #--------------------------------------------------------------------------------------#
@@ -60,3 +68,5 @@ if(NOT TARGET masstree::masstree)
     "${MASSTREE_SOURCE_DIR}"
   )
 endif()
+
+message(NOTICE "[mass_beta] Preparation completed.")

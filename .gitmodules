@@ -4,12 +4,6 @@
 [submodule "external/cpp-utility"]
 	path = external/cpp-utility
 	url = https://github.com/dbgroup-nagoya-u/cpp-utility.git
-[submodule "latest-open-bw-repo"]
-	path = external/open_bwtree
-	url = https://github.com/wangziqi2016/index-microbench.git
-[submodule "masstree-beta"]
-	path = external/masstree
-	url = https://github.com/kohler/masstree-beta.git
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
@@ -22,9 +16,3 @@
 [submodule "external/b-tree"]
 	path = external/b-tree
 	url = https://github.com/dbgroup-nagoya-u/b-tree.git
-[submodule "external/GRE"]
-	path = external/GRE
-	url = git@github.com:gre4index/GRE.git
-[submodule "external/hydralist"]
-	path = external/hydralist
-	url = https://github.com/cosmoss-jigu/hydralist.git

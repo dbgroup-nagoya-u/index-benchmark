@@ -1,3 +1,5 @@
+message(NOTICE "[yakushima] Prepare Yakushima.")
+
 set(YAKUSHIMA_SOURCE_DIR "${PROJECT_SOURCE_DIR}/external/yakushima")
 
 #--------------------------------------------------------------------------------------#
@@ -26,3 +28,5 @@ if(NOT TARGET tsurugi::yakushima)
     ${glog_LIBRARIES}
   )
 endif()
+
+message(NOTICE "[yakushima] Preparation completed.")

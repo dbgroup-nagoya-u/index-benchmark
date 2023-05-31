@@ -136,7 +136,7 @@ class YakushimaWrapper
         -> Payload
     {
       Payload payload{};
-      memcpy(&payload, std::get<1>(records_->at(pos_)), sizeof(Payload));
+      memcpy(&payload, &(std::get<1>(records_->at(pos_))), sizeof(Payload));
       return payload;
     }
 
@@ -206,7 +206,7 @@ class YakushimaWrapper
 
     // copy a gotten value if exist
     Payload value{};
-    memcpy(&value, ret.first, sizeof(Payload));
+    memcpy(&value, &ret.first, sizeof(Payload));
     return value;
   }
 

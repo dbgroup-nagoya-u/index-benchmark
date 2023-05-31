@@ -28,7 +28,6 @@
 
 // local sources
 #include "common.hpp"
-#include "key.hpp"
 
 namespace dbgroup
 {

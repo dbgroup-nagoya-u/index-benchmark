@@ -1,8 +1,19 @@
-set(ART_OLC_SOURCE_DIR "${PROJECT_SOURCE_DIR}/external/open_bwtree/ARTOLC")
+message(NOTICE "[art_olc] Prepare ART with optimistic lock coupling.")
+#--------------------------------------------------------------------------------------#
+# Configure ART with OLC
+#--------------------------------------------------------------------------------------#
 
-#--------------------------------------------------------------------------------------#
-# Configurations
-#--------------------------------------------------------------------------------------#
+include(FetchContent)
+FetchContent_GetProperties(open_bw)
+if(NOT open_bw_POPULATED)
+  FetchContent_Declare(
+    open_bw
+    GIT_REPOSITORY "https://github.com/wangziqi2016/index-microbench.git"
+    GIT_TAG "74cafa57d74798f209d8fcbce8c4f317ce066eae" # latest at May 31, 2023
+  )
+  FetchContent_Populate(open_bw)
+endif()
+set(ART_OLC_SOURCE_DIR "${open_bw_SOURCE_DIR}/ARTOLC")
 
 execute_process(
   COMMAND bash "-c" "grep 'functional' ${ART_OLC_SOURCE_DIR}/Tree.cpp &> /dev/null"
@@ -42,3 +53,5 @@ if(NOT TARGET open_bw::art_olc)
     TBB::tbb
   )
 endif()
+
+message(NOTICE "[art_olc] Preparation completed.")

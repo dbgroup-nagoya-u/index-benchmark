@@ -1,9 +1,17 @@
-set(HYDRALIST_SOURCE_DIR "${PROJECT_SOURCE_DIR}/external/hydralist/hydralist")
-set(HYDRALIST_ART_SOURCE_DIR "${HYDRALIST_SOURCE_DIR}/lib/ARTROWEX")
+message(NOTICE "[hydralist] Prepare HydraList.")
+#--------------------------------------------------------------------------------------#
+# Configure HydraList
+#--------------------------------------------------------------------------------------#
 
-#--------------------------------------------------------------------------------------#
-# Configure CPU information if needed
-#--------------------------------------------------------------------------------------#
+include(FetchContent)
+FetchContent_Declare(
+  hydralist
+  GIT_REPOSITORY "https://github.com/cosmoss-jigu/hydralist.git"
+  GIT_TAG "989b1dd73d225e51c7cde4bfd83f4f1631e3700b" # latest at May 31, 2023
+)
+FetchContent_Populate(hydralist)
+set(HYDRALIST_SOURCE_DIR "${hydralist_SOURCE_DIR}/hydralist")
+set(HYDRALIST_ART_SOURCE_DIR "${HYDRALIST_SOURCE_DIR}/lib/ARTROWEX")
 
 set(
   HYDRALIST_NUMA_CONFIG_PATH
@@ -67,3 +75,5 @@ if(NOT TARGET hydralist::hydralist)
     TBB::tbb
   )
 endif()
+
+message(NOTICE "[hydralist] Preparation completed.")
