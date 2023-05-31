@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_KEY_HPP
-#define INDEX_BENCHMARK_KEY_HPP
+#ifndef INDEX_BENCHMARK_VAR_LEN_DATA_HPP
+#define INDEX_BENCHMARK_VAR_LEN_DATA_HPP
 
 // C++ standard libraries
 #include <cassert>
@@ -27,67 +27,67 @@
 namespace dbgroup
 {
 
-template <size_t kKeyLen>
-class Key
+template <size_t kDataLen>
+class VarLenData
 {
  public:
   /*####################################################################################
    * Public constructors and assignment operators
    *##################################################################################*/
 
-  constexpr Key() = default;
+  constexpr VarLenData() = default;
 
-  explicit Key(const uint32_t key) { ExtendToKey(key); }
+  explicit VarLenData(const uint32_t seed) { Extend(seed); }
 
-  constexpr Key(const Key &) = default;
-  constexpr Key(Key &&) noexcept = default;
-  constexpr auto operator=(const Key &) -> Key & = default;
-  constexpr auto operator=(Key &&) -> Key & = default;
+  constexpr VarLenData(const VarLenData &) = default;
+  constexpr VarLenData(VarLenData &&) noexcept = default;
+  constexpr auto operator=(const VarLenData &) -> VarLenData & = default;
+  constexpr auto operator=(VarLenData &&) -> VarLenData & = default;
 
   /*####################################################################################
    * Public destructors
    *##################################################################################*/
 
-  ~Key() = default;
+  ~VarLenData() = default;
 
   /*####################################################################################
    * Public utilities
    *##################################################################################*/
 
   auto
-  operator<(const Key &obj) const  //
+  operator<(const VarLenData &obj) const  //
       -> bool
   {
-    return memcmp(&key_, &(obj.key_), kKeyLen) < 0;
+    return memcmp(&data_, &(obj.data_), kDataLen) < 0;
   }
 
   auto
-  operator>(const Key &obj) const  //
+  operator>(const VarLenData &obj) const  //
       -> bool
   {
-    return memcmp(&key_, &(obj.key_), kKeyLen) > 0;
+    return memcmp(&data_, &(obj.data_), kDataLen) > 0;
   }
 
   auto
-  operator==(const Key &obj) const  //
+  operator==(const VarLenData &obj) const  //
       -> bool
   {
-    return memcmp(&key_, &(obj.key_), kKeyLen) == 0;
+    return memcmp(&data_, &(obj.data_), kDataLen) == 0;
   }
 
   auto
   operator+(const size_t val) const  //
-      -> Key
+      -> VarLenData
   {
-    const auto new_key = static_cast<uint32_t>(GetValue() + val);
-    return Key{new_key};
+    const auto new_seed = Compress() + static_cast<uint32_t>(val);
+    return VarLenData{new_seed};
   }
 
   constexpr auto
   GetValue() const  //
       -> size_t
   {
-    return CompressKey();
+    return Compress();
   }
 
  private:
@@ -98,7 +98,7 @@ class Key
   static constexpr size_t kWordSize = 8;
   static constexpr size_t kSeedSize = sizeof(uint32_t);
   static constexpr size_t kSeedBitNum = 8;
-  static constexpr size_t kPartLen = kKeyLen / kSeedSize;
+  static constexpr size_t kPartLen = kDataLen / kSeedSize;
   static constexpr size_t kCopyLen = (kPartLen <= kWordSize) ? kPartLen : kWordSize;
   static constexpr size_t kCopyNum = kPartLen / kWordSize;
 
@@ -107,12 +107,12 @@ class Key
    *##################################################################################*/
 
   void
-  ExtendToKey(const uint32_t val)
+  Extend(const uint32_t val)
   {
     const auto *arr = reinterpret_cast<const uint8_t *>(&val);
-    for (size_t i = 0, j = kKeyLen - kCopyLen; i < kSeedSize; ++i) {
+    for (size_t i = 0, j = kDataLen - kCopyLen; i < kSeedSize; ++i) {
       if constexpr (kCopyNum <= 1) {
-        memset(&(key_[j]), arr[i], kCopyLen);
+        memset(&(data_[j]), arr[i], kCopyLen);
         j -= kCopyLen;
       } else {
         constexpr size_t kMaskBitSize = kSeedBitNum / kCopyNum;
@@ -120,7 +120,7 @@ class Key
 
         auto mask = kBitMask;
         for (size_t k = 0; k < kCopyNum; ++k, j -= kCopyLen) {
-          memset(&(key_[j]), arr[i] & mask, kCopyLen);
+          memset(&(data_[j]), arr[i] & mask, kCopyLen);
           mask <<= kMaskBitSize;
         }
       }
@@ -128,18 +128,18 @@ class Key
   }
 
   constexpr auto
-  CompressKey() const  //
+  Compress() const  //
       -> uint32_t
   {
     uint32_t val{0};
     auto *arr = reinterpret_cast<uint8_t *>(&val);
-    for (size_t i = 0, j = kKeyLen - kCopyLen; i < kSeedSize; ++i) {
+    for (size_t i = 0, j = kDataLen - kCopyLen; i < kSeedSize; ++i) {
       if constexpr (kCopyNum <= 1) {
-        arr[i] = key_[j];
+        arr[i] = data_[j];
         j -= kCopyLen;
       } else {
         for (size_t k = 0; k < kCopyNum; ++k, j -= kCopyLen) {
-          arr[i] |= key_[j];
+          arr[i] |= data_[j];
         }
       }
     }
@@ -151,9 +151,9 @@ class Key
    * Internal member variables
    *##################################################################################*/
 
-  uint8_t key_[kKeyLen]{};
+  uint8_t data_[kDataLen]{};
 };
 
 }  // namespace dbgroup
 
-#endif  // INDEX_BENCHMARK_KEY_HPP
+#endif  // INDEX_BENCHMARK_VAR_LEN_DATA_HPP

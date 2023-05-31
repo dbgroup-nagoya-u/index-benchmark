@@ -254,23 +254,23 @@ RunWithSelectedKey()
   if constexpr (kUseIntegerKeys) {
     RunWithMultipleIndexes<uint64_t>();
   } else if constexpr (!kBuildLongKeys) {
-    RunWithMultipleIndexes<Key<k8>>();
+    RunWithMultipleIndexes<VarLenData<k8>>();
   } else {
     switch (FLAGS_key_size) {
       case k8:
-        RunWithMultipleIndexes<Key<k8>>();
+        RunWithMultipleIndexes<VarLenData<k8>>();
         break;
       case k16:
-        RunWithMultipleIndexes<Key<k16>>();
+        RunWithMultipleIndexes<VarLenData<k16>>();
         break;
       case k32:
-        RunWithMultipleIndexes<Key<k32>>();
+        RunWithMultipleIndexes<VarLenData<k32>>();
         break;
       case k64:
-        RunWithMultipleIndexes<Key<k64>>();
+        RunWithMultipleIndexes<VarLenData<k64>>();
         break;
       case k128:
-        RunWithMultipleIndexes<Key<k128>>();
+        RunWithMultipleIndexes<VarLenData<k128>>();
         break;
       default:
         break;

@@ -32,7 +32,7 @@
 #include "nlohmann/json.hpp"
 
 // local sources
-#include "key.hpp"
+#include "var_len_data.hpp"
 
 namespace dbgroup
 {
