@@ -107,6 +107,10 @@ RunWithMultipleIndexes()
   using V = uint64_t;
   auto run_any = false;  // check any indexes are specified as benchmarking targets
 
+  if (!FLAGS_csv) {
+    std::cout << "NOTE: use " << FLAGS_workload << " in benchmarking." << std::endl << std::endl;
+  }
+
   /*----------------------------------------------------------------------------------*
    * Basic B+tree implementations
    *----------------------------------------------------------------------------------*/

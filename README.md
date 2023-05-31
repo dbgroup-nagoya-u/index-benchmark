@@ -5,9 +5,9 @@
 - [Build](#build)
     - [Prerequisites](#prerequisites)
     - [Build Options](#build-options)
-    - [Build Options for Unit Testing](#build-options-for-unit-testing)
     - [Build and Run Unit Tests](#build-and-run-unit-tests)
 - [Usage](#usage)
+- [Acknowledgments](#acknowledgments)
 
 ## Build
 
@@ -58,7 +58,7 @@ sudo apt install libgoogle-glog-dev libnuma-dev
 - `INDEX_BENCH_BUILD_HYDRALIST`: build a benchmarker with HydraList if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_ALEX_OLC`: build a benchmarker with OLC based ALEX if `ON` (default: `OFF`).
 
-### Build Options for Unit Testing
+#### Build Options for Unit Testing
 
 - `INDEX_BENCH_BUILD_TESTS`: build unit tests if `ON` (default: `OFF`).
 - `INDEX_BENCH_TEST_THREAD_NUM`: the maximum number of threads to perform unit tests (default `8`).
@@ -99,3 +99,7 @@ If you want to measure latency, use `--throughput=f` flag:
 ```
 
 We prepare scripts in `bin` directory to measure performance with a variety of parameters. You can set parameters for benchmarking by `config/bench.env`.
+
+## Acknowledgments
+
+This work is based on results from project JPNP16007 commissioned by the New Energy and Industrial Technology Development Organization (NEDO), and it was supported partially by KAKENHI (JP20K19804, JP21H03555, and JP22H03594). We also thank Takayuki Tanabe and our students for contributing to implementations.
