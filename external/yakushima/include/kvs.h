@@ -40,10 +40,10 @@ namespace yakushima {
 
 /**
  * @param [in] storage_name
- * @return The total memory usage of the given storage.
+ * @return The memory usage data of the given storage.
  */
 [[maybe_unused]] static memory_usage_stack
-mem_usage(std::string_view storage_name);
+mem_usage(std::string_view storage_name); // NOLINT
 
 /**
  * @brief Create storage

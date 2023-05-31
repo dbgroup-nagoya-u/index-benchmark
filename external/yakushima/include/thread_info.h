@@ -13,7 +13,7 @@
 
 namespace yakushima {
 
-class alignas(kCacheLineSize) thread_info {
+class alignas(CACHE_LINE_SIZE) thread_info {
 public:
     /**
    * @details Take the right to assign this gc_info.

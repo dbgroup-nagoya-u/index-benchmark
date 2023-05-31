@@ -21,8 +21,8 @@
 
 namespace yakushima {
 
-class alignas(kCacheLineSize) interior_node final // NOLINT
-    : public base_node {                          // NOLINT
+class alignas(CACHE_LINE_SIZE) interior_node final // NOLINT
+    : public base_node {                           // NOLINT
 public:
     /**
    * @details The structure is "ptr, key, ptr, key, ..., ptr".
@@ -149,7 +149,10 @@ public:
     }
 
     /**
-     * @return The total memory usage of this node.
+     * @brief Collect the memory usage of this partial tree.
+     * 
+     * @param level the level of this node in the tree.
+     * @param mem_stat the stack of memory usage for each level.
      */
     void mem_usage(std::size_t level,
                    memory_usage_stack& mem_stat) const override {
@@ -157,9 +160,10 @@ public:
         auto& [node_num, used, reserved] = mem_stat.at(level);
 
         const auto n_keys = n_keys_ + 1UL;
+        ++node_num;
         reserved += sizeof(interior_node);
         used += sizeof(interior_node) -
-                ((child_length - n_keys) * sizeof(base_node*));
+                ((child_length - n_keys) * sizeof(uintptr_t));
 
         const auto next_level = level + 1;
         for (std::size_t i = 0; i < n_keys; ++i) {

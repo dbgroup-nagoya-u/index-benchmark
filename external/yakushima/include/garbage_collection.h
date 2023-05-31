@@ -145,7 +145,7 @@ private:
     static constexpr std::size_t gc_target_index = 1;
     static constexpr std::size_t gc_target_size_index = 2;
     static constexpr std::size_t gc_target_align_index = 3;
-    alignas(kCacheLineSize) static inline std::atomic<Epoch> gc_epoch_{
+    alignas(CACHE_LINE_SIZE) static inline std::atomic<Epoch> gc_epoch_{
             0};                                                      // NOLINT
     std::tuple<Epoch, base_node*> cache_node_container_{0, nullptr}; // NOLINT
     concurrent_queue<std::tuple<Epoch, base_node*>> node_container_; // NOLINT
