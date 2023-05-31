@@ -15,7 +15,7 @@
  */
 
 // the corresponding header
-#include "key.hpp"
+#include "var_len_data.hpp"
 
 // C++ standard libraries
 #include <algorithm>
@@ -32,9 +32,9 @@ namespace dbgroup
  * Classes for templated testing
  *####################################################################################*/
 
-template <size_t kKeyLen>
+template <size_t kDataLen>
 struct Target {
-  inline static constexpr size_t kSize = kKeyLen;
+  inline static constexpr size_t kSize = kDataLen;
 };
 
 /*######################################################################################
@@ -49,9 +49,9 @@ constexpr size_t kRandomSeed = 20;
  *####################################################################################*/
 
 template <class Target>
-class KeyFixture : public ::testing::Test
+class VarLenDataFixture : public ::testing::Test
 {
-  using Key_t = Key<Target::kSize>;
+  using VarLenData_t = VarLenData<Target::kSize>;
 
  protected:
   void
@@ -84,8 +84,8 @@ class KeyFixture : public ::testing::Test
   {
     for (size_t i = 0; i < kRepeatNum; ++i) {
       const auto expected_val = uint_dist_(randome_engine_);
-      Key_t key{expected_val};
-      EXPECT_EQ(key.GetValue(), expected_val);
+      VarLenData_t data{expected_val};
+      EXPECT_EQ(data.GetValue(), expected_val);
     }
   }
 
@@ -95,23 +95,23 @@ class KeyFixture : public ::testing::Test
     const auto &expected_values = CreateSortedRandomUInt();
 
     auto prev_val = expected_values[0];
-    Key_t prev_key{prev_val};
+    VarLenData_t prev_data{prev_val};
     for (size_t i = 1; i < expected_values.size(); ++i) {
       auto next_val = expected_values[i];
-      Key_t next_key{next_val};
+      VarLenData_t next_data{next_val};
 
       if (prev_val == next_val) {
-        EXPECT_EQ(prev_key, next_key);
-        EXPECT_FALSE(prev_key < next_key);
-        EXPECT_FALSE(prev_key > next_key);
+        EXPECT_EQ(prev_data, next_data);
+        EXPECT_FALSE(prev_data < next_data);
+        EXPECT_FALSE(prev_data > next_data);
       } else {
-        EXPECT_FALSE(prev_key == next_key);
-        EXPECT_LT(prev_key, next_key);
-        EXPECT_GT(next_key, prev_key);
+        EXPECT_FALSE(prev_data == next_data);
+        EXPECT_LT(prev_data, next_data);
+        EXPECT_GT(next_data, prev_data);
       }
 
       prev_val = next_val;
-      prev_key = next_key;
+      prev_data = next_data;
     }
   }
 
@@ -122,10 +122,10 @@ class KeyFixture : public ::testing::Test
       const auto base_val = uint_dist_(randome_engine_) / 2;
       const auto diff_val = uint_dist_(randome_engine_) / 2;
 
-      Key_t base_key{base_val};
-      const auto &added_key = base_key + diff_val;
+      VarLenData_t base_data{base_val};
+      const auto &added_data = base_data + diff_val;
 
-      EXPECT_EQ(added_key.GetValue(), base_val + diff_val);
+      EXPECT_EQ(added_data.GetValue(), base_val + diff_val);
     }
   }
 
@@ -143,23 +143,23 @@ using TestTargets = ::testing::Types<  //
     Target<32>,
     Target<64>,
     Target<128>>;
-TYPED_TEST_SUITE(KeyFixture, TestTargets);
+TYPED_TEST_SUITE(VarLenDataFixture, TestTargets);
 
 /*######################################################################################
  * Unit test definitions
  *####################################################################################*/
 
-TYPED_TEST(KeyFixture, GetValueReturnOriginalUInt)
+TYPED_TEST(VarLenDataFixture, GetValueReturnOriginalUInt)
 {  //
   TestFixture::VerifyGetValue();
 }
 
-TYPED_TEST(KeyFixture, ComparaOperatorsReturnSameResultsWithUInt)
+TYPED_TEST(VarLenDataFixture, ComparaOperatorsReturnSameResultsWithUInt)
 {  //
   TestFixture::VerifyCompareOperators();
 }
 
-TYPED_TEST(KeyFixture, PlusOperatorsReturnIncrementedKeys)
+TYPED_TEST(VarLenDataFixture, PlusOperatorsReturnIncrementedData)
 {  //
   TestFixture::VerifyPlusOperator();
 }

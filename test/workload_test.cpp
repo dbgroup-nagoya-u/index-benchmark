@@ -46,7 +46,7 @@ constexpr size_t kRandomSeed = 20;
 class WorkloadFixture : public ::testing::Test
 {
  public:
-  using Key_t = Key<k8>;
+  using Key_t = VarLenData<k8>;
   using Payload_t = uint64_t;
   using Operation_t = Operation<Key_t, Payload_t>;
   using Json_t = ::nlohmann::json;
