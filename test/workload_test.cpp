@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
+// the corresponding header
 #include "workload/workload.hpp"
 
+// C++ standard libraries
 #include <vector>
 
+// external sources
 #include "gtest/gtest.h"
+
+// local sources
 #include "workload/operation.hpp"
+
+namespace dbgroup
+{
 
 /*######################################################################################
  * Global constants
@@ -38,7 +46,7 @@ constexpr size_t kRandomSeed = 20;
 class WorkloadFixture : public ::testing::Test
 {
  public:
-  using Key_t = Key<k8>;
+  using Key_t = VarLenData<k8>;
   using Payload_t = uint64_t;
   using Operation_t = Operation<Key_t, Payload_t>;
   using Json_t = ::nlohmann::json;
@@ -94,20 +102,21 @@ TEST_F(WorkloadFixture, ConstructorWOArgsGenerateReadOnlyWorkload)
 
 TEST_F(WorkloadFixture, WorkloadHavingAllOperationsGenerateOperationsUniformly)
 {  //
-  constexpr size_t kOpsTypeNum = 10;
+  constexpr size_t kOpsTypeNum = 11;
 
   Json_t w_json = R"({
     "operation ratios": {
-      "read": 0.1,
-      "scan": 0.1,
-      "write": 0.1,
-      "insert": 0.1,
-      "update": 0.1,
-      "delete": 0.1,
-      "insert or update": 0.1,
-      "delete and insert": 0.1,
-      "delete or insert": 0.1,
-      "insert and delete": 0.1
+      "read": 0.0909,
+      "scan": 0.0909,
+      "full scan": 0.0909,
+      "write": 0.0909,
+      "insert": 0.0909,
+      "update": 0.0909,
+      "delete": 0.0909,
+      "insert or update": 0.0909,
+      "delete and insert": 0.0909,
+      "delete or insert": 0.0909,
+      "insert and delete": 0.0909
     },
     "# of keys": 1000000,
     "partitioning policy": "none",
@@ -123,7 +132,8 @@ TEST_F(WorkloadFixture, WorkloadHavingAllOperationsGenerateOperationsUniformly)
   auto &&operations = PrepareOperationVector();
   workload.AddOperations(operations, kRepeatNum, 0, 1, kRandomSeed);
 
-  std::vector<size_t> frequency(kOpsTypeNum, 0);
+  std::array<size_t, kOpsTypeNum> frequency{};
+  frequency.fill(0);
   for (const auto &ops : operations) {
     ++(frequency.at(static_cast<size_t>(ops.type)));
   }
@@ -170,7 +180,7 @@ TEST_F(WorkloadFixture, WorkloadWithRangePartitionGenerateSeparatedKeys)
     "operation ratios": {"read": 1.0},
     "# of keys": 1000000,
     "partitioning policy": "range",
-    "access pattern": "reverse"
+    "access pattern": "descending"
   })"_json;
 
   Workload workload{w_json};
@@ -197,7 +207,7 @@ TEST_F(WorkloadFixture, WorkloadWithStripePartitionGenerateStripedKeys)
     "operation ratios": {"read": 1.0},
     "# of keys": 1000000,
     "partitioning policy": "stripe",
-    "access pattern": "sequential"
+    "access pattern": "ascending"
   })"_json;
 
   Workload workload{w_json};
@@ -216,3 +226,5 @@ TEST_F(WorkloadFixture, WorkloadWithStripePartitionGenerateStripedKeys)
     operations.clear();
   }
 }
+
+}  // namespace dbgroup

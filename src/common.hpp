@@ -17,6 +17,7 @@
 #ifndef INDEX_BENCHMARK_COMMON_HPP
 #define INDEX_BENCHMARK_COMMON_HPP
 
+// C++ standard libraries
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -27,8 +28,14 @@
 #include <thread>
 #include <vector>
 
-#include "key.hpp"
+// external sources
 #include "nlohmann/json.hpp"
+
+// local sources
+#include "var_len_data.hpp"
+
+namespace dbgroup
+{
 
 /*######################################################################################
  * Global enum and constants
@@ -73,8 +80,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(IndexOperation,
 enum AccessPattern {
   kUndefinedAccessPattern = -1,
   kRandom,
-  kSequential,
-  kSeqReverse,
+  kAscending,
+  kDescending,
 };
 
 // mapping for access pattern strings
@@ -82,8 +89,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(AccessPattern,
                              {
                                  {kUndefinedAccessPattern, nullptr},
                                  {kRandom, "random"},
-                                 {kSequential, "sequential"},
-                                 {kSeqReverse, "reverse"},
+                                 {kAscending, "ascending"},
+                                 {kDescending, "descending"},
                              })
 
 enum Partitioning {
@@ -114,15 +121,33 @@ enum KeySize {
   k128 = 128,
 };
 
+constexpr int kSuccess = 0;
+
+constexpr int kFailed = -1;
+
 constexpr size_t kMaxCoreNum = INDEX_BENCH_MAX_CORES;
 
 constexpr size_t kGCInterval = 100000;
 
 constexpr size_t kGCThreadNum = 8;
 
+constexpr size_t kScanSize = 128;
+
 constexpr bool kClosed = true;
 
 constexpr bool kUseBulkload = true;
+
+#ifdef INDEX_BENCH_BUILD_LONG_KEYS
+constexpr bool kBuildLongKeys = true;
+#else
+constexpr bool kBuildLongKeys = false;
+#endif
+
+#ifdef INDEX_BENCH_COMPARE_WITH_SOTA
+constexpr bool kUseIntegerKeys = true;
+#else
+constexpr bool kUseIntegerKeys = false;
+#endif
 
 constexpr double kEpsilon = 0.001;
 
@@ -189,5 +214,15 @@ PrepareBulkLoadEntries(  //
 
   return entries;
 }
+
+template <template <class K, class V> class Index>
+constexpr auto
+HasSetUpTearDown()  //
+    -> bool
+{
+  return false;
+}
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_COMMON_HPP

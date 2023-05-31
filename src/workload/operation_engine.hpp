@@ -17,13 +17,18 @@
 #ifndef INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP
 #define INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP
 
+// C++ standard libraries
 #include <atomic>
 #include <fstream>
 #include <random>
 #include <tuple>
 
+// local sources
 #include "operation.hpp"
 #include "workload.hpp"
+
+namespace dbgroup
+{
 
 /**
  * @brief A class to represent index read/write operations.
@@ -145,5 +150,7 @@ class OperationEngine
 
   std::vector<Workload> workloads_{Workload{}};
 };
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP

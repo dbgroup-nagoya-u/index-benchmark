@@ -17,14 +17,24 @@
 #ifndef INDEX_BENCHMARK_INDEXES_YAKUSHIMA_WRAPPER_HPP
 #define INDEX_BENCHMARK_INDEXES_YAKUSHIMA_WRAPPER_HPP
 
+// C++ standard libraries
 #include <optional>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+// external system libraries
+#include <byteswap.h>
+
+// external sources
+#include "kvs.h"
+
+// local sources
 #include "common.hpp"
-#include "yakushima/include/kvs.h"
+
+namespace dbgroup
+{
 
 template <class Key, class Payload>
 class YakushimaWrapper
@@ -35,20 +45,120 @@ class YakushimaWrapper
 
   using status = ::yakushima::status;
   using Token = ::yakushima::Token;
+  using ScanKey = std::optional<std::tuple<const Key &, size_t, bool>>;
 
  public:
   /*####################################################################################
-   * Public type aliases
+   * Public inner classes
    *##################################################################################*/
 
-  using K = Key;
-  using V = Payload;
+  /**
+   * @brief A class for representing an iterator of scan results.
+   *
+   */
+  class RecordIterator
+  {
+   public:
+    /*##################################################################################
+     * Public constructors and assignment operators
+     *################################################################################*/
+
+    /**
+     * @brief Construct a new object as an initial iterator.
+     *
+     * @param index a pointer to an index.
+     */
+    RecordIterator(std::vector<std::tuple<std::string, Payload *, size_t>> *records)
+        : records_{records}
+    {
+    }
+
+    RecordIterator(const RecordIterator &) = delete;
+    RecordIterator(RecordIterator &&) = delete;
+
+    auto operator=(const RecordIterator &) -> RecordIterator & = delete;
+    auto operator=(RecordIterator &&obj) -> RecordIterator & = delete;
+
+    /*##################################################################################
+     * Public destructors
+     *################################################################################*/
+
+    /**
+     * @brief Destroy the iterator and a retained node if exist.
+     *
+     */
+    ~RecordIterator() = default;
+
+    /*##################################################################################
+     * Public operators for iterators
+     *################################################################################*/
+
+    /**
+     * @retval true if this iterator indicates a live record.
+     * @retval false otherwise.
+     */
+    explicit operator bool()
+    {
+      while (true) {
+        const auto size = records_->size();
+        if (pos_ < size) return true;        // records remain in this node
+        if (size < kScanSize) return false;  // this node is the end of range-scan
+
+        const auto &key = std::move(std::get<0>(records_->back()));
+        records_->clear();
+        ::yakushima::scan(table_name_,                                 //
+                          key, ::yakushima::scan_endpoint::EXCLUSIVE,  //
+                          kDummyKey, ::yakushima::scan_endpoint::INF,  //
+                          *records_, nullptr, kScanSize);
+        pos_ = 0;
+      }
+    }
+
+    /**
+     * @brief Forward this iterator.
+     *
+     */
+    constexpr void
+    operator++()
+    {
+      ++pos_;
+    }
+
+    /*##################################################################################
+     * Public getters/setters
+     *################################################################################*/
+
+    /**
+     * @return a payload of a current record
+     */
+    [[nodiscard]] auto
+    GetPayload() const  //
+        -> Payload
+    {
+      Payload payload{};
+      memcpy(&payload, &(std::get<1>(records_->at(pos_))), sizeof(Payload));
+      return payload;
+    }
+
+   private:
+    /*##################################################################################
+     * Internal member variables
+     *################################################################################*/
+
+    /// the scanned records.
+    std::vector<std::tuple<std::string, Payload *, size_t>> *records_{nullptr};
+
+    /// the position of a current record.
+    size_t pos_{0};
+  };
 
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
 
-  explicit YakushimaWrapper([[maybe_unused]] const size_t worker_num)
+  YakushimaWrapper(  //
+      [[maybe_unused]] const size_t gc_interval,
+      [[maybe_unused]] const size_t gc_thread_num)
   {
     ::yakushima::init();
     ::yakushima::create_storage(table_name_);
@@ -76,9 +186,9 @@ class YakushimaWrapper
   Bulkload(  //
       [[maybe_unused]] const std::vector<std::pair<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
-      -> bool
+      -> int
   {
-    return false;
+    return kFailed;
   }
 
   /*####################################################################################
@@ -92,85 +202,29 @@ class YakushimaWrapper
     // get a value/size pair
     std::pair<Payload *, size_t> ret{};
     const auto rc = ::yakushima::get(table_name_, ToStrView(key), ret);
+    if (rc != status::OK) return std::nullopt;
 
     // copy a gotten value if exist
-    if (rc != status::OK) return std::nullopt;
     Payload value{};
-    memcpy(&value, ret.first, sizeof(Payload));
-
+    memcpy(&value, &ret.first, sizeof(Payload));
     return value;
   }
 
   auto
-  Scan(  //
-      Key begin_key,
-      int64_t scan_size)  //
-      -> size_t
+  Scan(const ScanKey &begin_key = std::nullopt)  //
+      -> RecordIterator
   {
-    constexpr auto kScanSize = 1024;
-    const auto len = (scan_size > kScanSize) ? kScanSize : scan_size;
-    size_t sum{0};
-    size_t count{0};
-    thread_local std::vector<std::tuple<std::string, Payload *, size_t>> tuples{kScanSize};
+    thread_local std::vector<std::tuple<std::string, Payload *, size_t>> records{kScanSize};
+    records.clear();
 
-    while (true) {
-      // scan target tuples
-      auto &&end_key = begin_key + len;
-      tuples.clear();
-      ::yakushima::scan(table_name_,                                                  //
-                        ToStrView(begin_key), ::yakushima::scan_endpoint::INCLUSIVE,  //
-                        ToStrView(end_key), ::yakushima::scan_endpoint::EXCLUSIVE,    //
-                        tuples);
-      if (tuples.empty()) break;
+    // scan target tuples
+    const auto &key = (begin_key) ? std::get<0>(*begin_key) : Key{};
+    ::yakushima::scan(table_name_,                                            //
+                      ToStrView(key), ::yakushima::scan_endpoint::INCLUSIVE,  //
+                      kDummyKey, ::yakushima::scan_endpoint::INF,             //
+                      records, nullptr, kScanSize);
 
-      // summarize scan results
-      for (const auto &tuple : tuples) {
-        sum += *(std::get<1>(tuple));
-        if (++count >= scan_size) return count;
-      }
-
-      begin_key = std::move(end_key);
-    }
-
-    return count;
-  }
-
-  auto
-  FullScan()  //
-      -> size_t
-  {
-    constexpr auto kScanSize = 1024;
-
-    Key begin_key{0};
-    Key end_key{kScanSize};
-    size_t sum{0};
-    size_t count{0};
-    std::vector<std::tuple<std::string, Payload *, size_t>> tuples{};
-    tuples.reserve(kScanSize);
-
-    ::yakushima::scan(table_name_,                                                //
-                      ToStrView(begin_key), ::yakushima::scan_endpoint::INF,      //
-                      ToStrView(end_key), ::yakushima::scan_endpoint::INCLUSIVE,  //
-                      tuples);
-
-    while (!tuples.empty()) {
-      // summarize scan results
-      for (const auto &tuple : tuples) {
-        sum += *(std::get<1>(tuple));
-        ++count;
-      }
-      tuples.clear();
-
-      begin_key = std::move(end_key);
-      end_key = begin_key + kScanSize;
-
-      ::yakushima::scan(table_name_,                                                  //
-                        ToStrView(begin_key), ::yakushima::scan_endpoint::EXCLUSIVE,  //
-                        ToStrView(end_key), ::yakushima::scan_endpoint::INCLUSIVE,    //
-                        tuples);
-    }
-
-    return count;
+    return RecordIterator{&records};
   }
 
   auto
@@ -182,7 +236,7 @@ class YakushimaWrapper
     auto *value_v = const_cast<Payload *>(&value);
     const auto rc = ::yakushima::put(token_, table_name_, ToStrView(key), value_v);
 
-    return (rc == status::OK) ? 0 : 1;
+    return (rc == status::OK) ? kSuccess : kFailed;
   }
 
   auto
@@ -191,7 +245,7 @@ class YakushimaWrapper
       [[maybe_unused]] const Payload &value)
   {
     throw std::runtime_error{"ERROR: the insert operation is not implemented."};
-    return 1;
+    return kFailed;
   }
 
   auto
@@ -200,7 +254,7 @@ class YakushimaWrapper
       [[maybe_unused]] const Payload &value)
   {
     throw std::runtime_error{"ERROR: the update operation is not implemented."};
-    return 1;
+    return kFailed;
   }
 
   auto
@@ -209,29 +263,27 @@ class YakushimaWrapper
     // delete a tuple by a given key
     const auto rc = ::yakushima::remove(token_, table_name_, ToStrView(key));
 
-    return (rc == status::OK) ? 0 : 1;
-    return 1;
+    return (rc == status::OK) ? kSuccess : kFailed;
   }
 
  private:
   /*####################################################################################
+   * Internal constants
+   *##################################################################################*/
+
+  static constexpr std::string_view kDummyKey{};
+
+  /*####################################################################################
    * Internal utility functions
    *##################################################################################*/
 
-  template <class T>
-  static constexpr auto
-  ToStrView(const T &data)  //
+  static auto
+  ToStrView(const uint64_t &key)  //
       -> std::string_view
   {
-    return std::string_view{reinterpret_cast<const char *>(&data), sizeof(T)};
-  }
-
-  template <class T>
-  static constexpr auto
-  ToKey(const std::string_view &data)  //
-      -> T
-  {
-    return *(reinterpret_cast<const T *>(data.data()));
+    thread_local uint64_t swapped{};
+    swapped = bswap_64(key);
+    return std::string_view{reinterpret_cast<const char *>(&swapped), sizeof(uint64_t)};
   }
 
   /*####################################################################################
@@ -244,5 +296,15 @@ class YakushimaWrapper
   /// a token for each thread
   inline static thread_local Token token_{};
 };
+
+template <>
+constexpr auto
+HasSetUpTearDown<YakushimaWrapper>()  //
+    -> bool
+{
+  return true;
+}
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_INDEXES_YAKUSHIMA_WRAPPER_HPP

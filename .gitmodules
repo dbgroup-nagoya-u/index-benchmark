@@ -1,30 +1,18 @@
 [submodule "external/bztree"]
 	path = external/bztree
-	url = git@github.com:dbgroup-nagoya-u/bztree.git
+	url = https://github.com/dbgroup-nagoya-u/bztree.git
 [submodule "external/cpp-utility"]
 	path = external/cpp-utility
 	url = https://github.com/dbgroup-nagoya-u/cpp-utility.git
-[submodule "latest-open-bw-repo"]
-	path = external/open_bwtree
-	url = https://github.com/wangziqi2016/index-microbench.git
-[submodule "masstree-beta"]
-	path = external/masstree
-	url = https://github.com/kohler/masstree-beta.git
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
 [submodule "external/bw-tree"]
 	path = external/bw-tree
-	url = git@github.com:dbgroup-nagoya-u/bw-tree.git
+	url = https://github.com/dbgroup-nagoya-u/bw-tree.git
 [submodule "external/cpp-benchmark"]
 	path = external/cpp-benchmark
 	url = https://github.com/dbgroup-nagoya-u/cpp-benchmark.git
-[submodule "external/yakushima"]
-	path = external/yakushima
-	url = git@github.com:project-tsurugi/yakushima.git
 [submodule "external/b-tree"]
 	path = external/b-tree
-	url = git@github.com:dbgroup-nagoya-u/b-tree.git
-[submodule "external/GRE"]
-	path = external/GRE
-	url = git@github.com:gre4index/GRE.git
+	url = https://github.com/dbgroup-nagoya-u/b-tree.git

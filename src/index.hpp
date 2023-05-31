@@ -17,77 +17,110 @@
 #ifndef INDEX_BENCHMARK_INDEX_HPP
 #define INDEX_BENCHMARK_INDEX_HPP
 
-#include <gflags/gflags.h>
-
+// C++ standard libraries
 #include <memory>
 #include <thread>
 #include <vector>
 
+// external system libraries
+#include <gflags/gflags.h>
+
+// local sources
 #include "common.hpp"
-#include "indexes/index_wrapper.hpp"
 #include "workload/operation.hpp"
 
 /*######################################################################################
- * Target indexes and its pre-definitions
+ * Target indexes
  *####################################################################################*/
 
+/*------------------------------------------------------------------------------------*
+ * B+trees
+ *------------------------------------------------------------------------------------*/
+
 #include "b_tree/b_tree.hpp"
+
+DEFINE_bool(b_pml, false, "Use BTreePML as a benchmark target");
+DEFINE_bool(b_psl, false, "Use BTreePSL as a benchmark target");
+DEFINE_bool(b_oml, false, "Use BTreeOML as a benchmark target");
+DEFINE_bool(b_osl, false, "Use BTreeOSL as a benchmark target");
+
+#ifdef INDEX_BENCH_BUILD_OPTIMIZED_B_TREES
+DEFINE_bool(b_pml_opt, false, "Use optimized BTreePML for fixed-length data as a benchmark target");
+DEFINE_bool(b_psl_opt, false, "Use optimized BTreePSL for fixed-length data as a benchmark target");
+DEFINE_bool(b_oml_opt, false, "Use optimized BTreeOML for fixed-length data as a benchmark target");
+DEFINE_bool(b_osl_opt, false, "Use optimized BTreeOSL for fixed-length data as a benchmark target");
+#endif
+
+#ifdef INDEX_BENCH_BUILD_B_TREE_OLC
+#include "indexes/b_tree_olc_wrapper.hpp"
+DEFINE_bool(b_olc, false, "Use OLC based B-tree as a benchmark target");
+#endif
+
+/*------------------------------------------------------------------------------------*
+ * Bw-trees
+ *------------------------------------------------------------------------------------*/
+
 #include "bw_tree/bw_tree.hpp"
+
+DEFINE_bool(bw, false, "Use Bw-tree as a benchmark target");
+
+#ifdef INDEX_BENCH_BUILD_OPTIMIZED_B_TREES
+DEFINE_bool(bw_opt, false, "Use optimized Bw-tree for fixed-length data as a benchmark target");
+#endif
+
+#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
+#include "indexes/open_bw_tree_wrapper.hpp"
+DEFINE_bool(open_bw, false, "Use Open-BwTree as a benchmark target");
+#endif
+
+/*------------------------------------------------------------------------------------*
+ * BzTrees
+ *------------------------------------------------------------------------------------*/
+
 #include "bztree/bztree.hpp"
+
+DEFINE_bool(bz, false, "Use BzTree with in-place based update as a benchmark target");
+DEFINE_bool(bz_append, false, "Use BzTree with append based update as a benchmark target");
+
+/*------------------------------------------------------------------------------------*
+ * Masstrees
+ *------------------------------------------------------------------------------------*/
+
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+#include "indexes/masstree_wrapper.hpp"
+DEFINE_bool(mass_beta, false, "Use Masstree as a benchmark target");
+#endif
 
 #ifdef INDEX_BENCH_BUILD_YAKUSHIMA
 #include "indexes/yakushima_wrapper.hpp"
-#endif
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
-#include "indexes/btree_olc_wrapper.hpp"
-#endif
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-#include "indexes/open_bw_tree_wrapper.hpp"
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-#include "indexes/masstree_wrapper.hpp"
-#endif
-#ifdef INDEX_BENCH_BUILD_ALEX_OLC
-#include "indexes/alex_olc_wrapper.hpp"
+DEFINE_bool(yakushima, false, "Use yakushima as a benchmark target");
 #endif
 
-DEFINE_bool(b_pml, false, "Use BTreePML with variable-length data as a benchmark target");
-DEFINE_bool(b_pml_opt, false, "Use BTreePML with fixed-length data as a benchmark target");
-DEFINE_bool(b_psl, false, "Use BTreePSL with variable-length data as a benchmark target");
-DEFINE_bool(b_psl_opt, false, "Use BTreePSL with fixed-length data as a benchmark target");
-DEFINE_bool(b_oml, false, "Use BTreeOML with variable-length data as a benchmark target");
-DEFINE_bool(b_oml_opt, false, "Use BTreeOML with fixed-length data as a benchmark target");
-DEFINE_bool(b_osl, false, "Use BTreeOSL with variable-length data as a benchmark target");
-DEFINE_bool(b_osl_opt, false, "Use BTreeOSL with fixed-length data as a benchmark target");
-DEFINE_bool(bw, false, "Use Bw-tree with variable-length data as a benchmark target");
-DEFINE_bool(bw_opt, false, "Use Bw-tree with fixed-length data as a benchmark target");
-DEFINE_bool(bz, false, "Use BzTree with in-place based update as a benchmark target");
-DEFINE_bool(bz_append, false, "Use BzTree with append based update as a benchmark target");
-#ifdef INDEX_BENCH_BUILD_YAKUSHIMA
-DEFINE_bool(yakushima, false, "Use yakushima as a benchmark target");
-#else
-DEFINE_bool(yakushima, false, "yakushima is not built as a benchmark target.");
+/*------------------------------------------------------------------------------------*
+ * Adaptive radix tres.
+ *------------------------------------------------------------------------------------*/
+
+#ifdef INDEX_BENCH_BUILD_ART_OLC
+#include "indexes/art_olc_wrapper.hpp"
+DEFINE_bool(art_olc, false, "Use OLC based ART as a benchmark target");
 #endif
-#ifdef INDEX_BENCH_BUILD_BTREE_OLC
-DEFINE_bool(b_olc, false, "Use OLC based B-tree as a benchmark target");
-#else
-DEFINE_bool(b_olc, false, "OLC based B-tree is not built as a benchmark target.");
+
+#ifdef INDEX_BENCH_BUILD_HYDRALIST
+#include "indexes/hydralist_wrapper.hpp"
+DEFINE_bool(hydralist, false, "Use HydraList as a benchmark target");
 #endif
-#ifdef INDEX_BENCH_BUILD_OPEN_BWTREE
-DEFINE_bool(open_bw, false, "Use Open-BwTree as a benchmark target");
-#else
-DEFINE_bool(open_bw, false, "OpenBw-Tree is not built as a benchmark target.");
-#endif
-#ifdef INDEX_BENCH_BUILD_MASSTREE
-DEFINE_bool(mass_beta, false, "Use Masstree as a benchmark target");
-#else
-DEFINE_bool(mass_beta, false, "Massree is not built as a benchmark target. ");
-#endif
+
+/*------------------------------------------------------------------------------------*
+ * Learned indexes
+ *------------------------------------------------------------------------------------*/
+
 #ifdef INDEX_BENCH_BUILD_ALEX_OLC
+#include "indexes/alex_olc_wrapper.hpp"
 DEFINE_bool(alex_olc, false, "Use OLC based ALEX as a benchmark target");
-#else
-DEFINE_bool(alex_olc, false, "OLC based Alex is not built as a benchmark target.");
 #endif
+
+namespace dbgroup
+{
 
 /*######################################################################################
  * Class definition
@@ -98,13 +131,14 @@ DEFINE_bool(alex_olc, false, "OLC based Alex is not built as a benchmark target.
  *
  * @tparam Implementation A certain implementation of thread-safe indexes.
  */
-template <class Key, class Payload, class Implementation>
+template <class Key, class Payload, template <class K, class V> class Implementation>
 class Index
 {
   /*####################################################################################
    * Type aliases
    *##################################################################################*/
 
+  using Index_t = Implementation<Key, Payload>;
   using Operation_t = Operation<Key, Payload>;
   using ConstIter_t = typename std::vector<std::pair<Key, Payload>>::const_iterator;
 
@@ -113,10 +147,7 @@ class Index
    * Public constructors and assignment operators
    *##################################################################################*/
 
-  Index(const size_t total_thread_num)
-  {
-    index_ = std::make_unique<Implementation>(total_thread_num);
-  }
+  Index() { index_ = std::make_unique<Index_t>(kGCInterval, kGCThreadNum); }
 
   /*####################################################################################
    * Public destructors
@@ -131,13 +162,17 @@ class Index
   void
   SetUpForWorker()
   {
-    index_->SetUp();
+    if constexpr (HasSetUpTearDown<Implementation>()) {
+      index_->SetUp();
+    }
   }
 
   void
   TearDownForWorker()
   {
-    index_->TearDown();
+    if constexpr (HasSetUpTearDown<Implementation>()) {
+      index_->TearDown();
+    }
   }
 
   void
@@ -147,17 +182,17 @@ class Index
       const bool use_bulkload)
   {
     // if the target index has a bulkload function, use it
-    if (use_bulkload && index_->Bulkload(entries, thread_num)) return;
+    if (use_bulkload && (index_->Bulkload(entries, thread_num) == kSuccess)) return;
 
     // otherwise, construct an index with one-by-one writing
     auto f = [&](ConstIter_t iter, const ConstIter_t &end_it) {
       // lambda function to insert key-value pairs in a certain thread
-      index_->SetUp();
+      SetUpForWorker();
       for (; iter != end_it; ++iter) {
         const auto &[key, payload] = *iter;
         index_->Write(key, payload);
       }
-      index_->TearDown();
+      TearDownForWorker();
     };
 
     // insert initial key-value pairs in multi-threads
@@ -180,45 +215,70 @@ class Index
       -> size_t
   {
     switch (ops.type) {
-      case kScan:
-        return index_->Scan(ops.GetKey(), ops.GetPayload());
+      case kScan: {
+        const auto &begin_k = std::make_tuple(ops.GetKey(), sizeof(Key), kClosed);
+        const size_t scan_size = ops.GetPayload();
+        size_t sum{0};
+        size_t count{0};
+        for (auto &&iter = index_->Scan(begin_k); iter && count < scan_size; ++iter, ++count) {
+          sum += iter.GetPayload();
+        }
+
+        return count;
+      }
+
+      case kFullScan: {
+        size_t sum{0};
+        size_t count{0};
+        for (auto &&iter = index_->Scan(); iter; ++iter, ++count) {
+          sum += iter.GetPayload();
+        }
+
+        return count;
+      }
 
       case kRead:
         index_->Read(ops.GetKey());
         break;
-      case kFullScan:
-        index_->FullScan();
-        break;
+
       case kWrite:
         index_->Write(ops.GetKey(), ops.GetPayload());
         break;
+
       case kInsert:
         index_->Insert(ops.GetKey(), ops.GetPayload());
         break;
+
       case kUpdate:
         index_->Update(ops.GetKey(), ops.GetPayload());
         break;
+
       case kDelete:
         index_->Delete(ops.GetKey());
         break;
+
       case kInsertOrUpdate:
         if (index_->Insert(ops.GetKey(), ops.GetPayload())) {
           index_->Update(ops.GetKey(), ops.GetPayload());
         }
         break;
+
       case kDeleteAndInsert:
         index_->Delete(ops.GetKey());
         index_->Insert(ops.GetKey(), ops.GetPayload());
         break;
+
       case kDeleteOrInsert:
         if (index_->Delete(ops.GetKey())) {
           index_->Insert(ops.GetKey(), ops.GetPayload());
         }
         break;
+
       case kInsertAndDelete:
         index_->Insert(ops.GetKey(), ops.GetPayload());
         index_->Delete(ops.GetKey());
         break;
+
       default:
         std::string err_msg = "ERROR: an undefined operation is about to be executed.";
         throw std::runtime_error{err_msg};
@@ -227,13 +287,34 @@ class Index
     return 1;
   }
 
+  auto
+  CheckMemoryUsage()  //
+      -> std::pair<size_t, size_t>
+  {
+    size_t actual_size = 0;
+    size_t virtual_size = 0;
+
+    const auto &stat_data = index_->CollectStatisticalData();
+    for (size_t level = 0; level < stat_data.size(); ++level) {
+      const auto &[node_num, act, vir] = stat_data.at(level);
+      actual_size += act;
+      virtual_size += vir;
+
+      std::cout << level << "," << node_num << "," << act << "," << vir << std::endl;
+    }
+
+    return {actual_size, virtual_size};
+  }
+
  private:
   /*####################################################################################
    * Internal member variables
    *##################################################################################*/
 
   /// an actual target implementation
-  std::unique_ptr<Implementation> index_{nullptr};
+  std::unique_ptr<Index_t> index_{nullptr};
 };
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_INDEX_HPP

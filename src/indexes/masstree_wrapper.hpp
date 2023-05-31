@@ -17,33 +17,38 @@
 #ifndef INDEX_BENCHMARK_INDEXES_MASSTREE_WRAPPER_HPP
 #define INDEX_BENCHMARK_INDEXES_MASSTREE_WRAPPER_HPP
 
+// C++ standard libraries
 #include <atomic>
 #include <optional>
 #include <string>
 #include <utility>
 
+// external system libraries
+#include <byteswap.h>
+
+// external sources
+#include "clp.h"
+#include "config.h"
+#include "json.hh"
+#include "kvio.hh"
+#include "kvrandom.hh"
+#include "kvrow.hh"
+#include "kvstats.hh"
+#include "kvtest.hh"
+#include "masstree_insert.hh"
+#include "masstree_remove.hh"
+#include "masstree_scan.hh"
+#include "masstree_tcursor.hh"
+#include "nodeversion.hh"
+#include "query_masstree.hh"
+#include "timestamp.hh"
+
+// local sources
 #include "common.hpp"
-#include "masstree/clp.h"
-#include "masstree/config.h"
-#include "masstree/json.hh"
-#include "masstree/kvio.hh"
-#include "masstree/kvrandom.hh"
-#include "masstree/kvrow.hh"
-#include "masstree/kvstats.hh"
-#include "masstree/kvtest.hh"
-#include "masstree/masstree_insert.hh"
-#include "masstree/masstree_remove.hh"
-#include "masstree/masstree_scan.hh"
-#include "masstree/masstree_tcursor.hh"
-#include "masstree/nodeversion.hh"
-#include "masstree/query_masstree.hh"
-#include "masstree/timestamp.hh"
 
 /*######################################################################################
  * Global variables for Masstree
  *####################################################################################*/
-
-static nodeversion32 global_epoch_lock(false);
 
 /// global epoch, updated by main thread regularly
 volatile mrcu_epoch_type globalepoch = timestamp() >> 16;
@@ -60,6 +65,9 @@ volatile bool recovering = false;
 ///
 kvtimestamp_t initial_timestamp;
 
+namespace dbgroup
+{
+
 /*######################################################################################
  * Class definition
  *####################################################################################*/
@@ -71,30 +79,186 @@ class MasstreeWrapper
    * Type aliases
    *##################################################################################*/
 
+  using Query_t = query<row_type>;
   using Table_t = Masstree::default_table;
   using Str_t = lcdf::Str;
+  using Json_t = lcdf::Json;
+  using ScanKey = std::optional<std::tuple<const Key &, size_t, bool>>;
 
  public:
   /*####################################################################################
-   * Public type aliases
+   * Public inner classes
    *##################################################################################*/
 
-  using K = Key;
-  using V = Payload;
+  /**
+   * @brief A class for representing an iterator of scan results.
+   *
+   */
+  class RecordIterator
+  {
+   public:
+    /*##################################################################################
+     * Public constructors and assignment operators
+     *################################################################################*/
+
+    /**
+     * @brief Construct a new object as an initial iterator.
+     *
+     * @param index a pointer to an index.
+     */
+    RecordIterator(  //
+        Table_t *table,
+        Key &&key,
+        std::vector<Payload> &payloads)
+        : table_{table}, payloads_{payloads}, key_{key}
+    {
+    }
+
+    RecordIterator(const RecordIterator &) = delete;
+    RecordIterator(RecordIterator &&) = delete;
+
+    auto operator=(const RecordIterator &) -> RecordIterator & = delete;
+    auto operator=(RecordIterator &&obj) -> RecordIterator & = delete;
+
+    /*##################################################################################
+     * Public destructors
+     *################################################################################*/
+
+    /**
+     * @brief Destroy the iterator and a retained node if exist.
+     *
+     */
+    ~RecordIterator() = default;
+
+    /*##################################################################################
+     * Public operators for iterators
+     *################################################################################*/
+
+    /**
+     * @retval true if this iterator indicates a live record.
+     * @retval false otherwise.
+     */
+    explicit operator bool()
+    {
+      while (true) {
+        const size_t size = payloads_.size();
+        if (pos_ < size) return true;        // records remain in this node
+        if (size < kScanSize) return false;  // this node is the end of range-scan
+
+        key_ = key_ + kScanSize;
+        Scanner scanner{kScanSize, payloads_};
+        table_->table().scan(ToStr(key_), true, scanner, *thread_info_);
+        pos_ = 0;
+      }
+    }
+
+    /**
+     * @brief Forward this iterator.
+     *
+     */
+    constexpr void
+    operator++()
+    {
+      ++pos_;
+    }
+
+    /*##################################################################################
+     * Public getters/setters
+     *################################################################################*/
+
+    /**
+     * @return a payload of a current record
+     */
+    [[nodiscard]] auto
+    GetPayload() const  //
+        -> Payload
+    {
+      return payloads_.at(pos_);
+    }
+
+   private:
+    /*##################################################################################
+     * Internal member variables
+     *################################################################################*/
+
+    Table_t *table_{nullptr};
+
+    /// the scanned payloads.
+    std::vector<Payload> &payloads_;
+
+    /// the position of a current record.
+    size_t pos_{0};
+
+    /// the current scan key.
+    Key key_{};
+  };
+
+  class Scanner
+  {
+   public:
+    /*##################################################################################
+     * Public constructors and assignment operators
+     *################################################################################*/
+
+    Scanner(  //
+        const size_t scan_size,
+        std::vector<Payload> &payloads)
+        : num_remain_(scan_size), payloads_(payloads)
+    {
+      payloads.clear();
+    }
+
+    /*##################################################################################
+     * Public utilities
+     *################################################################################*/
+
+    template <typename SS, typename K>
+    void
+    visit_leaf(const SS &, const K &, const threadinfo &)
+    {
+      // do nothing for single-version scanning
+    }
+
+    auto
+    visit_value(  //
+        Str_t,
+        row_type *value,
+        threadinfo &)  //
+        -> bool
+    {
+      if (row_is_marker(value)) return true;
+
+      Payload payload{};
+      memcpy(&payload, value->col(0).data(), sizeof(Payload));
+      payloads_.emplace_back(std::move(payload));
+
+      return (--num_remain_) > 0;
+    }
+
+   private:
+    /*##################################################################################
+     * Internal member variables
+     *################################################################################*/
+
+    int64_t num_remain_{0};
+
+    std::vector<Payload> &payloads_;
+  };
 
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
 
-  MasstreeWrapper([[maybe_unused]] const size_t worker_num)
+  MasstreeWrapper(  //
+      [[maybe_unused]] const size_t gc_interval,
+      [[maybe_unused]] const size_t gc_thread_num)
   {
     // assume that a main thread construct this instance
     thread_info_ = threadinfo::make(threadinfo::TI_MAIN, -1);
     table_.initialize(*thread_info_);
-    thread_info_->rcu_start();
   }
 
-  ~MasstreeWrapper() { thread_info_->rcu_stop(); }
+  ~MasstreeWrapper() = default;
 
   /*####################################################################################
    * Public utility functions
@@ -105,24 +269,20 @@ class MasstreeWrapper
   {
     thread_id_ = thread_counter_.fetch_add(1);
     thread_info_ = threadinfo::make(threadinfo::TI_PROCESS, thread_id_);
-    thread_info_->rcu_start();
-
-    TryRCUQuiesce();
   }
 
   void
   TearDown()
   {
-    thread_info_->rcu_stop();
   }
 
   constexpr auto
   Bulkload(  //
       [[maybe_unused]] const std::vector<std::pair<Key, Payload>> &entries,
       [[maybe_unused]] const size_t thread_num)  //
-      -> bool
+      -> int
   {
-    return false;
+    return kFailed;
   }
 
   /*####################################################################################
@@ -136,110 +296,69 @@ class MasstreeWrapper
     Payload value{};
     auto &&str_val = ToStr(value);
     auto found = index_.run_get1(table_.table(), ToStr(key), 0, str_val, *thread_info_);
-    TryRCUQuiesce();
 
     if (found) return value;
     return std::nullopt;
   }
 
-  void
-  Scan(  //
-      [[maybe_unused]] const Key &begin_key,
-      [[maybe_unused]] const size_t scan_range)
+  auto
+  Scan(const ScanKey &begin_key = std::nullopt)  //
+      -> RecordIterator
   {
-    throw std::runtime_error{"ERROR: the scan operation is not implemented."};
-  }
+    thread_local std::vector<Payload> payloads{kScanSize};
 
-  void
-  FullScan()
-  {
-    throw std::runtime_error{"ERROR: the scan operation is not implemented."};
+    auto key = (begin_key) ? std::get<0>(*begin_key) : Key{0};
+    Scanner scanner{kScanSize, payloads};
+    table_.table().scan(ToStr(key), true, scanner, *thread_info_);
+
+    return RecordIterator{&table_, std::move(key), payloads};
   }
 
   auto
   Write(  //
       const Key &key,
-      const Payload &value)  //
-      -> int64_t
+      const Payload &value)
   {
-    // run replace procedure as write (upsert)
     index_.run_replace(table_.table(), ToStr(key), ToStr(value), *thread_info_);
-    TryRCUQuiesce();
-
-    return 0;
+    return kSuccess;
   }
 
   auto
   Insert(  //
       [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Payload &value)  //
-      -> int64_t
+      [[maybe_unused]] const Payload &value)
   {
     throw std::runtime_error{"ERROR: the insert operation is not implemented."};
-    return 1;
+    return kFailed;
   }
 
   auto
   Update(  //
       [[maybe_unused]] const Key &key,
-      [[maybe_unused]] const Payload &value)  //
-      -> int64_t
+      [[maybe_unused]] const Payload &value)
   {
     throw std::runtime_error{"ERROR: the update operation is not implemented."};
-    return 1;
+    return kFailed;
   }
 
   auto
-  Delete(const Key &key)  //
-      -> int64_t
+  Delete(const Key &key)
   {
-    auto deleted = index_.run_remove(table_.table(), ToStr(key), *thread_info_);
-    TryRCUQuiesce();
-
-    return !deleted;
+    return (index_.run_remove(table_.table(), ToStr(key), *thread_info_)) ? kSuccess : kFailed;
   }
 
  private:
   /*####################################################################################
-   * Internal constants
-   *##################################################################################*/
-
-  static constexpr size_t kGCThresholdMask = (1 << 6) - 1;
-
-  /*####################################################################################
    * Internal utility functions
    *##################################################################################*/
 
-  template <class T>
-  static constexpr auto
-  ToStr(const T &data)  //
+  static auto
+  ToStr(const uint64_t &key)  //
       -> Str_t
   {
-    return Str_t{reinterpret_cast<const char *>(&data), sizeof(T)};
-  }
-
-  void
-  SetGlobalEpoch(const mrcu_epoch_type e)
-  {
-    if (global_epoch_lock.try_lock()) {
-      if (mrcu_signed_epoch_type(e - globalepoch) > 0) {
-        globalepoch = e;
-        active_epoch = threadinfo::min_active_epoch();
-      }
-      global_epoch_lock.unlock();
-    }
-  }
-
-  void
-  TryRCUQuiesce()
-  {
-    if ((++ops_counter_ & kGCThresholdMask) == 0) {
-      const auto e = timestamp() >> 16;
-      if (e != globalepoch) {
-        SetGlobalEpoch(e);
-      }
-      thread_info_->rcu_quiesce();
-    }
+    thread_local uint64_t swapped{};
+    swapped = bswap_64(key);
+    return Str_t{reinterpret_cast<const char *>(&swapped), sizeof(uint64_t)};
   }
 
   /*####################################################################################
@@ -255,12 +374,19 @@ class MasstreeWrapper
   /// a thread id for each worker thread
   static thread_local inline size_t thread_id_ = 0;
 
-  /// a counter for controling GC
-  static thread_local inline size_t ops_counter_ = 0;
-
-  query<row_type> index_{};
+  Query_t index_{};
 
   Table_t table_{};
 };
+
+template <>
+constexpr auto
+HasSetUpTearDown<MasstreeWrapper>()  //
+    -> bool
+{
+  return true;
+}
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_INDEXES_MASSTREE_WRAPPER_HPP

@@ -95,6 +95,7 @@ for IMPL in ${IMPL_CANDIDATES}; do
           "--key-size" ${KEY_SIZE} \
           "--num-exec" ${OPERATION_COUNT} \
           "--num-thread" ${THREAD_NUM} \
+          "--timeout" ${BENCH_TIME_OUT} \
           >> "${TMP_OUT}"
         sed "s/^/${IMPL},${KEY_SIZE},${THREAD_NUM},/g" "${TMP_OUT}"
       done

@@ -17,12 +17,19 @@
 #ifndef INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP
 #define INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP
 
+// C++ standard libraries
 #include <random>
 #include <variant>
 
-#include "common.hpp"
+// external sources
 #include "nlohmann/json.hpp"
 #include "random/zipf.hpp"
+
+// local sources
+#include "common.hpp"
+
+namespace dbgroup
+{
 
 /**
  * @brief A class for representing a certain phase in workloads.
@@ -194,11 +201,14 @@ class Workload
   {
     const uint32_t key_num = (partition_ == kNone) ? key_num_ : (key_num_ - (w_id + 1)) / w_num + 1;
     uint32_t key_id{};
-    if (access_pattern_ == kRandom) {
+    if (access_pattern_ == kRandom && partition_ == kNone) {
       key_id = std::visit([&](auto &dist) { return dist(rand_engine); }, key_dist);
-    } else if (access_pattern_ == kSequential) {
+    } else if (access_pattern_ == kRandom) {  // the stripe or range partitioning
+      thread_local const auto &rand_keys = CreateRandomKeyIDs(key_num, rand_engine);
+      key_id = rand_keys.at(i % key_num);
+    } else if (access_pattern_ == kAscending) {
       key_id = i % key_num;
-    } else {  // access_pattern_ == kSeqReverse
+    } else {  // access_pattern_ == kDescending
       key_id = key_num - 1 - (i % key_num);
     }
 
@@ -209,6 +219,22 @@ class Workload
     const uint32_t pad = key_num_ % w_num;
     const uint32_t begin_pos = (key_num_ / w_num) * w_id + ((w_id < pad) ? w_id : pad);
     return begin_pos + key_id;
+  }
+
+  static auto
+  CreateRandomKeyIDs(  //
+      const size_t key_num,
+      std::mt19937_64 &rand_engine)  //
+      -> std::vector<uint32_t>
+  {
+    std::vector<uint32_t> key_ids{};
+    key_ids.reserve(key_num);
+    for (size_t i = 0; i < key_num; ++i) {
+      key_ids.emplace_back(i);
+    }
+    std::shuffle(key_ids.begin(), key_ids.end(), rand_engine);
+
+    return key_ids;
   }
 
   /*####################################################################################
@@ -229,5 +255,7 @@ class Workload
 
   size_t scan_length_{1000};
 };
+
+}  // namespace dbgroup
 
 #endif  // INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP

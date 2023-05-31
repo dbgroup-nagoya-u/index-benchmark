@@ -92,7 +92,8 @@ for IMPL in ${IMPL_CANDIDATES}; do
           "--workload" "${WORKLOAD}" \
           "--key-size" ${KEY_SIZE} \
           "--num-exec" ${OPERATION_COUNT} \
-          "--num-thread" ${THREAD_NUM}
+          "--num-thread" ${THREAD_NUM} \
+          "--timeout" ${BENCH_TIME_OUT}
       done
     done
   done

@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
+// the corresponding header
 #include "workload/operation_engine.hpp"
 
+// external sources
 #include "gtest/gtest.h"
+
+namespace dbgroup
+{
 
 /*######################################################################################
  * Global constants
@@ -34,7 +39,7 @@ constexpr size_t kRandomSeed = 20;
 class OperationEngineFixture : public ::testing::Test
 {
  public:
-  using Key_t = Key<k8>;
+  using Key_t = VarLenData<k8>;
   using Payload_t = uint64_t;
   using OperationEngine_t = OperationEngine<Key_t, Payload_t>;
   using Json_t = ::nlohmann::json;
@@ -149,3 +154,5 @@ TEST_F(OperationEngineFixture, MultiplePhasesWorkloadGenerateValidOperations)
   }
   EXPECT_EQ(counter, kOpsNumPerThread);
 }
+
+}  // namespace dbgroup
