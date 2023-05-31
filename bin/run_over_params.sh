@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu
+set -u
 
 ########################################################################################
 # Documents
@@ -10,6 +10,7 @@ CONFIG_ENV=""
 CRITERIA="throughput"
 IS_THROUGHPUT="t"
 NUMA_NODES=""
+TIMEOUT_SEC="3m"
 WORKSPACE_DIR=$(cd $(dirname ${BASH_SOURCE:-${0}})/.. && pwd)
 OUTPUT_FILE=""
 
@@ -18,17 +19,19 @@ usage() {
 Usage:
   ${BASH_SOURCE:-${0}} <bench_bin> <config>
 Description:
-  Run benchmark to measure performance in index construction/destruction.
-  All the benchmark results are output in CSV format.
+  Run benchmark to measure performance in index construction/destruction. All the
+  benchmark results are output in CSV format.
 Arguments:
   <bench_bin>: A path to a binary file for benchmarking.
   <config>: A path to a configuration file for benchmarking.
 Options:
   -t: Use throughput as a performance criteria (default: true).
-  -l: Use latency as a performance criteria (default: false). Note that this
-      option will overwrites the "-t" option.
+  -l: Use latency as a performance criteria (default: false). Note that this option will
+      overwrites the "-t" option.
   -o: Set a file path to write the benchmarking results.
   -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
+  -r: Set a timeout value to prevent some indexes from going into infinite loops and
+      retry benchmarking (default: 3m). See "man timeout" for details.
   -h: Show this messsage and exit.
 EOS
   exit 1
@@ -38,7 +41,7 @@ EOS
 # Parse options
 ########################################################################################
 
-while getopts tlo:n:h OPT
+while getopts tlo:n:r:h OPT
 do
   case ${OPT} in
     t) CRITERIA="throughput"; IS_THROUGHPUT="t"
@@ -48,6 +51,8 @@ do
     o) OUTPUT_FILE="${OPTARG}"
       ;;
     n) NUMA_NODES=${OPTARG}
+      ;;
+    r) TIMEOUT_SEC=${OPTARG}
       ;;
     h) usage
       ;;
@@ -135,16 +140,22 @@ EOF
 
               # run a benchmark program
               for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
-                ${BENCH_BIN} \
-                  "--${IMPL}=t" \
-                  "--csv" \
-                  "--throughput=${IS_THROUGHPUT}" \
-                  "--workload" "${TMP_WORKLOAD}" \
-                  "--key-size" ${KEY_SIZE} \
-                  "--num-exec" ${OPERATION_COUNT} \
-                  "--num-thread" ${THREAD_NUM} \
-                  "--timeout" ${BENCH_TIME_OUT} \
-                  >> ${TMP_OUTPUT}
+                while : ; do
+                  timeout ${TIMEOUT_SEC} \
+                    ${BENCH_BIN} \
+                    "--${IMPL}=t" \
+                    "--csv" \
+                    "--throughput=${IS_THROUGHPUT}" \
+                    "--workload" "${TMP_WORKLOAD}" \
+                    "--key-size" ${KEY_SIZE} \
+                    "--num-exec" ${OPERATION_COUNT} \
+                    "--num-thread" ${THREAD_NUM} \
+                    "--timeout" ${BENCH_TIME_OUT} \
+                    >> ${TMP_OUTPUT}
+                  if [ ${?} -eq 0 ]; then
+                    break
+                  fi
+                done
               done
 
               # format and append the benchmarking results

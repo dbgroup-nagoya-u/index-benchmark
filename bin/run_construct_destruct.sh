@@ -18,15 +18,15 @@ usage() {
 Usage:
   ${BASH_SOURCE:-${0}} <bench_bin> <config>
 Description:
-  Run benchmark to measure performance in index construction/destruction.
-  All the benchmark results are output in CSV format.
+  Run benchmark to measure performance in index construction/destruction. All the
+  benchmark results are output in CSV format.
 Arguments:
   <bench_bin>: A path to a binary file for benchmarking.
   <config>: A path to a configuration file for benchmarking.
 Options:
   -t: Use throughput as a performance criteria (default: true).
-  -l: Use latency as a performance criteria (default: false). Note that this
-      option will overwrites the "-t" option.
+  -l: Use latency as a performance criteria (default: false). Note that this option will
+      overwrites the "-t" option.
   -o: Set a file path to write the benchmarking results.
   -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
   -h: Show this messsage and exit.
