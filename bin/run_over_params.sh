@@ -120,7 +120,8 @@ for INDEX_SIZE in ${INDEX_SIZE_CANDIDATES}; do
 {
   "initialization": {
     "# of keys": ${INDEX_SIZE},
-    "use all cores": true
+    "use all cores": true,
+    "use bulkload if possible": true
   },
   "workloads": [
     {

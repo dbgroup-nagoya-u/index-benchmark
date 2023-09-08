@@ -125,7 +125,8 @@ for W_OPS in ${WRITE_OPS_CANDIDATES}; do
 {
   "initialization": {
     "# of keys": ${INITIAL_SIZE},
-    "use all cores": true
+    "use all cores": true,
+    "use bulkload if possible": true
   },
   "workloads": [
     {
