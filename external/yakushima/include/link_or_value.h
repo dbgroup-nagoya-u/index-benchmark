@@ -68,7 +68,7 @@ public:
 
     /**
      * @brief Collect the memory usage of this record.
-     * 
+     *
      * @param[in] level The level of this node in the tree.
      * @param[in,out] mem_stat The stack of memory usage for each level.
      */
@@ -77,7 +77,7 @@ public:
             child->mem_usage(level + 1, mem_stat);
         } else if (auto* v = get_value(); v != nullptr) {
             const auto v_len = std::get<1>(value::get_gc_info(v));
-            auto& [node_num, used, reserved] = mem_stat.at(level);
+            auto& [node_num, used, reserved] = mem_stat.back();
             used += v_len;
             reserved += v_len;
         }
@@ -91,10 +91,10 @@ public:
 
     /**
      * @brief Get the root node of the next layer.
-     * 
+     *
      * Note that this function uses the atomic operation (i.e., load) for dealing with
      * concurrent modifications.
-     * 
+     *
      * @retval The root node of the next layer if exists.
      * @retval nullptr otherwise.
      */
@@ -106,10 +106,10 @@ public:
 
     /**
      * @brief Get the value pointer.
-     * 
+     *
      * Note that this function uses the atomic operation (i.e., load) for dealing with
      * concurrent modifications.
-     * 
+     *
      * @retval The pointer of the contained value if exists.
      * @retval nullptr otherwise.
      */
@@ -121,11 +121,11 @@ public:
 
     /**
      * @brief Initialize the payload to zero.
-     * 
+     *
      */
     void init_lv() { child_or_v_ = kValPtrFlag; }
 
-    /** 
+    /**
      * @details This is move process.
      * @param nlv
      */
@@ -174,13 +174,13 @@ public:
 private:
     /**
      * @brief A flag for indicating that the next layer exists.
-     * 
+     *
      */
     static constexpr uintptr_t kChildFlag = 0b10UL << 62UL;
 
     /**
      * @brief A flag for indicating that the next layer exists.
-     * 
+     *
      */
     static constexpr uintptr_t kValPtrFlag = 0b01UL << 62UL;
 

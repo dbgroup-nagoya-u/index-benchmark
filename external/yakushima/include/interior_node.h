@@ -156,14 +156,17 @@ public:
      */
     void mem_usage(std::size_t level,
                    memory_usage_stack& mem_stat) const override {
-        if (mem_stat.size() <= level) { mem_stat.emplace_back(0, 0, 0); }
-        auto& [node_num, used, reserved] = mem_stat.at(level);
+        constexpr std::size_t kPadSize = 16;
+        constexpr std::size_t kRecSize = sizeof(uintptr_t) +
+                                         sizeof(key_slice_type) +
+                                         sizeof(key_length_type);
+        const std::size_t n_keys = n_keys_ + 1UL;
+        const std::size_t rec_num = child_length - n_keys;
 
-        const auto n_keys = n_keys_ + 1UL;
+        auto& [node_num, used, reserved] = mem_stat.front();
         ++node_num;
         reserved += sizeof(interior_node);
-        used += sizeof(interior_node) -
-                ((child_length - n_keys) * sizeof(uintptr_t));
+        used += sizeof(interior_node) - kPadSize - (rec_num * kRecSize);
 
         const auto next_level = level + 1;
         for (std::size_t i = 0; i < n_keys; ++i) {

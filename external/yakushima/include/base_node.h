@@ -79,7 +79,7 @@ public:
 
     /**
      * @brief Collect the memory usage of this partial tree.
-     * 
+     *
      * @param level the level of this node in the tree.
      * @param mem_stat the stack of memory usage for each level.
      */
@@ -277,7 +277,7 @@ public:
         version_.atomic_inc_vinsert();
     }
 
-private:
+protected:
     /**
      * @attention This variable is read/written concurrently.
      */
@@ -289,6 +289,7 @@ private:
      * interior's view and border's view.
      * This variable is read/written concurrently.
      */
+private:
     base_node* parent_{nullptr};
     /**
      * @attention This variable is read/written concurrently.

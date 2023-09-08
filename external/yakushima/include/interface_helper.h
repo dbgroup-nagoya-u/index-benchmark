@@ -41,6 +41,9 @@ namespace yakushima {
 [[maybe_unused]] static memory_usage_stack
 mem_usage(std::string_view storage_name) {
     memory_usage_stack mem_stat{};
+    mem_stat.emplace_back(0, 0, 0); // interior nodes
+    mem_stat.emplace_back(0, 0, 0); // border nodes
+
     tree_instance* ti{};
     if (status::OK == storage::find_storage(storage_name, &ti)) {
         ti->load_root_ptr()->mem_usage(0, mem_stat);
