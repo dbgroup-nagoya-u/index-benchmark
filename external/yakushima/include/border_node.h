@@ -23,7 +23,7 @@ namespace yakushima {
 using std::cout;
 using std::endl;
 
-class alignas(CACHE_LINE_SIZE) border_node final : public base_node { // NOLINT
+class alignas(kCacheLineSize) border_node final : public base_node { // NOLINT
 public:
     ~border_node() override {} // NOLINT
 
@@ -215,7 +215,7 @@ public:
 
     /**
      * @brief Collect the memory usage of this partial tree.
-     * 
+     *
      * @param level the level of this node in the tree.
      * @param mem_stat the stack of memory usage for each level.
      */

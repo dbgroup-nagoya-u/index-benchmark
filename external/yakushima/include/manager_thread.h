@@ -90,10 +90,10 @@ public:
     }
 
 private:
-    alignas(CACHE_LINE_SIZE) static inline std::atomic<bool> kEpochThreadEnd{
+    alignas(kCacheLineSize) static inline std::atomic<bool> kEpochThreadEnd{
             false};                         // NOLINT : can't become constexpr
     static inline std::thread kEpochThread; // NOLINT : can't become constexpr
-    alignas(CACHE_LINE_SIZE) static inline std::atomic<bool> kGCThreadEnd{
+    alignas(kCacheLineSize) static inline std::atomic<bool> kGCThreadEnd{
             false};                      // NOLINT : can't become constexpr
     static inline std::thread kGCThread; // NOLINT : can't become constexpr
 };

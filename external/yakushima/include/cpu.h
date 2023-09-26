@@ -6,5 +6,6 @@
 
 namespace yakushima {
 
-static constexpr std::size_t CACHE_LINE_SIZE{64};
+constexpr std::size_t kCacheLineSize{64};
+
 }

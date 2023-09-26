@@ -21,7 +21,7 @@
 
 namespace yakushima {
 
-class alignas(CACHE_LINE_SIZE) interior_node final // NOLINT
+class alignas(kCacheLineSize) interior_node final // NOLINT
     : public base_node {                           // NOLINT
 public:
     /**
@@ -150,7 +150,7 @@ public:
 
     /**
      * @brief Collect the memory usage of this partial tree.
-     * 
+     *
      * @param level the level of this node in the tree.
      * @param mem_stat the stack of memory usage for each level.
      */
