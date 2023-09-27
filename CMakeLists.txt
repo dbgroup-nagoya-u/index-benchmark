@@ -25,6 +25,7 @@ option(INDEX_BENCH_BUILD_OPTIMIZED_B_TREES "Build the optimized B+trees for fixe
 #--------------------------------------------------------------------------------------#
 
 option(INDEX_BENCH_BUILD_B_TREE_OLC "Build B+tree with OLC as a benchmarking target" OFF)
+option(INDEX_BENCH_BUILD_B_TREE_OPTIQL "Build B+tree with OptiQL as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_YAKUSHIMA "Build Yakushima as a benchmarking target" OFF)
@@ -34,6 +35,7 @@ option(INDEX_BENCH_BUILD_ALEX_OLC "Build Alex with OLC as a benchmarking target"
 
 set(INDEX_BENCH_COMPARE_WITH_SOTA OFF)
 if(${INDEX_BENCH_BUILD_B_TREE_OLC}
+  OR ${INDEX_BENCH_BUILD_B_TREE_OPTIQL}
   OR ${INDEX_BENCH_BUILD_OPEN_BWTREE}
   OR ${INDEX_BENCH_BUILD_MASSTREE}
   OR ${INDEX_BENCH_BUILD_YAKUSHIMA}
@@ -104,6 +106,10 @@ if(${INDEX_BENCH_BUILD_B_TREE_OLC})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/b_tree_olc.cmake")
 endif()
 
+if(${INDEX_BENCH_BUILD_B_TREE_OPTIQL})
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/b_tree_optiql.cmake")
+endif()
+
 if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/open_bw_tree.cmake")
 endif()
@@ -152,6 +158,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     $<$<BOOL:${INDEX_BENCH_BUILD_LONG_KEYS}>:INDEX_BENCH_BUILD_LONG_KEYS>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPTIMIZED_B_TREES}>:INDEX_BENCH_BUILD_OPTIMIZED_B_TREES>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:INDEX_BENCH_BUILD_B_TREE_OLC>
+    $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OPTIQL}>:INDEX_BENCH_BUILD_B_TREE_OPTIQL>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
@@ -173,6 +180,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     nlohmann_json::nlohmann_json
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:open_bw::b_tree_olc>
+    $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OPTIQL}>:b_tree_optiql::b_tree_optiql>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:open_bw::bw_tree>
     $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:masstree::masstree>
     $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:tsurugi::yakushima>

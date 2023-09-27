@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_INDEXES_OPEN_BW_TREE_HPP
-#define INDEX_BENCHMARK_INDEXES_OPEN_BW_TREE_HPP
+#ifndef INDEX_BENCHMARK_INDEXES_B_TREE_OPTIQL_WRAPPER_HPP
+#define INDEX_BENCHMARK_INDEXES_B_TREE_OPTIQL_WRAPPER_HPP
 
 // C++ standard libraries
-#include <atomic>
 #include <optional>
 #include <utility>
-#include <vector>
 
 // external sources
-#include "BwTree/bwtree.h"
+#include "indexes/BTreeOLC/BTreeOMCS.h"
 
 // local sources
 #include "common.hpp"
@@ -32,19 +30,14 @@
 namespace dbgroup
 {
 
-/*######################################################################################
- * Class definition
- *####################################################################################*/
-
 template <class Key, class Payload>
-class OpenBwTreeWrapper
+class BTreeOptiQLWrapper
 {
   /*####################################################################################
    * Type aliases
    *##################################################################################*/
 
-  using Index_t = wangziqi2013::bwtree::BwTree<Key, Payload>;
-  using ForwardIterator = typename Index_t::ForwardIterator;
+  using Index_t = btreeolc::BTreeOMCS<Key, Payload>;
   using ScanKey = std::optional<std::tuple<const Key &, size_t, bool>>;
 
  public:
@@ -70,14 +63,11 @@ class OpenBwTreeWrapper
      */
     RecordIterator(  //
         Index_t *index,
-        std::optional<Key> begin_key = std::nullopt)
-        : index_{index}
+        Key begin_key,
+        Payload *payloads,
+        size_t size)
+        : index_{index}, key_{std::move(begin_key)}, payloads_{payloads}, size_{size}
     {
-      if (begin_key) {
-        iter_ = ForwardIterator{index_, *begin_key};
-      } else {
-        iter_ = index_->Begin();
-      }
     }
 
     RecordIterator(const RecordIterator &) = delete;
@@ -107,7 +97,14 @@ class OpenBwTreeWrapper
     explicit
     operator bool()
     {
-      return !iter_.IsEnd();
+      while (true) {
+        if (pos_ < size_) return true;        // records remain in this node
+        if (size_ < kScanSize) return false;  // this node is the end of range-scan
+
+        key_ = key_ + kScanSize;
+        size_ = index_->scan(key_, kScanSize, payloads_);
+        pos_ = 0;
+      }
     }
 
     /**
@@ -117,7 +114,7 @@ class OpenBwTreeWrapper
     constexpr void
     operator++()
     {
-      ++iter_;
+      ++pos_;
     }
 
     /*##################################################################################
@@ -128,10 +125,10 @@ class OpenBwTreeWrapper
      * @return a payload of a current record
      */
     [[nodiscard]] auto
-    GetPayload()  //
+    GetPayload() const  //
         -> Payload
     {
-      return iter_->second;
+      return payloads_[pos_];
     }
 
    private:
@@ -143,38 +140,33 @@ class OpenBwTreeWrapper
     Index_t *index_{nullptr};
 
     /// the current begin key.
-    ForwardIterator iter_{};
+    Key key_{};
+
+    /// the scanned payloads.
+    Payload *payloads_{nullptr};
+
+    /// the number of payloads.
+    size_t size_{0};
+
+    /// the position of a current record.
+    size_t pos_{0};
   };
 
   /*####################################################################################
    * Public constructors/destructors
    *##################################################################################*/
 
-  OpenBwTreeWrapper(  //
+  BTreeOptiQLWrapper(  //
       [[maybe_unused]] const size_t gc_interval,
       [[maybe_unused]] const size_t gc_thread_num)
   {
-    index_.UpdateThreadLocal(2 * kMaxCoreNum + 1);
   }
 
-  ~OpenBwTreeWrapper() = default;
+  ~BTreeOptiQLWrapper() = default;
 
   /*####################################################################################
    * Public utility functions
    *##################################################################################*/
-
-  void
-  SetUp()
-  {
-    open_bw_thread_id_ = open_bw_thread_counter_.fetch_add(1);
-    index_.AssignGCID(open_bw_thread_id_);
-  }
-
-  void
-  TearDown()
-  {
-    index_.UnregisterThread(open_bw_thread_id_);
-  }
 
   constexpr auto
   Bulkload(  //
@@ -193,19 +185,20 @@ class OpenBwTreeWrapper
   Read(const Key &key)  //
       -> std::optional<Payload>
   {
-    std::vector<Payload> read_results{};
-    index_.GetValue(key, read_results);
-
-    if (read_results.empty()) return std::nullopt;
-    return read_results[0];
+    Payload value{};
+    if (index_.lookup(key, value)) return value;
+    return std::nullopt;
   }
 
   auto
   Scan(const ScanKey &begin_key = std::nullopt)  //
       -> RecordIterator
   {
-    if (begin_key) return RecordIterator{&index_, std::get<0>(*begin_key)};
-    return RecordIterator{&index_};
+    thread_local Payload payloads[kScanSize];
+
+    auto &&key = (begin_key) ? std::get<0>(*begin_key) : Key{0};
+    const auto size = index_.scan(key, kScanSize, payloads);
+    return RecordIterator{&index_, key, payloads, size};
   }
 
   auto
@@ -213,16 +206,17 @@ class OpenBwTreeWrapper
       const Key &key,
       const Payload &value)
   {
-    index_.Upsert(key, value);
+    index_.insert(key, value);
     return kSuccess;
   }
 
   auto
   Insert(  //
-      const Key &key,
-      const Payload &value)
+      [[maybe_unused]] const Key &key,
+      [[maybe_unused]] const Payload &value)
   {
-    return (index_.Insert(key, value)) ? kSuccess : kFailed;
+    throw std::runtime_error{"ERROR: the insert operation is not implemented."};
+    return kFailed;
   }
 
   auto
@@ -237,7 +231,7 @@ class OpenBwTreeWrapper
   auto
   Delete([[maybe_unused]] const Key &key)
   {
-    throw std::runtime_error{"ERROR: the update operation is not implemented."};
+    throw std::runtime_error{"ERROR: the delete operation is not implemented."};
     return kFailed;
   }
 
@@ -246,23 +240,9 @@ class OpenBwTreeWrapper
    * Internal member variables
    *##################################################################################*/
 
-  /// an atomic counter to count the number of worker threads
-  static inline std::atomic_size_t open_bw_thread_counter_ = 1;
-
-  /// a thread id for each worker thread
-  static thread_local inline size_t open_bw_thread_id_ = 0;
-
   Index_t index_{};
 };
 
-template <>
-constexpr auto
-HasSetUpTearDown<OpenBwTreeWrapper>()  //
-    -> bool
-{
-  return true;
-}
-
 }  // namespace dbgroup
 
-#endif  // INDEX_BENCHMARK_INDEXES_OPEN_BW_TREE_HPP
+#endif  // INDEX_BENCHMARK_INDEXES_B_TREE_OPTIQL_WRAPPER_HPP

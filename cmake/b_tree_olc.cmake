@@ -13,7 +13,7 @@ if(NOT open_bw_POPULATED)
   )
   FetchContent_Populate(open_bw)
 endif()
-set(B_TREE_OLC_SOURCE_DIR "${open_bw_SOURCE_DIR}/BTreeOLC")
+set(B_TREE_OLC_SOURCE_DIR "${open_bw_SOURCE_DIR}")
 
 #--------------------------------------------------------------------------------------#
 # Build targets

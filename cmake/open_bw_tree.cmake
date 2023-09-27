@@ -13,7 +13,7 @@ if(NOT open_bw_POPULATED)
   )
   FetchContent_Populate(open_bw)
 endif()
-set(OPEN_BW_TREE_SOURCE_DIR "${open_bw_SOURCE_DIR}/BwTree")
+set(OPEN_BW_TREE_SOURCE_DIR "${open_bw_SOURCE_DIR}")
 
 #--------------------------------------------------------------------------------------#
 # Build targets
@@ -22,7 +22,7 @@ set(OPEN_BW_TREE_SOURCE_DIR "${open_bw_SOURCE_DIR}/BwTree")
 if(NOT TARGET open_bw::bw_tree)
   find_package(Threads)
   add_library(open_bw_tree STATIC
-    "${OPEN_BW_TREE_SOURCE_DIR}/bwtree.cpp"
+    "${OPEN_BW_TREE_SOURCE_DIR}/BwTree/bwtree.cpp"
   )
   add_library(open_bw::bw_tree ALIAS open_bw_tree)
   target_compile_features(open_bw_tree PRIVATE
