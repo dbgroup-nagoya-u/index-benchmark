@@ -48,6 +48,8 @@ DEFINE_validator(workload, &ValidateWorkload);
 #ifdef INDEX_BENCH_BUILD_LONG_KEYS
 DEFINE_uint64(key_size, 8, "The size of target keys (only 8, 16, 32, 64, and 128 can be used)");
 DEFINE_validator(key_size, &ValidateKeySize);
+#else
+DEFINE_uint64(key_size, 8, "The size of target keys (only 8 can be used)");
 #endif
 
 /*######################################################################################
@@ -202,6 +204,14 @@ RunWithMultipleIndexes()
   if (FLAGS_b_olc) {
     using BTreeOLC_t = Index<K, V, BTreeOLCWrapper>;
     Run<K, V, BTreeOLC_t>("B-tree based on OLC");
+    run_any = true;
+  }
+#endif
+
+#ifdef INDEX_BENCH_BUILD_B_TREE_OPTIQL
+  if (FLAGS_b_optiql) {
+    using BTreeOptiQL_t = Index<K, V, BTreeOptiQLWrapper>;
+    Run<K, V, BTreeOptiQL_t>("B-tree based on OptiQL");
     run_any = true;
   }
 #endif

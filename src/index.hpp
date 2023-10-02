@@ -56,6 +56,11 @@ DEFINE_bool(b_osl_opt, false, "Use optimized BTreeOSL for fixed-length data as a
 DEFINE_bool(b_olc, false, "Use OLC based B-tree as a benchmark target");
 #endif
 
+#ifdef INDEX_BENCH_BUILD_B_TREE_OPTIQL
+#include "indexes/b_tree_optiql_wrapper.hpp"
+DEFINE_bool(b_optiql, false, "Use OptiQL based B-tree as a benchmark target");
+#endif
+
 /*------------------------------------------------------------------------------------*
  * Bw-trees
  *------------------------------------------------------------------------------------*/
