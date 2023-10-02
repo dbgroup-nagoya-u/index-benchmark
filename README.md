@@ -51,6 +51,7 @@ sudo apt install libgoogle-glog-dev libnuma-dev
 #### Optional Benchmarking Targets
 
 - `INDEX_BENCH_BUILD_BTREE_OLC`: build a benchmarker with OLC based B+tree if `ON` (default: `OFF`).
+- `INDEX_BENCH_BUILD_BTREE_OPTIQL`: build a benchmarker with OptiQL based B+tree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_OPEN_BWTREE`: build a benchmarker with OpenBw-Tree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_MASSTREE`: build a benchmarker with Masstree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_YAKUSHIMA`: build a benchmarker with yakushima if `ON` (default: `OFF`).
