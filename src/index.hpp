@@ -124,6 +124,15 @@ DEFINE_bool(hydralist, false, "Use HydraList as a benchmark target");
 DEFINE_bool(alex_olc, false, "Use OLC based ALEX as a benchmark target");
 #endif
 
+/*------------------------------------------------------------------------------------*
+ * Skip lists
+ *------------------------------------------------------------------------------------*/
+
+#ifdef INDEX_BENCH_BUILD_SKIP_LIST
+#include "skip_list/skip_list.hpp"
+DEFINE_bool(skip_list, false, "Use skip list as a benchmark target");
+#endif
+
 namespace dbgroup
 {
 

@@ -208,6 +208,15 @@ RunWithMultipleIndexes()
   }
 #endif
 
+#ifdef INDEX_BENCH_BUILD_SKIP_LIST
+  if (FLAGS_skip_list) {
+    using V_FOR_APPEND = int64_t;
+    using SkipList_t = Index<K, V_FOR_APPEND, ::dbgroup::index::skip_list::SkipList>;
+    Run<K, V_FOR_APPEND, SkipList_t>("Skip list");
+    run_any = true;
+  }
+#endif
+
 #ifdef INDEX_BENCH_BUILD_B_TREE_OPTIQL
   if (FLAGS_b_optiql) {
     using BTreeOptiQL_t = Index<K, V, BTreeOptiQLWrapper>;

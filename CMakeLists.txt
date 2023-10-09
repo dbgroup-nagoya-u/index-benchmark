@@ -24,6 +24,7 @@ option(INDEX_BENCH_BUILD_OPTIMIZED_B_TREES "Build the optimized B+trees for fixe
 # Build option for optional indexes
 #--------------------------------------------------------------------------------------#
 
+option(INDEX_BENCH_BUILD_SKIP_LIST "Build skip list as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_B_TREE_OLC "Build B+tree with OLC as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_B_TREE_OPTIQL "Build B+tree with OptiQL as a benchmarking target" OFF)
 option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
@@ -102,6 +103,10 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
 # Configure the state-of-the-art indexes
 #--------------------------------------------------------------------------------------#
 
+if(${INDEX_BENCH_BUILD_SKIP_LIST})
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/skip_list.cmake")
+endif()
+
 if(${INDEX_BENCH_BUILD_B_TREE_OLC})
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/b_tree_olc.cmake")
 endif()
@@ -157,6 +162,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
     $<$<BOOL:${INDEX_BENCH_BUILD_LONG_KEYS}>:INDEX_BENCH_BUILD_LONG_KEYS>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPTIMIZED_B_TREES}>:INDEX_BENCH_BUILD_OPTIMIZED_B_TREES>
+    $<$<BOOL:${INDEX_BENCH_BUILD_SKIP_LIST}>:INDEX_BENCH_BUILD_SKIP_LIST>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:INDEX_BENCH_BUILD_B_TREE_OLC>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OPTIQL}>:INDEX_BENCH_BUILD_B_TREE_OPTIQL>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
@@ -179,6 +185,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     gflags
     nlohmann_json::nlohmann_json
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
+    $<$<BOOL:${INDEX_BENCH_BUILD_SKIP_LIST}>:dbgroup::skip_list>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:open_bw::b_tree_olc>
     $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OPTIQL}>:b_tree_optiql::b_tree_optiql>
     $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:open_bw::bw_tree>
