@@ -97,7 +97,8 @@ class YakushimaWrapper
      * @retval true if this iterator indicates a live record.
      * @retval false otherwise.
      */
-    explicit operator bool()
+    explicit
+    operator bool()
     {
       while (true) {
         const auto size = records_->size();
@@ -156,9 +157,7 @@ class YakushimaWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  YakushimaWrapper(  //
-      [[maybe_unused]] const size_t gc_interval,
-      [[maybe_unused]] const size_t gc_thread_num)
+  YakushimaWrapper()
   {
     ::yakushima::init();
     ::yakushima::create_storage(table_name_);

@@ -156,11 +156,7 @@ class BTreeOptiQLWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  BTreeOptiQLWrapper(  //
-      [[maybe_unused]] const size_t gc_interval,
-      [[maybe_unused]] const size_t gc_thread_num)
-  {
-  }
+  BTreeOptiQLWrapper() = default;
 
   ~BTreeOptiQLWrapper() = default;
 

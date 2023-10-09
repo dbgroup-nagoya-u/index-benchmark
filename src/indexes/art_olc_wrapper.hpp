@@ -96,7 +96,8 @@ class ArtOLCWrapper
      * @retval true if this iterator indicates a live record.
      * @retval false otherwise.
      */
-    explicit operator bool()
+    explicit
+    operator bool()
     {
       while (true) {
         if (pos_ < size_) return true;        // records remain in this node
@@ -158,11 +159,7 @@ class ArtOLCWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  ArtOLCWrapper(  //
-      [[maybe_unused]] const size_t gc_interval,
-      [[maybe_unused]] const size_t gc_thread_num)
-  {
-  }
+  ArtOLCWrapper() = default;
 
   ~ArtOLCWrapper() = default;
 

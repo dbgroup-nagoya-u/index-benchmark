@@ -95,7 +95,8 @@ class HydraListWrapper
      * @retval true if this iterator indicates a live record.
      * @retval false otherwise.
      */
-    explicit operator bool()
+    explicit
+    operator bool()
     {
       while (true) {
         const auto size = payloads_.size();
@@ -155,11 +156,7 @@ class HydraListWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  HydraListWrapper(  //
-      [[maybe_unused]] const size_t gc_interval,
-      [[maybe_unused]] const size_t gc_thread_num)
-  {
-  }
+  HydraListWrapper() = default;
 
   ~HydraListWrapper() = default;
 

@@ -150,12 +150,7 @@ class OpenBwTreeWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  OpenBwTreeWrapper(  //
-      [[maybe_unused]] const size_t gc_interval,
-      [[maybe_unused]] const size_t gc_thread_num)
-  {
-    index_.UpdateThreadLocal(2 * kMaxCoreNum + 1);
-  }
+  OpenBwTreeWrapper() { index_.UpdateThreadLocal(2 * kMaxCoreNum + 1); }
 
   ~OpenBwTreeWrapper() = default;
 
