@@ -156,11 +156,7 @@ class BTreeOLCWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  BTreeOLCWrapper(  //
-      [[maybe_unused]] const size_t gc_interval,
-      [[maybe_unused]] const size_t gc_thread_num)
-  {
-  }
+  BTreeOLCWrapper() = default;
 
   ~BTreeOLCWrapper() = default;
 

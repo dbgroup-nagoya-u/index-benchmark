@@ -103,7 +103,8 @@ class AlexOLCWrapper
      * @retval true if this iterator indicates a live record.
      * @retval false otherwise.
      */
-    explicit operator bool()
+    explicit
+    operator bool()
     {
       while (true) {
         if (pos_ < size_) return true;        // records remain in this node
@@ -161,11 +162,7 @@ class AlexOLCWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  AlexOLCWrapper(  //
-      [[maybe_unused]] const size_t gc_interval,
-      [[maybe_unused]] const size_t gc_thread_num)
-  {
-  }
+  AlexOLCWrapper() = default;
 
   ~AlexOLCWrapper() = default;
 

@@ -152,7 +152,7 @@ class Index
    * Public constructors and assignment operators
    *##################################################################################*/
 
-  Index() { index_ = std::make_unique<Index_t>(kGCInterval, kGCThreadNum); }
+  Index() { index_ = std::make_unique<Index_t>(); }
 
   /*####################################################################################
    * Public destructors

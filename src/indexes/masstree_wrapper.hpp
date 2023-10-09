@@ -138,7 +138,8 @@ class MasstreeWrapper
      * @retval true if this iterator indicates a live record.
      * @retval false otherwise.
      */
-    explicit operator bool()
+    explicit
+    operator bool()
     {
       while (true) {
         const size_t size = payloads_.size();
@@ -249,9 +250,7 @@ class MasstreeWrapper
    * Public constructors/destructors
    *##################################################################################*/
 
-  MasstreeWrapper(  //
-      [[maybe_unused]] const size_t gc_interval,
-      [[maybe_unused]] const size_t gc_thread_num)
+  MasstreeWrapper()
   {
     // assume that a main thread construct this instance
     thread_info_ = threadinfo::make(threadinfo::TI_MAIN, -1);
