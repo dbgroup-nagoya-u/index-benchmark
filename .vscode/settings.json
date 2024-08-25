@@ -1,7 +1,7 @@
 {
   // editor settings
   "editor.rulers": [
-    88,
+    80,
     100
   ],
   "editor.renderControlCharacters": true,
@@ -26,13 +26,20 @@
     "**/node_modules/*/**": true,
     "**/.hg/store/**": true,
   },
+  // "C_Cpp.codeAnalysis.clangTidy.path": "/usr/bin/clang-tidy",
+  // "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
+  "C_Cpp.default.compileCommands": "build/vscode/compile_commands.json",
   // unit test settings
   "testMate.cpp.test.runtimeLimit": 60,
-  "testMate.cpp.test.executables": "build/**/test/*_test",
+  "testMate.cpp.test.executables": "build/vscode/test/*_test",
   // cmake settings
+  "[cmake]": {
+    "editor.autoIndent": "brackets",
+  },
   "cmake.configureOnOpen": true,
-  "cmake.buildDirectory": "${workspaceRoot}/build/${buildType}",
+  "cmake.buildDirectory": "${workspaceRoot}/build/vscode",
   "cmake.generator": "Ninja",
+  "cmake.options.statusBarVisibility": "compact",
   "cmake.debugConfig": {
     "args": [
       // "--yakushima",
