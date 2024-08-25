@@ -29,7 +29,6 @@ namespace dbgroup
  */
 template <class Key, class Payload>
 struct Operation {
- public:
   /*############################################################################
    * Public constructors and assignment operators
    *##########################################################################*/
@@ -45,6 +44,13 @@ struct Operation {
   /*############################################################################
    * Public getters
    *##########################################################################*/
+
+  [[nodiscard]] constexpr auto
+  GetOpsID() const  //
+      -> size_t
+  {
+    return static_cast<size_t>(type);
+  }
 
   [[nodiscard]] constexpr auto
   GetKey() const  //

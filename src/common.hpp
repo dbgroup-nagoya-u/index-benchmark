@@ -58,6 +58,7 @@ enum IndexOperation {
   kDeleteAndInsert,
   kDeleteOrInsert,
   kInsertAndDelete,
+  kOpsNum,
 };
 
 // mapping for operation strings

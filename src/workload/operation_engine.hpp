@@ -79,6 +79,13 @@ class OperationEngine
     return {init_key_num_, use_all_cores_for_init_, use_bulkload_if_possible_};
   }
 
+  [[nodiscard]] constexpr auto
+  GetOpsTypeNum() const  //
+      -> size_t
+  {
+    return static_cast<size_t>(kOpsNum);
+  }
+
   /*############################################################################
    * Public utilities
    *##########################################################################*/
