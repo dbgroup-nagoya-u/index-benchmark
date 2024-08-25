@@ -158,6 +158,12 @@ RunWithMultipleIndexes()
     run_any = true;
   }
 
+  if (FLAGS_bc) {
+    using BcTree_t = Index<K, V, ::dbgroup::index::bc_tree::BcTree>;
+    Run<K, V, BcTree_t>("Bc-tree");
+    run_any = true;
+  }
+
   /*--------------------------------------------------------------------------*
    * B+tree implementations optimized for fixed-length data
    *--------------------------------------------------------------------------*/

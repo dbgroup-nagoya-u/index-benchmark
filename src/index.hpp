@@ -88,6 +88,14 @@ DEFINE_bool(bz, false, "Use BzTree with in-place based update as a benchmark tar
 DEFINE_bool(bz_append, false, "Use BzTree with append based update as a benchmark target");
 
 /*----------------------------------------------------------------------------*
+ * Bc-tree
+ *----------------------------------------------------------------------------*/
+
+#include "bc_tree/bc_tree.hpp"
+
+DEFINE_bool(bc, false, "Use Bc-tree as a benchmark target");
+
+/*----------------------------------------------------------------------------*
  * Masstrees
  *----------------------------------------------------------------------------*/
 

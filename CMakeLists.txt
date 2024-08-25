@@ -98,6 +98,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/b-tree")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bw-tree")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bc-tree")
 
 #--------------------------------------------------------------------------------------#
 # Configure the state-of-the-art indexes
@@ -182,6 +183,7 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     dbgroup::b_tree
     dbgroup::bw_tree
     dbgroup::bztree
+    dbgroup::bc_tree
     gflags
     nlohmann_json::nlohmann_json
     $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>

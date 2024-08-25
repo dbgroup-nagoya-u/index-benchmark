@@ -16,3 +16,6 @@
 [submodule "external/b-tree"]
 	path = external/b-tree
 	url = https://github.com/dbgroup-nagoya-u/b-tree.git
+[submodule "external/bc-tree"]
+	path = external/bc-tree
+	url = git@github.com:dbgroup-nagoya-u/bc-tree.git
