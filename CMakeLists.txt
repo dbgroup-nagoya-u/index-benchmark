@@ -13,6 +13,10 @@ project(
   LANGUAGES "CXX" "C"
 )
 
+# enable features
+include(FetchContent)
+include(ProcessorCount)
+
 #--------------------------------------------------------------------------------------#
 # Build option for target indexes
 #--------------------------------------------------------------------------------------#
@@ -52,7 +56,6 @@ endif()
 # Configurations for target indexes
 #--------------------------------------------------------------------------------------#
 
-include(ProcessorCount)
 ProcessorCount(TMP_PROC_COUNT)
 if(NOT TMP_PROC_COUNT EQUAL 0)
   set(INDEX_BENCH_MAX_CORES "${TMP_PROC_COUNT}" CACHE STRING "The number of logical cores.")
@@ -74,7 +77,15 @@ find_package(gflags REQUIRED)
 
 option(INDEX_BENCH_OVERRIDE_MIMALLOC "Override entire memory allocation with mimalloc" OFF)
 if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
-  find_package(mimalloc 1.7 REQUIRED)
+  set(MI_BUILD_SHARED OFF CACHE BOOL "Disable mimalloc's unit tests." FORCE)
+  set(MI_BUILD_OBJECT OFF CACHE BOOL "Disable mimalloc's unit tests." FORCE)
+  set(MI_BUILD_TESTS OFF CACHE BOOL "Disable mimalloc's unit tests." FORCE)
+  FetchContent_Declare(
+    mimalloc
+    GIT_REPOSITORY "https://github.com/microsoft/mimalloc"
+    GIT_TAG "8c532c32c3c96e5ba1f2283e032f69ead8add00f" # v2.1.7
+  )
+  FetchContent_MakeAvailable(mimalloc)
 endif()
 
 #--------------------------------------------------------------------------------------#
