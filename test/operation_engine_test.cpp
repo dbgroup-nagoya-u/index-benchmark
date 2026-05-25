@@ -42,7 +42,7 @@ class OperationEngineFixture : public ::testing::Test
   using Key_t = VarLenData<k8>;
   using Payload_t = uint64_t;
   using OperationEngine_t = OperationEngine<Key_t, Payload_t>;
-  using Json_t = ::nlohmann::json;
+  using Json = ::nlohmann::json;
 
  protected:
   void
@@ -68,7 +68,7 @@ class OperationEngineFixture : public ::testing::Test
 
 TEST_F(OperationEngineFixture, SinglePhaseWorkloadGenerateValidOperations)
 {
-  Json_t w_json = R"({
+  Json w_json = R"({
     "initialization": {
       "# of keys": 1000000,
       "use all cores": true,
@@ -107,7 +107,7 @@ TEST_F(OperationEngineFixture, SinglePhaseWorkloadGenerateValidOperations)
 
 TEST_F(OperationEngineFixture, MultiplePhasesWorkloadGenerateValidOperations)
 {
-  Json_t w_json = R"({
+  Json w_json = R"({
     "initialization": {
       "# of keys": 1000000,
       "use all cores": false,

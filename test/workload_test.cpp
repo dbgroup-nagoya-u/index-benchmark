@@ -49,7 +49,7 @@ class WorkloadFixture : public ::testing::Test
   using Key_t = VarLenData<k8>;
   using Payload_t = uint64_t;
   using Operation_t = Operation<Key_t, Payload_t>;
-  using Json_t = ::nlohmann::json;
+  using Json = ::nlohmann::json;
 
  protected:
   void
@@ -104,7 +104,7 @@ TEST_F(WorkloadFixture, WorkloadHavingAllOperationsGenerateOperationsUniformly)
 {  //
   constexpr size_t kOpsTypeNum = 11;
 
-  Json_t w_json = R"({
+  Json w_json = R"({
     "operation ratios": {
       "read": 0.0909,
       "scan": 0.0909,
@@ -144,7 +144,7 @@ TEST_F(WorkloadFixture, WorkloadHavingAllOperationsGenerateOperationsUniformly)
 
 TEST_F(WorkloadFixture, WorkloadWithSkewParameterGenerateSkewedKeys)
 {  //
-  Json_t w_json = R"({
+  Json w_json = R"({
     "operation ratios": {"read": 1.0},
     "# of keys": 1000000,
     "partitioning policy": "none",
@@ -176,7 +176,7 @@ TEST_F(WorkloadFixture, WorkloadWithRangePartitionGenerateSeparatedKeys)
 {  //
   constexpr size_t kOpsNumPerThread = kDefaultKeyNum / kThreadNum;
 
-  Json_t w_json = R"({
+  Json w_json = R"({
     "operation ratios": {"read": 1.0},
     "# of keys": 1000000,
     "partitioning policy": "range",
@@ -203,7 +203,7 @@ TEST_F(WorkloadFixture, WorkloadWithStripePartitionGenerateStripedKeys)
 {  //
   constexpr size_t kOpsNumPerThread = kDefaultKeyNum / kThreadNum;
 
-  Json_t w_json = R"({
+  Json w_json = R"({
     "operation ratios": {"read": 1.0},
     "# of keys": 1000000,
     "partitioning policy": "stripe",

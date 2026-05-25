@@ -1,0 +1,8 @@
+ADD_INDEX_BENCH_TEST("b_tree_optiql_single_thread_test")
+ADD_INDEX_BENCH_TEST("b_tree_optiql_multi_thread_test")
+ADD_INDEX_BENCH_TEST("yakushima_single_thread_test")
+ADD_INDEX_BENCH_TEST("yakushima_multi_thread_test")
+ADD_INDEX_BENCH_TEST("masstree_beta_single_thread_test")
+ADD_INDEX_BENCH_TEST("masstree_beta_multi_thread_test")
+ADD_INDEX_BENCH_TEST("art_olc_single_thread_test")
+ADD_INDEX_BENCH_TEST("art_olc_multi_thread_test")
