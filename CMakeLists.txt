@@ -18,64 +18,81 @@ include(FetchContent)
 include(ProcessorCount)
 
 #------------------------------------------------------------------------------#
-# Build option for target indexes
+# Build options for benchmark
 #------------------------------------------------------------------------------#
 
-option(INDEX_BENCH_BUILD_LONG_KEYS "Build keys with sizes of 16/32/64/128 bytes." OFF)
-option(INDEX_BENCH_BUILD_OPTIMIZED_B_TREES "Build the optimized B+trees for fixed-length keys." OFF)
-
-#------------------------------------------------------------------------------#
-# Build option for optional indexes
-#------------------------------------------------------------------------------#
-
-option(INDEX_BENCH_BUILD_SKIP_LIST "Build skip list as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_B_TREE_OLC "Build B+tree with OLC as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_B_TREE_OPTIQL "Build B+tree with OptiQL as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_OPEN_BWTREE "Build OpenBw-Tree as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_MASSTREE "Build Masstree as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_YAKUSHIMA "Build Yakushima as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_ART_OLC "Build ART with OLC as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_HYDRALIST "Build HydraList as a benchmarking target" OFF)
-option(INDEX_BENCH_BUILD_ALEX_OLC "Build Alex with OLC as a benchmarking target" OFF)
-
-set(INDEX_BENCH_COMPARE_WITH_SOTA OFF)
-if(${INDEX_BENCH_BUILD_B_TREE_OLC}
-  OR ${INDEX_BENCH_BUILD_B_TREE_OPTIQL}
-  OR ${INDEX_BENCH_BUILD_OPEN_BWTREE}
-  OR ${INDEX_BENCH_BUILD_MASSTREE}
-  OR ${INDEX_BENCH_BUILD_YAKUSHIMA}
-  OR ${INDEX_BENCH_BUILD_ART_OLC}
-  OR ${INDEX_BENCH_BUILD_HYDRALIST}
-  OR ${INDEX_BENCH_BUILD_ALEX_OLC}
+set(
+  INDEX_BENCH_PAGE_SIZE
+  "1024" CACHE STRING
+  "A page size"
 )
-  message("[${PROJECT_NAME}] Use 8-bytes unsigned integer keys for comparison among the state-of-the-art indexes.")
-  set(INDEX_BENCH_COMPARE_WITH_SOTA ON)
-endif()
 
-#------------------------------------------------------------------------------#
-# Configurations for target indexes
-#------------------------------------------------------------------------------#
+set(
+  INDEX_BENCH_MAX_VARLEN_DATA_SIZE
+  "32" CACHE STRING
+  "The expected maximum size of a variable-length data."
+)
+
+option(
+  INDEX_BENCH_OVERRIDE_MIMALLOC
+  "Override entire memory allocation with mimalloc."
+  OFF
+)
 
 ProcessorCount(TMP_PROC_COUNT)
 if(NOT TMP_PROC_COUNT EQUAL 0)
-  set(INDEX_BENCH_MAX_CORES "${TMP_PROC_COUNT}" CACHE STRING "The number of logical cores.")
-  message("[${PROJECT_NAME}] The detected number of cores: ${INDEX_BENCH_MAX_CORES}")
+  set(
+    INDEX_BENCH_MAX_CORES
+    "${TMP_PROC_COUNT}" CACHE STRING
+    "The number of logical cores."
+  )
+  message(STATUS
+    "[${PROJECT_NAME}] The detected number of cores: ${INDEX_BENCH_MAX_CORES}"
+  )
 else()
-  set(INDEX_BENCH_MAX_CORES "128" CACHE STRING "The number of logical cores.")
-  message(WARNING "[${PROJECT_NAME}] The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORES explicitly.")
+  set(
+    INDEX_BENCH_MAX_CORES
+    "128" CACHE STRING
+    "The number of logical cores."
+  )
+  message(WARNING
+    "[${PROJECT_NAME}] The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORES explicitly."
+  )
 endif()
 
 #------------------------------------------------------------------------------#
-# Use gflags to manage CLI options
+# Configurations
 #------------------------------------------------------------------------------#
 
+# use gflags to manage CLI options
 find_package(gflags REQUIRED)
 
-#------------------------------------------------------------------------------#
-# Build option for efficient memory allocators
-#------------------------------------------------------------------------------#
+# use our utility
+FetchContent_Declare(
+  cpp-utility
+  GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-utility"
+  GIT_TAG "e00883c3d14da4a0f6e68691c45f7e9a558e4bec"
+)
+FetchContent_MakeAvailable(cpp-utility)
 
-option(INDEX_BENCH_OVERRIDE_MIMALLOC "Override entire memory allocation with mimalloc" OFF)
+# use our benchmark utility
+FetchContent_Declare(
+  cpp-benchmark
+  GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-benchmark"
+  GIT_TAG "ab0e87838d620e1e086baaf512230b0428ef9f13"
+)
+FetchContent_MakeAvailable(cpp-benchmark)
+
+# use YAML parser
+set(YAML_CPP_BUILD_TOOLS OFF CACHE INTERNAL "Disable parse tools")
+FetchContent_Declare(
+  yaml-cpp
+  GIT_REPOSITORY "https://github.com/jbeder/yaml-cpp"
+  GIT_TAG        "56e3bb550c91fd7005566f19c079cb7a503223cf" # v0.9.0
+)
+FetchContent_MakeAvailable(yaml-cpp)
+
+# use mimalloc as efficient memory allocator
 if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
   set(MI_BUILD_SHARED OFF CACHE BOOL "Disable mimalloc's unit tests." FORCE)
   set(MI_BUILD_OBJECT OFF CACHE BOOL "Disable mimalloc's unit tests." FORCE)
@@ -83,75 +100,62 @@ if(${INDEX_BENCH_OVERRIDE_MIMALLOC})
   FetchContent_Declare(
     mimalloc
     GIT_REPOSITORY "https://github.com/microsoft/mimalloc"
-    GIT_TAG "8c532c32c3c96e5ba1f2283e032f69ead8add00f" # v2.1.7
+    GIT_TAG "30b2d9d89099bee08e9f67a1ffb3e12e7ba45227" # v3.3.2
   )
   FetchContent_MakeAvailable(mimalloc)
 endif()
 
 #------------------------------------------------------------------------------#
-# Configure our libraries
+# Build benchmark library
 #------------------------------------------------------------------------------#
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
+# define as library
+add_library(${PROJECT_NAME} STATIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/var_len_data.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/key_space.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/operation_selector.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/zipf_workload.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/timestamp_workload.cpp"
+)
+add_library(dbgroup::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+target_compile_features(${PROJECT_NAME} PUBLIC
+  "cxx_std_20"
+)
+target_compile_options(${PROJECT_NAME} PRIVATE
+  $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Release">:-march=native>
+  $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">:-g3>
+  -Wall
+  -Wextra
+)
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+  INDEX_BENCH_MAX_VARLEN_DATA_SIZE=${INDEX_BENCH_MAX_VARLEN_DATA_SIZE}
+  INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
+  $<$<BOOL:${INDEX_BENCH_BUILD_LONG_KEYS}>:INDEX_BENCH_BUILD_LONG_KEYS>
+)
+target_include_directories(${PROJECT_NAME} PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  dbgroup::cpp_utility
+  dbgroup::cpp_bench
+  gflags
+  yaml-cpp::yaml-cpp
+  $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
+)
 
 #------------------------------------------------------------------------------#
-# Configure nlohmann_json
+# Configure competitors
 #------------------------------------------------------------------------------#
 
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/json")
+file(GLOB INDEX_BENCH_COMPETITORS CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/*.cmake"
+)
+foreach(INDEX_BENCH_COMPETITOR ${INDEX_BENCH_COMPETITORS})
+  include(${INDEX_BENCH_COMPETITOR})
+endforeach()
 
 #------------------------------------------------------------------------------#
-# Configure our B+trees
-#------------------------------------------------------------------------------#
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/b-tree")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bw-tree")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/bztree")
-
-#------------------------------------------------------------------------------#
-# Configure the state-of-the-art indexes
-#------------------------------------------------------------------------------#
-
-if(${INDEX_BENCH_BUILD_SKIP_LIST})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/skip_list.cmake")
-endif()
-
-if(${INDEX_BENCH_BUILD_B_TREE_OLC})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/b_tree_olc.cmake")
-endif()
-
-if(${INDEX_BENCH_BUILD_B_TREE_OPTIQL})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/b_tree_optiql.cmake")
-endif()
-
-if(${INDEX_BENCH_BUILD_OPEN_BWTREE})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/open_bw_tree.cmake")
-endif()
-
-if(${INDEX_BENCH_BUILD_MASSTREE})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/masstree.cmake")
-endif()
-
-if(${INDEX_BENCH_BUILD_YAKUSHIMA})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/yakushima.cmake")
-endif()
-
-if(${INDEX_BENCH_BUILD_ART_OLC})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/art_olc.cmake")
-endif()
-
-if(${INDEX_BENCH_BUILD_HYDRALIST})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/hydralist.cmake")
-endif()
-
-if(${INDEX_BENCH_BUILD_ALEX_OLC})
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/alex_olc.cmake")
-endif()
-
-#------------------------------------------------------------------------------#
-# Build Benchmark
+# Build each benchmark
 #------------------------------------------------------------------------------#
 
 # define function to add unit tests in the same format
@@ -160,56 +164,21 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     "${CMAKE_CURRENT_SOURCE_DIR}/src/${BENCHMARK_TARGET}.cpp"
   )
   target_compile_features(${BENCHMARK_TARGET} PRIVATE
-    "cxx_std_17"
+    "cxx_std_20"
   )
   target_compile_options(${BENCHMARK_TARGET} PRIVATE
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Release">:-march=native>
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">:-g3>
     -Wall
     -Wextra
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
-  )
-  target_compile_definitions(${BENCHMARK_TARGET} PRIVATE
-    INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
-    $<$<BOOL:${INDEX_BENCH_BUILD_LONG_KEYS}>:INDEX_BENCH_BUILD_LONG_KEYS>
-    $<$<BOOL:${INDEX_BENCH_BUILD_OPTIMIZED_B_TREES}>:INDEX_BENCH_BUILD_OPTIMIZED_B_TREES>
-    $<$<BOOL:${INDEX_BENCH_BUILD_SKIP_LIST}>:INDEX_BENCH_BUILD_SKIP_LIST>
-    $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:INDEX_BENCH_BUILD_B_TREE_OLC>
-    $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OPTIQL}>:INDEX_BENCH_BUILD_B_TREE_OPTIQL>
-    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:INDEX_BENCH_BUILD_OPEN_BWTREE>
-    $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:INDEX_BENCH_BUILD_MASSTREE>
-    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:INDEX_BENCH_BUILD_YAKUSHIMA>
-    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:INDEX_BENCH_BUILD_ART_OLC>
-    $<$<BOOL:${INDEX_BENCH_BUILD_HYDRALIST}>:INDEX_BENCH_BUILD_HYDRALIST>
-    $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:INDEX_BENCH_BUILD_ALEX_OLC>
-    $<$<BOOL:${INDEX_BENCH_COMPARE_WITH_SOTA}>:INDEX_BENCH_COMPARE_WITH_SOTA>
-  )
-  target_include_directories(${BENCHMARK_TARGET} PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/src"
   )
   target_link_libraries(${BENCHMARK_TARGET} PRIVATE
-    dbgroup::cpp_utility
-    dbgroup::cpp_bench
-    dbgroup::b_tree
-    dbgroup::bw_tree
-    dbgroup::bztree
-    gflags
-    nlohmann_json::nlohmann_json
-    $<$<BOOL:${INDEX_BENCH_OVERRIDE_MIMALLOC}>:mimalloc-static>
-    $<$<BOOL:${INDEX_BENCH_BUILD_SKIP_LIST}>:dbgroup::skip_list>
-    $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OLC}>:open_bw::b_tree_olc>
-    $<$<BOOL:${INDEX_BENCH_BUILD_B_TREE_OPTIQL}>:b_tree_optiql::b_tree_optiql>
-    $<$<BOOL:${INDEX_BENCH_BUILD_OPEN_BWTREE}>:open_bw::bw_tree>
-    $<$<BOOL:${INDEX_BENCH_BUILD_MASSTREE}>:masstree::masstree>
-    $<$<BOOL:${INDEX_BENCH_BUILD_YAKUSHIMA}>:tsurugi::yakushima>
-    $<$<BOOL:${INDEX_BENCH_BUILD_ART_OLC}>:open_bw::art_olc>
-    $<$<BOOL:${INDEX_BENCH_BUILD_HYDRALIST}>:hydralist::hydralist>
-    $<$<BOOL:${INDEX_BENCH_BUILD_ALEX_OLC}>:GRE::alex_olc>
+    dbgroup::${PROJECT_NAME}
   )
 endfunction()
 
 # add executables
-ADD_BENCHMARK("index_bench")
+ADD_BENCHMARK("run_bench")
 
 #------------------------------------------------------------------------------#
 # Build unit tests if required

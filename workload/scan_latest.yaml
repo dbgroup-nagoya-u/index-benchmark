@@ -1,0 +1,9 @@
+workload: timestamp
+
+operations:
+  ratios: { scan_latest: 0.05, write: 0.95 }
+  scan_size: 100
+  per_thread: false
+  num: 1e6
+
+reversed: true
