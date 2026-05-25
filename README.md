@@ -25,16 +25,22 @@ We optionally use [mimalloc](https://github.com/microsoft/mimalloc) for efficien
 
 #### Preparation for Existing Implementations
 
-Some existing indexes use [Intel OneAPI Base Toolkit](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html) (i.e., Threading Building Blocks), so please [prepare Intel OneAPI Base Toolkit](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html?operatingsystem=linux&distributions=aptpackagemanager) in advance if you want to compare the state-of-the-art indexes. If you prefer to install oneTBB separately, you can use the following targets instead of `intel-basekit`:
+Some existing indexes use [Intel OneAPI Toolkit](https://www.intel.com/content/www/us/en/developer/tools/oneapi/oneapi-toolkit.html) (i.e., Threading Building Blocks), so please [prepare Intel OneAPI Toolkit](https://www.intel.com/content/www/us/en/docs/oneapi-toolkit/installation-guide-linux/latest/overview.html) in advance if you want to compare the state-of-the-art indexes. If you prefer to install oneTBB separately, you can use the following targets instead of `intel-basekit`:
 
 ```bash
 sudo apt install intel-oneapi-tbb-devel
 ```
 
-You also need the following packages for Yakushima (`libgoogle-glog-dev`) and HydraList (`libnuma-dev`).
+You also need the following packages for Yakushima (`libgoogle-glog-dev`).
 
 ```bash
-sudo apt install libgoogle-glog-dev libnuma-dev
+sudo apt install libgoogle-glog-dev
+```
+
+You also need the following packages for Masstree-beta (`autoconf`).
+
+```bash
+sudo apt install autoconf
 ```
 
 ### Build Options
@@ -42,7 +48,6 @@ sudo apt install libgoogle-glog-dev libnuma-dev
 #### Utility Options
 
 - `INDEX_BENCH_BUILD_LONG_KEYS`: build keys with sizes of 16/32/64/128 bytes if `ON` (default: `OFF`).
-- `INDEX_BENCH_BUILD_OPTIMIZED_B_TREES`: build the optimized B+trees for fixed-length keys if `ON` (default: `OFF`).
 
 #### Memory Allocation
 
@@ -50,19 +55,15 @@ sudo apt install libgoogle-glog-dev libnuma-dev
 
 #### Optional Benchmarking Targets
 
-- `INDEX_BENCH_BUILD_BTREE_OLC`: build a benchmarker with OLC based B+tree if `ON` (default: `OFF`).
-- `INDEX_BENCH_BUILD_BTREE_OPTIQL`: build a benchmarker with OptiQL based B+tree if `ON` (default: `OFF`).
-- `INDEX_BENCH_BUILD_OPEN_BWTREE`: build a benchmarker with OpenBw-Tree if `ON` (default: `OFF`).
-- `INDEX_BENCH_BUILD_MASSTREE`: build a benchmarker with Masstree if `ON` (default: `OFF`).
+- `INDEX_BENCH_BUILD_B_TREE`: build a benchmarker with OLC based B+tree if `ON` (default: `OFF`).
+- `INDEX_BENCH_BUILD_B_TREE_OPTIQL`: build a benchmarker with OptiQL based B+tree if `ON` (default: `OFF`).
+- `INDEX_BENCH_BUILD_MASSTREE_BETA`: build a benchmarker with Masstree if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_YAKUSHIMA`: build a benchmarker with yakushima if `ON` (default: `OFF`).
 - `INDEX_BENCH_BUILD_ART_OLC`: build a benchmarker with OLC based ART if `ON` (default: `OFF`).
-- `INDEX_BENCH_BUILD_HYDRALIST`: build a benchmarker with HydraList if `ON` (default: `OFF`).
-- `INDEX_BENCH_BUILD_ALEX_OLC`: build a benchmarker with OLC based ALEX if `ON` (default: `OFF`).
 
 #### Build Options for Unit Testing
 
 - `INDEX_BENCH_BUILD_TESTS`: build unit tests if `ON` (default: `OFF`).
-- `INDEX_BENCH_TEST_THREAD_NUM`: the maximum number of threads to perform unit tests (default `8`).
 
 ### Build and Run Unit Tests
 
