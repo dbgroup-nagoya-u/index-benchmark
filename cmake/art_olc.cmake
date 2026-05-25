@@ -1,57 +1,81 @@
-message(NOTICE "[art_olc] Prepare ART with optimistic lock coupling.")
+set(ORGANIZATION "microbench")
+set(COMPETITOR "art_olc")
+string(TOUPPER ${COMPETITOR} COMPETITOR_FLAG)
+
+option(
+  INDEX_BENCH_BUILD_${COMPETITOR_FLAG}
+  "Build ${ORGANIZATION}::${COMPETITOR}"
+  OFF
+)
+if(NOT ${INDEX_BENCH_BUILD_${COMPETITOR_FLAG}})
+  message(STATUS "[${COMPETITOR}] Ignore ${ORGANIZATION}::${COMPETITOR}.")
+  return()
+endif()
+
 #------------------------------------------------------------------------------#
-# Configure ART with OLC
+# Configuration
 #------------------------------------------------------------------------------#
+message(STATUS "[${COMPETITOR}] Prepare ${ORGANIZATION}::${COMPETITOR}.")
 
 include(FetchContent)
-FetchContent_GetProperties(open_bw)
-if(NOT open_bw_POPULATED)
+FetchContent_GetProperties(${ORGANIZATION})
+if(NOT ${ORGANIZATION}_POPULATED)
   FetchContent_Declare(
-    open_bw
+    ${ORGANIZATION}
     GIT_REPOSITORY "https://github.com/wangziqi2016/index-microbench.git"
-    GIT_TAG "74cafa57d74798f209d8fcbce8c4f317ce066eae" # latest at May 31, 2023
+    GIT_TAG "74cafa57d74798f209d8fcbce8c4f317ce066eae" # latest at May 25, 2026
   )
-  FetchContent_Populate(open_bw)
+  FetchContent_Populate(${ORGANIZATION})
 endif()
-set(ART_OLC_SOURCE_DIR "${open_bw_SOURCE_DIR}/ARTOLC")
+set(SOURCE_DIR "${${ORGANIZATION}_SOURCE_DIR}/ARTOLC")
 
 execute_process(
-  COMMAND bash "-c" "grep 'functional' ${ART_OLC_SOURCE_DIR}/Tree.cpp &> /dev/null"
-  RESULT_VARIABLE ART_OLC_NEED_FIX
+  COMMAND bash "-c" "grep 'functional' ${SOURCE_DIR}/Tree.cpp &> /dev/null"
+  RESULT_VARIABLE ${COMPETITOR_FLAG}_NEED_FIX
 )
-if(${ART_OLC_NEED_FIX})
+if(${${COMPETITOR_FLAG}_NEED_FIX})
   execute_process(
-    COMMAND bash "-c" "sed -i '3i #include <functional>' ${ART_OLC_SOURCE_DIR}/Tree.cpp"
+    COMMAND bash "-c" "sed -i '3i #include <functional>' ${SOURCE_DIR}/Tree.cpp"
   )
-  message(NOTICE "[art_olc] The <functional> library has been added.")
+  message(STATUS "[${COMPETITOR}] The <functional> library has been added.")
 endif()
 
 #------------------------------------------------------------------------------#
 # Build targets
 #------------------------------------------------------------------------------#
 
-if(NOT TARGET open_bw::art_olc)
+if(NOT TARGET ${ORGANIZATION}::${COMPETITOR})
   find_package(TBB REQUIRED)
 
-  add_library(art_olc STATIC
-    "${ART_OLC_SOURCE_DIR}/Epoche.cpp"
-    "${ART_OLC_SOURCE_DIR}/Tree.cpp"
+  add_library(${COMPETITOR} STATIC
+    "${SOURCE_DIR}/Epoche.cpp"
+    "${SOURCE_DIR}/Tree.cpp"
   )
-  add_library(open_bw::art_olc ALIAS art_olc)
-  target_compile_features(art_olc PRIVATE
+  add_library(${ORGANIZATION}::${COMPETITOR} ALIAS ${COMPETITOR})
+  target_compile_features(${COMPETITOR} PRIVATE
     "cxx_std_14"
   )
-  target_compile_options(art_olc PRIVATE
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
+  target_compile_options(${COMPETITOR} PRIVATE
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Release">:-march=native>
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">:-g3>
   )
-  target_include_directories(art_olc PUBLIC
-    "${ART_OLC_SOURCE_DIR}"
+  target_include_directories(${COMPETITOR} PUBLIC
+    "${SOURCE_DIR}"
   )
-  target_link_libraries(art_olc PUBLIC
+  target_link_libraries(${COMPETITOR} PUBLIC
     TBB::tbb
   )
 endif()
 
-message(NOTICE "[art_olc] Preparation completed.")
+#------------------------------------------------------------------------------#
+# Add competitor to benchmark
+#------------------------------------------------------------------------------#
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+  INDEX_BENCH_BUILD_${COMPETITOR_FLAG}
+)
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  ${ORGANIZATION}::${COMPETITOR}
+)
+
+message(STATUS "[${COMPETITOR}] Preparation completed.")
