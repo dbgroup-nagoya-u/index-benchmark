@@ -43,6 +43,11 @@ DEFINE_bool(bw_tree, false, "Use dbgroup::bw_tree as a competitor");
  * Trie relevant indexes
  *----------------------------------------------------------------------------*/
 
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+#include "dbgroup/masstree/masstree.hpp"
+DEFINE_bool(masstree, false, "Use dbgroup::masstree as a competitor");
+#endif
+
 #ifdef INDEX_BENCH_BUILD_MASSTREE_BETA
 #include "wrappers/masstree_beta_wrapper.hpp"
 DEFINE_bool(masstree_beta, false, "Use kohler::masstree_beta as a competitor");
@@ -90,6 +95,12 @@ SetCompetitor(  //
 #ifdef INDEX_BENCH_BUILD_B_TREE_OPTIQL
   if (FLAGS_b_tree_optiql) {
     bench.template operator()<BTreeOptiQLWrapper>("sfu_dis::b_tree_optiql");
+  }
+#endif
+
+#ifdef INDEX_BENCH_BUILD_MASSTREE
+  if (FLAGS_masstree) {
+    bench.template operator()<dbgroup::index::masstree::Masstree>("dbgroup::masstree");
   }
 #endif
 

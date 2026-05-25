@@ -1,0 +1,3 @@
+[submodule "external/masstree"]
+	path = external/masstree
+	url = git@github.com:dbgroup-nagoya-u/masstree.git

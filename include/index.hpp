@@ -110,39 +110,39 @@ class Index
       case kRead:
         index_->Read(key, key_len);
         break;
-      case kScan:
-        count = 0;
-        for (auto&& iter = index_->Scan(std::make_tuple(key, key_len, kClosed));  //
-             iter && count < scan_size;                                           //
-             ++iter, ++count) {
-          // do nothing
-        }
-        break;
-      case kScanLatest:
-        count = 0;
-        for (auto&& iter = index_->Scan(); iter && count < scan_size; ++iter, ++count) {
-          // do nothing
-        }
-        break;
+      // case kScan:
+      //   count = 0;
+      //   for (auto&& iter = index_->Scan(std::make_tuple(key, key_len, kClosed));  //
+      //        iter && count < scan_size;                                           //
+      //        ++iter, ++count) {
+      //     // do nothing
+      //   }
+      //   break;
+      // case kScanLatest:
+      //   count = 0;
+      //   for (auto&& iter = index_->Scan(); iter && count < scan_size; ++iter, ++count) {
+      //     // do nothing
+      //   }
+      //   break;
       case kWrite:
         index_->Write(key, Payload{}, key_len);
         break;
       case kUpsert:
         index_->Upsert(key, Payload{}, key_len);
         break;
-      case kInsert:
-        index_->Insert(key, Payload{}, key_len);
-        break;
-      case kUpdate:
-        index_->Update(key, Payload{}, key_len);
-        break;
-      case kDelete:
-        index_->Delete(key, key_len);
-        break;
-      case kDeleteAndInsert:
-        index_->Delete(key, key_len);
-        index_->Insert(key, Payload{}, key_len);
-        break;
+      // case kInsert:
+      //   index_->Insert(key, Payload{}, key_len);
+      //   break;
+      // case kUpdate:
+      //   index_->Update(key, Payload{}, key_len);
+      //   break;
+      // case kDelete:
+      //   index_->Delete(key, key_len);
+      //   break;
+      // case kDeleteAndInsert:
+      //   index_->Delete(key, key_len);
+      //   index_->Insert(key, Payload{}, key_len);
+      //   break;
       default:
         throw std::runtime_error{"ERROR: an undefined operation is about to be executed."};
     }
@@ -175,12 +175,12 @@ class Index
       const OPEngine& op_engine)
   {
     const auto& [worker_num, use_bulkload, entries] = op_engine.CreateInitData();
-    if constexpr (HasBulkload<Implementation>()) {
-      if (use_bulkload) {
-        index_->Bulkload(entries, worker_num);
-        return;
-      }
-    }
+    // if constexpr (HasBulkload<Implementation>()) {
+    //   if (use_bulkload) {
+    //     index_->Bulkload(entries, worker_num);
+    //     return;
+    //   }
+    // }
 
     std::vector<std::thread> threads{};
     threads.reserve(worker_num);

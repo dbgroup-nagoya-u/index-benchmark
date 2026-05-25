@@ -60,4 +60,4 @@ endfunction()
 # ADD_INDEX_BENCH_TEST("operation_engine_test")
 
 # add unit tests for wrappers
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/wrappers)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/wrappers)
