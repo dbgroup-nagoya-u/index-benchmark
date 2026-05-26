@@ -93,7 +93,7 @@ class YakushimaWrapper
       -> std::optional<Payload>
   {
     // get a value/size pair
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
+    const auto& bin_key = GetBinKey(key, key_len);
     std::pair<Payload*, size_t> ret{};
     const auto rc = yakushima::get(kTableName, bin_key, ret);
     if (rc != status::OK) return std::nullopt;
@@ -112,8 +112,16 @@ class YakushimaWrapper
     records.clear();
 
     // scan target tuples
-    const auto& key = (begin_key) ? std::get<0>(*begin_key) : Key{};
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
+    Key key;
+    size_t key_len;
+    if (begin_key) {
+      std::tie(key, key_len, std::ignore) = *begin_key;
+    } else {
+      key = {};
+      key_len = 0;
+    }
+    const auto& bin_key = GetBinKey(key, key_len);
+
     yakushima::scan(kTableName,                                    //
                     bin_key, yakushima::scan_endpoint::INCLUSIVE,  //
                     kDummyKey, yakushima::scan_endpoint::INF,      //
@@ -129,7 +137,7 @@ class YakushimaWrapper
       [[maybe_unused]] const size_t key_len)
   {
     // put a key/value pair
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
+    const auto& bin_key = GetBinKey(key, key_len);
     auto* value_v = const_cast<Payload*>(&value);
     yakushima::put(token(), kTableName, bin_key, value_v);
   }
@@ -141,7 +149,7 @@ class YakushimaWrapper
       [[maybe_unused]] const size_t key_len)
   {
     // put a key/value pair
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
+    const auto& bin_key = GetBinKey(key, key_len);
     auto* value_v = const_cast<Payload*>(&value);
     yakushima::put(token(), kTableName, bin_key, value_v);
   }
@@ -169,7 +177,7 @@ class YakushimaWrapper
       const Key& key,
       [[maybe_unused]] const size_t key_len)
   {
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
+    const auto& bin_key = GetBinKey(key, key_len);
     yakushima::remove(token(), kTableName, bin_key);
   }
 
@@ -316,6 +324,19 @@ class YakushimaWrapper
   static constexpr std::string_view kDummyKey{};
 
   static constexpr const char* kTableName{"T"};
+
+  /*##########################################################################*
+   * Internal utilities
+   *##########################################################################*/
+
+  static auto
+  GetBinKey(  //
+      const Key& key,
+      const size_t key_len)  //
+      -> std::string_view
+  {
+    return std::string_view{index::ConvertToBinaryData<Key, char>(key), key_len};
+  }
 
   /*##########################################################################*
    * Internal static variables
