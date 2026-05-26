@@ -40,7 +40,7 @@ if(NOT TARGET ${ORGANIZATION}::${COMPETITOR})
     "cxx_std_20"
   )
   target_compile_definitions(${COMPETITOR} INTERFACE
-    YAKUSHIMA_MAX_PARALLEL_SESSIONS=${INDEX_BENCH_MAX_CORES}
+    YAKUSHIMA_MAX_PARALLEL_SESSIONS=${INDEX_BENCH_MAX_WORKER_NUM}
   )
   target_compile_options(${COMPETITOR} INTERFACE
     -fsized-deallocation

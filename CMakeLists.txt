@@ -42,21 +42,24 @@ option(
 ProcessorCount(TMP_PROC_COUNT)
 if(NOT TMP_PROC_COUNT EQUAL 0)
   set(
-    INDEX_BENCH_MAX_CORES
-    "${TMP_PROC_COUNT}" CACHE STRING
-    "The number of logical cores."
+    INDEX_BENCH_MAX_WORKER_NUM
+    "2 * ${TMP_PROC_COUNT}" CACHE STRING
+    "The maximums number of workers."
   )
   message(STATUS
-    "[${PROJECT_NAME}] The detected number of cores: ${INDEX_BENCH_MAX_CORES}"
+    "[${PROJECT_NAME}] The detected number of cores: ${TMP_PROC_COUNT}."
+  )
+  message(STATUS
+    "[${PROJECT_NAME}] We use ${INDEX_BENCH_MAX_WORKER_NUM} as the maximum number of workers."
   )
 else()
   set(
-    INDEX_BENCH_MAX_CORES
+    INDEX_BENCH_MAX_WORKER_NUM
     "128" CACHE STRING
-    "The number of logical cores."
+    "The maximums number of workers."
   )
   message(WARNING
-    "[${PROJECT_NAME}] The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORES explicitly."
+    "[${PROJECT_NAME}] The number of cores could not be detected. Please set INDEX_BENCH_MAX_WORKER_NUM explicitly."
   )
 endif()
 
@@ -130,7 +133,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 )
 target_compile_definitions(${PROJECT_NAME} PUBLIC
   INDEX_BENCH_MAX_VARLEN_DATA_SIZE=${INDEX_BENCH_MAX_VARLEN_DATA_SIZE}
-  INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
+  INDEX_BENCH_MAX_WORKER_NUM=${INDEX_BENCH_MAX_WORKER_NUM}
   $<$<BOOL:${INDEX_BENCH_BUILD_LONG_KEYS}>:INDEX_BENCH_BUILD_LONG_KEYS>
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
