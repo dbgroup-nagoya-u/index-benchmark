@@ -83,6 +83,22 @@ class YakushimaWrapper
   }
 
   /*##########################################################################*
+   * Public utilities
+   *##########################################################################*/
+
+  void
+  SetUp()
+  {
+    yakushima::enter(token);
+  }
+
+  void
+  TearDown()
+  {
+    yakushima::leave(token);
+  }
+
+  /*##########################################################################*
    * Public read/write APIs
    *##########################################################################*/
 
@@ -139,7 +155,7 @@ class YakushimaWrapper
     // put a key/value pair
     const auto& bin_key = GetBinKey(key, key_len);
     auto* value_v = const_cast<Payload*>(&value);
-    yakushima::put(token(), kTableName, bin_key, value_v);
+    yakushima::put(token, kTableName, bin_key, value_v);
   }
 
   auto
@@ -151,7 +167,7 @@ class YakushimaWrapper
     // put a key/value pair
     const auto& bin_key = GetBinKey(key, key_len);
     auto* value_v = const_cast<Payload*>(&value);
-    yakushima::put(token(), kTableName, bin_key, value_v);
+    yakushima::put(token, kTableName, bin_key, value_v);
   }
 
   auto
@@ -178,7 +194,7 @@ class YakushimaWrapper
       [[maybe_unused]] const size_t key_len)
   {
     const auto& bin_key = GetBinKey(key, key_len);
-    yakushima::remove(token(), kTableName, bin_key);
+    yakushima::remove(token, kTableName, bin_key);
   }
 
   /*##########################################################################*
@@ -266,56 +282,6 @@ class YakushimaWrapper
 
  private:
   /*##########################################################################*
-   * Internal classes
-   *##########################################################################*/
-
-  class TokenHolder
-  {
-   public:
-    /*########################################################################*
-     * Public constructors and assignment operators
-     *########################################################################*/
-
-    TokenHolder()
-    {  //
-      yakushima::enter(token_);
-    }
-
-    TokenHolder(const TokenHolder&) = delete;
-    TokenHolder(TokenHolder&&) = delete;
-
-    auto operator=(const TokenHolder&) -> TokenHolder& = delete;
-    auto operator=(TokenHolder&&) -> TokenHolder& = delete;
-
-    /*########################################################################*
-     * Public destructors
-     *########################################################################*/
-
-    ~TokenHolder()
-    {  //
-      yakushima::leave(token_);
-    }
-
-    /*########################################################################*
-     * Public operators
-     *########################################################################*/
-
-    constexpr auto
-    operator()() noexcept  //
-        -> Token&
-    {
-      return token_;
-    }
-
-   private:
-    /*########################################################################*
-     * Internal member variables
-     *########################################################################*/
-
-    Token token_{};
-  };
-
-  /*##########################################################################*
    * Internal constants
    *##########################################################################*/
 
@@ -342,12 +308,28 @@ class YakushimaWrapper
    * Internal static variables
    *##########################################################################*/
 
-  inline static thread_local TokenHolder token{};
+  inline static thread_local Token token{};
 };
 
 /*############################################################################*
  * Specialization for wrappers
  *############################################################################*/
+
+template <>
+constexpr auto
+HasSetUp<YakushimaWrapper>()  //
+    -> bool
+{
+  return true;
+}
+
+template <>
+constexpr auto
+HasTearDown<YakushimaWrapper>()  //
+    -> bool
+{
+  return true;
+}
 
 template <>
 constexpr auto
