@@ -70,6 +70,10 @@
   "cmake.debugConfig": {
     "args": [
       "--b-tree",
+      // "--b-tree-optiql",
+      // "--masstree-beta",
+      // "--yakushima",
+      // "--art-olc",
       "--num-thread=1",
       "${workspaceRoot}/workload/ycsb_a.yaml",
     ],
