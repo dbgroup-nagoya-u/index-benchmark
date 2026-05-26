@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_VAR_LEN_DATA_HPP
-#define INDEX_BENCHMARK_VAR_LEN_DATA_HPP
+#ifndef INDEX_BENCHMARK_WORKLOAD_VAR_LEN_DATA_HPP_
+#define INDEX_BENCHMARK_WORKLOAD_VAR_LEN_DATA_HPP_
 
 // C++ standard libraries
+#include <cstddef>
 #include <cstdint>
-#include <string>
+#include <cstring>
+#include <string_view>
 
 // local sources
 #include "common.hpp"
@@ -36,19 +38,28 @@ struct VarLenData {
    * Public constructors and assignment operators
    *##########################################################################*/
 
-  constexpr VarLenData() = default;
+  constexpr VarLenData() noexcept = default;
 
   explicit VarLenData(  //
-      const char *src);
+      const std::string_view src) noexcept
+      : len{static_cast<uint16_t>(src.length())}
+  {
+    std::memcpy(data, src.data(), len);
+  }
 
-  explicit VarLenData(  //
-      const std::string &src);
+  VarLenData(  //
+      const void* const src,
+      const size_t len) noexcept
+      : len{static_cast<uint16_t>(len)}
+  {
+    std::memcpy(data, src, len);
+  }
 
-  constexpr VarLenData(const VarLenData &) = default;
-  constexpr VarLenData(VarLenData &&) noexcept = default;
+  constexpr VarLenData(const VarLenData&) noexcept = default;
+  constexpr VarLenData(VarLenData&&) noexcept = default;
 
-  constexpr auto operator=(const VarLenData &) -> VarLenData & = default;
-  constexpr auto operator=(VarLenData &&) noexcept -> VarLenData & = default;
+  constexpr auto operator=(const VarLenData&) noexcept -> VarLenData& = default;
+  constexpr auto operator=(VarLenData&&) noexcept -> VarLenData& = default;
 
   /*##########################################################################*
    * Public destructors
@@ -60,33 +71,53 @@ struct VarLenData {
    * Public utilities
    *##########################################################################*/
 
-  auto operator<(                   //
-      const VarLenData &rhs) const  //
-      -> bool;
+  auto
+  operator<(                                 //
+      const VarLenData& rhs) const noexcept  //
+      -> bool
+  {
+    const auto lt = (len < rhs.len);
+    const auto cmp = std::memcmp(data, rhs.data, lt ? len : rhs.len);
+    return cmp < 0 || (cmp == 0 && lt);
+  }
 
-  auto operator>(                   //
-      const VarLenData &rhs) const  //
-      -> bool;
+  auto
+  operator>(                                 //
+      const VarLenData& rhs) const noexcept  //
+      -> bool
+  {
+    const auto gt = (len > rhs.len);
+    const auto cmp = std::memcmp(data, rhs.data, gt ? rhs.len : len);
+    return cmp > 0 || (cmp == 0 && gt);
+  }
 
-  auto operator==(                  //
-      const VarLenData &rhs) const  //
-      -> bool;
+  auto
+  operator==(                                //
+      const VarLenData& rhs) const noexcept  //
+      -> bool
+  {
+    return len == rhs.len && std::memcmp(data, rhs.data, len) == 0;
+  }
 
-  auto operator!=(                  //
-      const VarLenData &rhs) const  //
-      -> bool;
+  auto
+  operator!=(                                //
+      const VarLenData& rhs) const noexcept  //
+      -> bool
+  {
+    return len != rhs.len || std::memcmp(data, rhs.data, len) != 0;
+  }
 
   /*##########################################################################*
    * Public member variables
    *##########################################################################*/
 
   /// @brief An actual data.
-  char data[kMaxVarLenSize]{};
+  std::byte data[kMaxVarLenSize] = {};
 
   /// @brief The length of a stored data.
-  uint8_t len{};
+  uint16_t len{};
 };
 
 }  // namespace dbgroup::index_bench
 
-#endif  // INDEX_BENCHMARK_VAR_LEN_DATA_HPP
+#endif  // INDEX_BENCHMARK_WORKLOAD_VAR_LEN_DATA_HPP_

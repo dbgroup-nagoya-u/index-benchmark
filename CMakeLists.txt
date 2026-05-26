@@ -119,7 +119,6 @@ endif()
 
 # define as library
 add_library(${PROJECT_NAME} STATIC
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/var_len_data.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/key_space.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/operation_selector.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/zipf_workload.cpp"
