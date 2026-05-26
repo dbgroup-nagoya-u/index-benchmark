@@ -52,10 +52,10 @@ using Payload = uint64_t;
  *############################################################################*/
 
 /// @brief The expected maximum length of variable-length data.
-constexpr size_t kMaxVarLenSize = INDEX_BENCH_MAX_VARLEN_DATA_SIZE;
+constexpr size_t kMaxVarLenSize = static_cast<size_t>(INDEX_BENCH_MAX_VARLEN_DATA_SIZE);
 
 /// @brief The expected maximum number of cores.
-constexpr size_t kMaxCoreNum = INDEX_BENCH_MAX_CORES;
+constexpr size_t kMaxCoreNum = static_cast<size_t>(INDEX_BENCH_MAX_CORE_NUM);
 
 /*############################################################################*
  * Global utilities

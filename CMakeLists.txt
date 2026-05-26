@@ -39,24 +39,32 @@ option(
   OFF
 )
 
-ProcessorCount(TMP_PROC_COUNT)
-if(NOT TMP_PROC_COUNT EQUAL 0)
+ProcessorCount(INDEX_BENCH_MAX_CORE_NUM)
+if(NOT INDEX_BENCH_MAX_CORE_NUM EQUAL 0)
   set(
-    INDEX_BENCH_MAX_CORES
-    "${TMP_PROC_COUNT}" CACHE STRING
-    "The number of logical cores."
+    INDEX_BENCH_MAX_WORKER_NUM
+    "2 * ${INDEX_BENCH_MAX_CORE_NUM}" CACHE STRING
+    "The maximums number of workers."
   )
   message(STATUS
-    "[${PROJECT_NAME}] The detected number of cores: ${INDEX_BENCH_MAX_CORES}"
+    "[${PROJECT_NAME}] The detected number of cores: ${INDEX_BENCH_MAX_CORE_NUM}."
+  )
+  message(STATUS
+    "[${PROJECT_NAME}] We use ${INDEX_BENCH_MAX_WORKER_NUM} as the maximum number of workers."
   )
 else()
   set(
-    INDEX_BENCH_MAX_CORES
+    INDEX_BENCH_MAX_CORE_NUM
+    "64" CACHE STRING
+    "The maximums number of workers."
+  )
+  set(
+    INDEX_BENCH_MAX_WORKER_NUM
     "128" CACHE STRING
-    "The number of logical cores."
+    "The maximums number of workers."
   )
   message(WARNING
-    "[${PROJECT_NAME}] The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORES explicitly."
+    "[${PROJECT_NAME}] The number of cores could not be detected. Please set INDEX_BENCH_MAX_CORE_NUM and INDEX_BENCH_MAX_WORKER_NUM explicitly."
   )
 endif()
 
@@ -123,13 +131,15 @@ target_compile_features(${PROJECT_NAME} PUBLIC
 )
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Release">:-march=native>
+  $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","RelWithDebInfo">:-fno-omit-frame-pointer>
   $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">:-g3>
   -Wall
   -Wextra
 )
 target_compile_definitions(${PROJECT_NAME} PUBLIC
   INDEX_BENCH_MAX_VARLEN_DATA_SIZE=${INDEX_BENCH_MAX_VARLEN_DATA_SIZE}
-  INDEX_BENCH_MAX_CORES=${INDEX_BENCH_MAX_CORES}
+  INDEX_BENCH_MAX_CORE_NUM=${INDEX_BENCH_MAX_CORE_NUM}
+  INDEX_BENCH_MAX_WORKER_NUM=${INDEX_BENCH_MAX_WORKER_NUM}
   $<$<BOOL:${INDEX_BENCH_BUILD_LONG_KEYS}>:INDEX_BENCH_BUILD_LONG_KEYS>
 )
 target_include_directories(${PROJECT_NAME} PUBLIC

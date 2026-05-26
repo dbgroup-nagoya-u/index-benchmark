@@ -83,6 +83,22 @@ class YakushimaWrapper
   }
 
   /*##########################################################################*
+   * Public utilities
+   *##########################################################################*/
+
+  void
+  SetUp()
+  {
+    yakushima::enter(token);
+  }
+
+  void
+  TearDown()
+  {
+    yakushima::leave(token);
+  }
+
+  /*##########################################################################*
    * Public read/write APIs
    *##########################################################################*/
 
@@ -93,7 +109,7 @@ class YakushimaWrapper
       -> std::optional<Payload>
   {
     // get a value/size pair
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
+    const auto& bin_key = GetBinKey(key, key_len);
     std::pair<Payload*, size_t> ret{};
     const auto rc = yakushima::get(kTableName, bin_key, ret);
     if (rc != status::OK) return std::nullopt;
@@ -112,8 +128,16 @@ class YakushimaWrapper
     records.clear();
 
     // scan target tuples
-    const auto& key = (begin_key) ? std::get<0>(*begin_key) : Key{};
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
+    Key key;
+    size_t key_len;
+    if (begin_key) {
+      std::tie(key, key_len, std::ignore) = *begin_key;
+    } else {
+      key = {};
+      key_len = 0;
+    }
+    const auto& bin_key = GetBinKey(key, key_len);
+
     yakushima::scan(kTableName,                                    //
                     bin_key, yakushima::scan_endpoint::INCLUSIVE,  //
                     kDummyKey, yakushima::scan_endpoint::INF,      //
@@ -129,9 +153,9 @@ class YakushimaWrapper
       [[maybe_unused]] const size_t key_len)
   {
     // put a key/value pair
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
+    const auto& bin_key = GetBinKey(key, key_len);
     auto* value_v = const_cast<Payload*>(&value);
-    yakushima::put(token(), kTableName, bin_key, value_v);
+    yakushima::put(token, kTableName, bin_key, value_v);
   }
 
   auto
@@ -141,9 +165,9 @@ class YakushimaWrapper
       [[maybe_unused]] const size_t key_len)
   {
     // put a key/value pair
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
+    const auto& bin_key = GetBinKey(key, key_len);
     auto* value_v = const_cast<Payload*>(&value);
-    yakushima::put(token(), kTableName, bin_key, value_v);
+    yakushima::put(token, kTableName, bin_key, value_v);
   }
 
   auto
@@ -169,8 +193,8 @@ class YakushimaWrapper
       const Key& key,
       [[maybe_unused]] const size_t key_len)
   {
-    const auto* const bin_key = index::ConvertToBinaryData<Key, char>(key);
-    yakushima::remove(token(), kTableName, bin_key);
+    const auto& bin_key = GetBinKey(key, key_len);
+    yakushima::remove(token, kTableName, bin_key);
   }
 
   /*##########################################################################*
@@ -258,56 +282,6 @@ class YakushimaWrapper
 
  private:
   /*##########################################################################*
-   * Internal classes
-   *##########################################################################*/
-
-  class TokenHolder
-  {
-   public:
-    /*########################################################################*
-     * Public constructors and assignment operators
-     *########################################################################*/
-
-    TokenHolder()
-    {  //
-      yakushima::enter(token_);
-    }
-
-    TokenHolder(const TokenHolder&) = delete;
-    TokenHolder(TokenHolder&&) = delete;
-
-    auto operator=(const TokenHolder&) -> TokenHolder& = delete;
-    auto operator=(TokenHolder&&) -> TokenHolder& = delete;
-
-    /*########################################################################*
-     * Public destructors
-     *########################################################################*/
-
-    ~TokenHolder()
-    {  //
-      yakushima::leave(token_);
-    }
-
-    /*########################################################################*
-     * Public operators
-     *########################################################################*/
-
-    constexpr auto
-    operator()() noexcept  //
-        -> Token&
-    {
-      return token_;
-    }
-
-   private:
-    /*########################################################################*
-     * Internal member variables
-     *########################################################################*/
-
-    Token token_{};
-  };
-
-  /*##########################################################################*
    * Internal constants
    *##########################################################################*/
 
@@ -318,15 +292,44 @@ class YakushimaWrapper
   static constexpr const char* kTableName{"T"};
 
   /*##########################################################################*
+   * Internal utilities
+   *##########################################################################*/
+
+  static auto
+  GetBinKey(  //
+      const Key& key,
+      const size_t key_len)  //
+      -> std::string_view
+  {
+    return std::string_view{index::ConvertToBinaryData<Key, char>(key), key_len};
+  }
+
+  /*##########################################################################*
    * Internal static variables
    *##########################################################################*/
 
-  inline static thread_local TokenHolder token{};
+  inline static thread_local Token token{};
 };
 
 /*############################################################################*
  * Specialization for wrappers
  *############################################################################*/
+
+template <>
+constexpr auto
+HasSetUp<YakushimaWrapper>()  //
+    -> bool
+{
+  return true;
+}
+
+template <>
+constexpr auto
+HasTearDown<YakushimaWrapper>()  //
+    -> bool
+{
+  return true;
+}
 
 template <>
 constexpr auto

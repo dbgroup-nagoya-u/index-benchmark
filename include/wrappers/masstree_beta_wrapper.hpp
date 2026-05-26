@@ -97,8 +97,8 @@ class MasstreeBetaWrapper
   MasstreeBetaWrapper()
   {
     // assume that a main thread construct this instance
-    thread_info = threadinfo::make(threadinfo::TI_MAIN, -1);
-    table_.initialize(*thread_info);
+    ti = threadinfo::make(threadinfo::TI_MAIN, -1);
+    table_.initialize(*ti);
   }
 
   MasstreeBetaWrapper(const MasstreeBetaWrapper&) = delete;
@@ -113,7 +113,18 @@ class MasstreeBetaWrapper
 
   ~MasstreeBetaWrapper()
   {  //
-    table_.destroy(*thread_info);
+    table_.destroy(*ti);
+  }
+
+  /*##########################################################################*
+   * Public utilities
+   *##########################################################################*/
+
+  void
+  SetUp()
+  {
+    const auto thread_id = static_cast<int32_t>(thread::IDManager::GetThreadID());
+    ti = threadinfo::make(threadinfo::TI_PROCESS, thread_id);
   }
 
   /*##########################################################################*
@@ -127,7 +138,7 @@ class MasstreeBetaWrapper
       -> std::optional<Payload>
   {
     Str out_v{};
-    auto found = index_.run_get1(table_.table(), ToBinKey(key, key_len), 0, out_v, *thread_info);
+    auto found = index_.run_get1(table_.table(), ToBinKey(key, key_len), 0, out_v, *ti);
 
     if (found) {
       Payload payload;
@@ -153,7 +164,7 @@ class MasstreeBetaWrapper
     }
 
     Scanner scanner{kScanSize, &payloads};
-    table_.table().scan(ToBinKey(key, key_len), true, scanner, *thread_info);
+    table_.table().scan(ToBinKey(key, key_len), true, scanner, *ti);
     return Iterator{&table_, std::move(key), &payloads};
   }
 
@@ -163,7 +174,7 @@ class MasstreeBetaWrapper
       const Payload& value,
       const size_t key_len)
   {
-    index_.run_replace(table_.table(), ToBinKey(key, key_len), ToBinVal(value), *thread_info);
+    index_.run_replace(table_.table(), ToBinKey(key, key_len), ToBinVal(value), *ti);
   }
 
   auto
@@ -172,7 +183,7 @@ class MasstreeBetaWrapper
       const Payload& value,
       const size_t key_len)
   {
-    index_.run_replace(table_.table(), ToBinKey(key, key_len), ToBinVal(value), *thread_info);
+    index_.run_replace(table_.table(), ToBinKey(key, key_len), ToBinVal(value), *ti);
   }
 
   auto
@@ -198,7 +209,7 @@ class MasstreeBetaWrapper
       const Key& key,
       const size_t key_len)
   {
-    index_.run_remove(table_.table(), ToBinKey(key, key_len), *thread_info);
+    index_.run_remove(table_.table(), ToBinKey(key, key_len), *ti);
   }
 
   /*##########################################################################*
@@ -248,7 +259,7 @@ class MasstreeBetaWrapper
 
         key_ = key_ + kScanSize;
         Scanner scanner{kScanSize, payloads_};
-        table_->table().scan(ToBinKey(key_, sizeof(Key)), true, scanner, *thread_info);
+        table_->table().scan(ToBinKey(key_, sizeof(Key)), true, scanner, *ti);
         pos_ = 0;
       }
     }
@@ -345,10 +356,6 @@ class MasstreeBetaWrapper
   };
 
  private:
-  struct ThreadInfoHolder {
-    threadinfo* th{};
-  };
-
   /*##########################################################################*
    * Internal constants
    *##########################################################################*/
@@ -379,13 +386,14 @@ class MasstreeBetaWrapper
   }
 
   /*##########################################################################*
-   * Internal member variables
+   * Internal static variables
    *##########################################################################*/
 
-  /// @brief Information of each worker thread.
-  static thread_local inline threadinfo* thread_info{threadinfo::make(  // NOLINT
-      threadinfo::TI_PROCESS,
-      static_cast<int32_t>(thread::IDManager::GetThreadID()))};
+  static thread_local inline threadinfo* ti{};
+
+  /*##########################################################################*
+   * Internal member variables
+   *##########################################################################*/
 
   Query index_{};
 
@@ -395,6 +403,14 @@ class MasstreeBetaWrapper
 /*############################################################################*
  * Specialization for wrappers
  *############################################################################*/
+
+template <>
+constexpr auto
+HasSetUp<MasstreeBetaWrapper>()  //
+    -> bool
+{
+  return true;
+}
 
 template <>
 constexpr auto
