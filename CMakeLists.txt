@@ -123,6 +123,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC
 )
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Release">:-march=native>
+  $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","RelWithDebInfo">:-fno-omit-frame-pointer>
   $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">:-g3>
   -Wall
   -Wextra
