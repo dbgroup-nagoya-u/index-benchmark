@@ -39,6 +39,7 @@ enum OPType {
   kUpsert,
   kInsert,
   kUpdate,
+  kUpdateOrWrite,
   kDelete,
   kDeleteAndInsert,
   kTotalNum,

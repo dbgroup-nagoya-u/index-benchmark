@@ -66,6 +66,10 @@ OPSelector::OPSelector(  //
     ratio += op.as<double>();
     cum_dist_.emplace_back(kUpdate, ratio);
   }
+  if (const auto &op = ratios["update_or_write"]; op) {
+    ratio += op.as<double>();
+    cum_dist_.emplace_back(kUpdateOrWrite, ratio);
+  }
   if (const auto &op = ratios["delete"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kDelete, ratio);

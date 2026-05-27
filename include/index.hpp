@@ -162,6 +162,15 @@ class Index
           throw std::runtime_error{"The update operation is not implemented."};
         }
         break;
+      case kUpdateOrWrite:
+        if constexpr (index::HasUpdate<Target, Key, Payload>()) {
+          index_->Update(key, Payload{}, key_len);
+        } else if constexpr (index::HasWrite<Target, Key, Payload>()) {
+          index_->Write(key, Payload{}, key_len);
+        } else {
+          throw std::runtime_error{"There are no update relevant operations."};
+        }
+        break;
       case kDelete:
         if constexpr (index::HasDelete<Target, Key, Payload>()) {
           index_->Delete(key, key_len);
