@@ -27,6 +27,7 @@
 #include <vector>
 
 // external C++ libraries
+#include <dbgroup/index/concepts.hpp>
 #include <dbgroup/index/utility.hpp>
 
 // local sources
@@ -84,7 +85,7 @@ class Index
   void
   SetUpForWorker()
   {
-    if constexpr (HasSetUp<Implementation>()) {
+    if constexpr (index::HasSetUp<Target>()) {
       index_->SetUp();
     }
   }
@@ -92,9 +93,6 @@ class Index
   void
   PreProcess()
   {
-    if constexpr (HasPreProcess<Implementation>()) {
-      index_->PreProcess();
-    }
   }
 
   auto
@@ -108,40 +106,77 @@ class Index
     size_t count = 1;
     switch (type) {
       case kRead:
-        index_->Read(key, key_len);
+        if constexpr (index::HasRead<Target, Key, Payload>()) {
+          index_->Read(key, key_len);
+        } else {
+          throw std::runtime_error{"The read operation is not implemented."};
+        }
         break;
       case kScan:
-        count = 0;
-        for (auto&& iter = index_->Scan(std::make_tuple(key, key_len, kClosed));  //
-             iter && count < scan_size;                                           //
-             ++iter, ++count) {
-          // do nothing
+        if constexpr (index::HasScan<Target, Key, Payload>()) {
+          count = 0;
+          for (auto&& iter = index_->Scan(std::make_tuple(key, key_len, kClosed));  //
+               iter && count < scan_size;                                           //
+               ++iter, ++count) {
+            // do nothing
+          }
+        } else {
+          throw std::runtime_error{"The scan operation is not implemented."};
         }
         break;
       case kScanLatest:
-        count = 0;
-        for (auto&& iter = index_->Scan(); iter && count < scan_size; ++iter, ++count) {
-          // do nothing
+        if constexpr (index::HasScan<Target, Key, Payload>()) {
+          count = 0;
+          for (auto&& iter = index_->Scan(); iter && count < scan_size; ++iter, ++count) {
+            // do nothing
+          }
+        } else {
+          throw std::runtime_error{"The scan (w/o keys) operation is not implemented."};
         }
         break;
       case kWrite:
-        index_->Write(key, Payload{}, key_len);
+        if constexpr (index::HasWrite<Target, Key, Payload>()) {
+          index_->Write(key, Payload{}, key_len);
+        } else {
+          throw std::runtime_error{"The write operation is not implemented."};
+        }
         break;
       case kUpsert:
-        index_->Upsert(key, Payload{}, key_len);
+        if constexpr (index::HasUpsert<Target, Key, Payload>()) {
+          index_->Upsert(key, Payload{}, key_len);
+        } else {
+          throw std::runtime_error{"The upsert operation is not implemented."};
+        }
         break;
       case kInsert:
-        index_->Insert(key, Payload{}, key_len);
+        if constexpr (index::HasInsert<Target, Key, Payload>()) {
+          index_->Insert(key, Payload{}, key_len);
+        } else {
+          throw std::runtime_error{"The insert operation is not implemented."};
+        }
         break;
       case kUpdate:
-        index_->Update(key, Payload{}, key_len);
+        if constexpr (index::HasUpdate<Target, Key, Payload>()) {
+          index_->Update(key, Payload{}, key_len);
+        } else {
+          throw std::runtime_error{"The update operation is not implemented."};
+        }
         break;
       case kDelete:
-        index_->Delete(key, key_len);
+        if constexpr (index::HasDelete<Target, Key, Payload>()) {
+          index_->Delete(key, key_len);
+        } else {
+          throw std::runtime_error{"The delete operation is not implemented."};
+        }
         break;
       case kDeleteAndInsert:
-        index_->Delete(key, key_len);
-        index_->Insert(key, Payload{}, key_len);
+        if constexpr (index::HasInsert<Target, Key, Payload>()
+                      && index::HasDelete<Target, Key, Payload>()) {
+          index_->Delete(key, key_len);
+          index_->Insert(key, Payload{}, key_len);
+        } else {
+          throw std::runtime_error{"The insert/delete operations are not implemented."};
+        }
         break;
       default:
         throw std::runtime_error{"ERROR: an undefined operation is about to be executed."};
@@ -153,15 +188,12 @@ class Index
   void
   PostProcess()
   {
-    if constexpr (HasPostProcess<Implementation>()) {
-      index_->PostProcess();
-    }
   }
 
   void
   TearDownForWorker()
   {
-    if constexpr (HasTearDown<Implementation>()) {
+    if constexpr (index::HasTearDown<Target>()) {
       index_->TearDown();
     }
   }
@@ -175,7 +207,7 @@ class Index
       const OPEngine& op_engine)
   {
     const auto& [worker_num, use_bulkload, entries] = op_engine.CreateInitData();
-    if constexpr (HasBulkload<Implementation>()) {
+    if constexpr (index::HasBulkload<Target, Key, Payload>()) {
       if (use_bulkload) {
         index_->Bulkload(entries, worker_num);
         return;
@@ -192,7 +224,15 @@ class Index
             SetUpForWorker();
             for (size_t i = 0; i < num; ++i) {
               const auto& [key, payload, key_len] = entries[pos + i];
-              index_->Write(key, payload, key_len);
+              if constexpr (index::HasWrite<Target, Key, Payload>()) {
+                index_->Write(key, payload, key_len);
+              } else if constexpr (index::HasInsert<Target, Key, Payload>()) {
+                index_->Insert(key, Payload{}, key_len);
+              } else if constexpr (index::HasUpsert<Target, Key, Payload>()) {
+                index_->Upsert(key, Payload{}, key_len);
+              } else {
+                throw std::runtime_error{"There are no write relevant operations."};
+              }
             }
             TearDownForWorker();
           },
