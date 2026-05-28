@@ -18,6 +18,7 @@
 #include "wrappers/yakushima_wrapper.hpp"
 
 // external libraries
+#include <dbgroup/index_fixtures/common.hpp>
 #include <dbgroup/index_fixtures/index_fixture_multi_thread.hpp>
 
 namespace dbgroup::index::test
@@ -29,7 +30,9 @@ namespace dbgroup::index::test
 template <class K, class V, class C, class... Others>
 using Index = index_bench::YakushimaWrapper<K, V>;
 
-using TestTargets = ::testing::Types<IndexInfo<Index, UInt8, UInt8> >;
+using TestTargets = ::testing::Types<  //
+    IndexInfo<Index, UInt8, UInt8>,    //
+    IndexInfo<Index, Var, UInt8> >;
 TYPED_TEST_SUITE(IndexMultiThreadFixture, TestTargets);
 
 /*############################################################################*

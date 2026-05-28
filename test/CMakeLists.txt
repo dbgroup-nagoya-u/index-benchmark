@@ -11,7 +11,7 @@ set(DBGROUP_TEST_DISABLE_RECORD_MERGER ON CACHE BOOL "" FORCE)
 FetchContent_Declare(
   index_fixtures
   GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/index-fixtures"
-  GIT_TAG "c8bf99e48ab6a0e16d084513b24b0372a35a9f97"
+  GIT_TAG "f26f791380fc3f246394de0f63c1f851c0d444f1"
 )
 FetchContent_MakeAvailable(index_fixtures)
 
