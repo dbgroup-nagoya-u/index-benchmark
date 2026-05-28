@@ -21,7 +21,6 @@
 #include <cstddef>
 #include <cstring>
 #include <optional>
-#include <stdexcept>
 #include <tuple>
 
 // external libraries
@@ -89,48 +88,45 @@ class BTreeOptiQLWrapper
     return Iterator{&index_, key, payloads, size};
   }
 
-  void
-  Write(  //
-      const Key& key,
-      const Payload& value,
-      [[maybe_unused]] const size_t key_len)
-  {
-    index_.insert(key, value);
-  }
-
-  auto
-  Upsert(  //
-      const Key& key,
-      const Payload& value,
-      [[maybe_unused]] const size_t key_len)
-  {
-    index_.insert(key, value);
-  }
-
   auto
   Insert(  //
-      [[maybe_unused]] const Key& key,
-      [[maybe_unused]] const Payload& value,
-      [[maybe_unused]] const size_t key_len)
+      const Key& key,
+      const Payload& value,
+      [[maybe_unused]] const size_t key_len)  //
+      -> std::optional<Payload>
   {
-    throw std::runtime_error{"ERROR: the insert operation is not implemented."};
+    std::optional<Payload> ret{};
+    if (!index_.insert(key, value)) {
+      ret.emplace(1);
+    }
+    return ret;
   }
 
   auto
   Update(  //
-      [[maybe_unused]] const Key& key,
-      [[maybe_unused]] const Payload& value,
-      [[maybe_unused]] const size_t key_len)
+      const Key& key,
+      const Payload& value,
+      [[maybe_unused]] const size_t key_len)  //
+      -> std::optional<Payload>
   {
-    throw std::runtime_error{"ERROR: the update operation is not implemented."};
+    std::optional<Payload> ret{};
+    if (index_.update(key, value)) {
+      ret.emplace(1);
+    }
+    return ret;
   }
 
   auto
   Delete(  //
-      [[maybe_unused]] const Key& key,
-      [[maybe_unused]] const size_t key_len)
+      const Key& key,
+      [[maybe_unused]] const size_t key_len)  //
+      -> std::optional<Payload>
   {
-    throw std::runtime_error{"ERROR: the delete operation is not implemented."};
+    std::optional<Payload> ret{};
+    if (index_.remove(key)) {
+      ret.emplace(1);
+    }
+    return ret;
   }
 
   /*##########################################################################*
@@ -191,17 +187,6 @@ class BTreeOptiQLWrapper
       ++pos_;
     }
 
-    /*########################################################################*
-     * Public getters/setters
-     *########################################################################*/
-
-    [[nodiscard]] auto
-    GetPayload() const  //
-        -> Payload
-    {
-      return payloads_[pos_];
-    }
-
    private:
     /*########################################################################*
      * Internal member variables
@@ -236,18 +221,6 @@ class BTreeOptiQLWrapper
 
   Index index_{};
 };
-
-/*############################################################################*
- * Specialization for wrappers
- *############################################################################*/
-
-template <>
-constexpr auto
-HasBulkload<BTreeOptiQLWrapper>()  //
-    -> bool
-{
-  return false;
-}
 
 }  // namespace dbgroup::index_bench
 

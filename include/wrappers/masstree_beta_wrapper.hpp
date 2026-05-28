@@ -21,7 +21,6 @@
 #include <cstddef>
 #include <cstring>
 #include <optional>
-#include <stdexcept>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -81,6 +80,7 @@ class MasstreeBetaWrapper
   using Str = lcdf::Str;
   using Json = lcdf::Json;
   using ScanKey = std::optional<std::tuple<Key, size_t, bool>>;
+  using ScanRecord = std::pair<std::string, Payload>;
 
  public:
   /*##########################################################################*
@@ -150,22 +150,32 @@ class MasstreeBetaWrapper
 
   auto
   Scan(  //
-      const ScanKey& begin_key = std::nullopt)
+      const ScanKey& begin_key = std::nullopt,
+      const ScanKey& end_key = std::nullopt)
   {
-    thread_local std::vector<Payload> payloads{kScanSize};
+    thread_local std::vector<ScanRecord> records{kScanSize};
 
-    Key key;
-    size_t key_len;
-    if (begin_key) {
-      std::tie(key, key_len, std::ignore) = *begin_key;
-    } else {
-      key = {};
-      key_len = 0;
+    std::optional<std::string> e_key{};
+    auto e_closed = false;
+    if (end_key) {
+      Key key;
+      size_t key_len;
+      std::tie(key, key_len, e_closed) = *end_key;
+      e_key.emplace(index::ConvertToBinaryData<Key, char>(key), key_len);
     }
 
-    Scanner scanner{kScanSize, &payloads};
-    table_.table().scan(ToBinKey(key, key_len), true, scanner, *ti);
-    return Iterator{&table_, std::move(key), &payloads};
+    Str b_key{};
+    auto b_closed = true;
+    if (begin_key) {
+      Key key;
+      size_t key_len;
+      std::tie(key, key_len, b_closed) = *begin_key;
+      b_key = ToBinKey(key, key_len);
+    }
+
+    Scanner scanner{kScanSize, &records};
+    table_.table().scan(b_key, b_closed, scanner, *ti);
+    return Iterator{&table_, &records, std::move(e_key), e_closed};
   }
 
   void
@@ -178,38 +188,16 @@ class MasstreeBetaWrapper
   }
 
   auto
-  Upsert(  //
-      const Key& key,
-      const Payload& value,
-      const size_t key_len)
-  {
-    index_.run_replace(table_.table(), ToBinKey(key, key_len), ToBinVal(value), *ti);
-  }
-
-  auto
-  Insert(  //
-      [[maybe_unused]] const Key& key,
-      [[maybe_unused]] const Payload& value,
-      [[maybe_unused]] const size_t key_len)
-  {
-    throw std::runtime_error{"ERROR: the insert operation is not implemented."};
-  }
-
-  auto
-  Update(  //
-      [[maybe_unused]] const Key& key,
-      [[maybe_unused]] const Payload& value,
-      [[maybe_unused]] const size_t key_len)
-  {
-    throw std::runtime_error{"ERROR: the update operation is not implemented."};
-  }
-
-  auto
   Delete(  //
       const Key& key,
-      const size_t key_len)
+      const size_t key_len)  //
+      -> std::optional<Payload>
   {
-    index_.run_remove(table_.table(), ToBinKey(key, key_len), *ti);
+    std::optional<Payload> ret{};
+    if (index_.run_remove(table_.table(), ToBinKey(key, key_len), *ti)) {
+      ret.emplace(1);
+    }
+    return ret;
   }
 
   /*##########################################################################*
@@ -223,21 +211,26 @@ class MasstreeBetaWrapper
      * Public constructors and assignment operators
      *########################################################################*/
 
+    constexpr Iterator() noexcept = default;
+
     Iterator(  //
         Table* table,
-        Key key,
-        std::vector<Payload>* payloads)
+        std::vector<ScanRecord>* records,
+        std::optional<std::string> e_key,
+        const bool e_closed)
         : table_{table}
-        , payloads_{payloads}
-        , key_{std::move(key)}
+        , records_{records}
+        , e_key_{std::move(e_key)}
+        , e_closed_{e_closed}
     {
     }
 
-    Iterator(const Iterator&) = delete;
-    Iterator(Iterator&&) = delete;
+    constexpr Iterator(Iterator&&) noexcept = default;
+    constexpr auto operator=(Iterator&&) noexcept -> Iterator& = default;
 
+    // forbit copying
+    Iterator(const Iterator&) = delete;
     auto operator=(const Iterator&) -> Iterator& = delete;
-    auto operator=(Iterator&& obj) -> Iterator& = delete;
 
     /*########################################################################*
      * Public destructors
@@ -253,13 +246,20 @@ class MasstreeBetaWrapper
     operator bool()
     {
       while (true) {
-        const size_t size = payloads_->size();
-        if (pos_ < size) return true;        // records remain in this node
-        if (size < kScanSize) return false;  // this node is the end of range-scan
+        const size_t size = records_->size();
+        if (pos_ < size) {
+          if (!e_key_) return true;
+          const auto& key = (*records_)[pos_].first;
+          const auto& end_key = *e_key_;
+          if (key < end_key || (e_closed_ && key == end_key)) return true;
+          records_->clear();
+          return false;
+        }
+        if (size < kScanSize) return false;
 
-        key_ = key_ + kScanSize;
-        Scanner scanner{kScanSize, payloads_};
-        table_->table().scan(ToBinKey(key_, sizeof(Key)), true, scanner, *ti);
+        const auto key = records_->back().first;
+        Scanner scanner{kScanSize, records_};
+        table_->table().scan(key, false, scanner, *ti);
         pos_ = 0;
       }
     }
@@ -270,16 +270,13 @@ class MasstreeBetaWrapper
       ++pos_;
     }
 
-    /*########################################################################*
-     * Public getters/setters
-     *########################################################################*/
-
-    [[nodiscard]]
-    constexpr auto
-    GetPayload() const  //
-        -> Payload
+    auto
+    operator*() const  //
+        -> std::pair<Key, Payload>
     {
-      return payloads_->at(pos_);
+      const auto& [bin_key, payload] = (*records_)[pos_];
+      const auto& key = index::ConvertFromBinaryData<Key>(bin_key.data());
+      return {key, payload};
     }
 
    private:
@@ -289,14 +286,13 @@ class MasstreeBetaWrapper
 
     Table* table_{};
 
-    /// @brief The scanned payloads.
-    std::vector<Payload>* payloads_{};
+    std::vector<ScanRecord>* records_{};
 
-    /// @brief The position of a current record.
     size_t pos_{};
 
-    /// @brief The current scan key.
-    Key key_{};
+    std::optional<std::string> e_key_{};
+
+    bool e_closed_{};
   };
 
   class Scanner
@@ -308,11 +304,11 @@ class MasstreeBetaWrapper
 
     Scanner(  //
         const int32_t scan_size,
-        std::vector<Payload>* payloads)
+        std::vector<ScanRecord>* records)
         : num_remain_(scan_size)
-        , payloads_(payloads)
+        , records_(records)
     {
-      payloads_->clear();
+      records_->clear();
     }
 
     /*########################################################################*
@@ -331,7 +327,7 @@ class MasstreeBetaWrapper
 
     auto
     visit_value(  // NOLINT
-        [[maybe_unused]] Str str,
+        Str str,
         row_type* value,
         [[maybe_unused]] threadinfo& th)  //
         -> bool
@@ -339,8 +335,9 @@ class MasstreeBetaWrapper
       if (row_is_marker(value)) return true;
 
       Payload payload{};
-      memcpy(&payload, value->col(0).data(), sizeof(Payload));
-      payloads_->emplace_back(std::move(payload));
+      memcpy(&payload, value->col(0).s, sizeof(Payload));
+      payload = index::ByteSwap(payload);
+      records_->emplace_back(std::string{str.s, static_cast<size_t>(str.len)}, payload);
 
       return (--num_remain_) > 0;
     }
@@ -352,7 +349,7 @@ class MasstreeBetaWrapper
 
     int32_t num_remain_{};
 
-    std::vector<Payload>* payloads_{};
+    std::vector<ScanRecord>* records_{};
   };
 
  private:
@@ -399,26 +396,6 @@ class MasstreeBetaWrapper
 
   Table table_{};
 };
-
-/*############################################################################*
- * Specialization for wrappers
- *############################################################################*/
-
-template <>
-constexpr auto
-HasSetUp<MasstreeBetaWrapper>()  //
-    -> bool
-{
-  return true;
-}
-
-template <>
-constexpr auto
-HasBulkload<MasstreeBetaWrapper>()  //
-    -> bool
-{
-  return false;
-}
 
 }  // namespace dbgroup::index_bench
 
