@@ -20,13 +20,16 @@
 // C++ standard libraries
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <random>
 #include <tuple>
 #include <vector>
 
 // external libraries
-#include "dbgroup/random/zipf.hpp"
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
+
+// external C++ libraries
+#include <dbgroup/random/zipf.hpp>
 
 // local sources
 #include "common.hpp"
@@ -59,37 +62,47 @@ class ZipfWorkload
   ZipfWorkload() = default;
 
   ZipfWorkload(  //
-      const YAML::Node &workload,
-      const size_t worker_num,
-      KeySpace keys);
+      const YAML::Node& workload,
+      size_t worker_num,
+      std::unique_ptr<KeySpace> keys);
 
-  ZipfWorkload(ZipfWorkload &&) noexcept = default;
-  auto operator=(ZipfWorkload &&) noexcept -> ZipfWorkload & = default;
+  ZipfWorkload(ZipfWorkload&&) noexcept = default;
+  auto operator=(ZipfWorkload&&) noexcept -> ZipfWorkload& = default;
 
   // disable copying
-  ZipfWorkload(const ZipfWorkload &) = delete;
-  auto operator=(const ZipfWorkload &) -> ZipfWorkload & = delete;
+  ZipfWorkload(const ZipfWorkload&) = delete;
+  auto operator=(const ZipfWorkload&) -> ZipfWorkload& = delete;
+
+  /*##########################################################################*
+   * Public destructor
+   *##########################################################################*/
+
+  ~ZipfWorkload() = default;
 
   /*##########################################################################*
    * Public operators
    *##########################################################################*/
 
-  [[nodiscard]] explicit operator bool() const;
+  [[nodiscard]]
+  explicit operator bool() const;
 
   /*##########################################################################*
    * Public operators
    *##########################################################################*/
 
-  [[nodiscard]] auto GetType(  //
-      const size_t thread_id,
-      std::mt19937_64 &rand_eng) const  //
+  [[nodiscard]]
+  auto GetType(  //
+      size_t thread_id,
+      std::mt19937_64& rand_eng) const  //
       -> OPType;
 
-  [[nodiscard]] auto GetOps(            //
+  [[nodiscard]]
+  auto GetOps(                          //
       std::mt19937_64& rand_eng) const  //
       -> std::tuple<Key, size_t, Payload, size_t>;
 
-  [[nodiscard]] auto CreateInitData() const  //
+  [[nodiscard]]
+  auto CreateInitData() const  //
       -> std::tuple<size_t, bool, std::vector<std::tuple<Key, Payload, size_t>>>;
 
  private:

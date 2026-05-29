@@ -18,21 +18,17 @@
 #define INDEX_BENCHMARK_WORKLOAD_TIMESTAMP_WORKLOAD_HPP_
 
 // C++ standard libraries
-#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <random>
 #include <tuple>
-#include <utility>
 #include <vector>
 
 // external libraries
-#include "dbgroup/random/zipf.hpp"
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
 
 // local sources
 #include "common.hpp"
-#include "workload/key_space.hpp"
 #include "workload/operation_selector.hpp"
 
 namespace dbgroup::index_bench
@@ -60,36 +56,46 @@ class TimestampWorkload
   TimestampWorkload() = default;
 
   TimestampWorkload(  //
-      const YAML::Node &workload,
-      const size_t worker_num);
+      const YAML::Node& workload,
+      size_t worker_num);
 
-  TimestampWorkload(const TimestampWorkload &) = default;
-  TimestampWorkload(TimestampWorkload &&) noexcept = default;
+  TimestampWorkload(const TimestampWorkload&) = default;
+  TimestampWorkload(TimestampWorkload&&) noexcept = default;
 
-  auto operator=(const TimestampWorkload &) -> TimestampWorkload & = default;
-  auto operator=(TimestampWorkload &&) noexcept -> TimestampWorkload & = default;
+  auto operator=(const TimestampWorkload&) -> TimestampWorkload& = default;
+  auto operator=(TimestampWorkload&&) noexcept -> TimestampWorkload& = default;
+
+  /*##########################################################################*
+   * Public destructor
+   *##########################################################################*/
+
+  ~TimestampWorkload() = default;
 
   /*##########################################################################*
    * Public operators
    *##########################################################################*/
 
-  [[nodiscard]] explicit operator bool() const;
+  [[nodiscard]]
+  explicit operator bool() const;
 
   /*##########################################################################*
    * Public getters/setters
    *##########################################################################*/
 
-  [[nodiscard]] auto GetType(  //
-      const size_t thread_id,
-      std::mt19937_64 &rand_eng) const  //
+  [[nodiscard]]
+  auto GetType(  //
+      size_t thread_id,
+      std::mt19937_64& rand_eng) const  //
       -> OPType;
 
-  [[nodiscard]] auto GetOps(            //
+  [[nodiscard]]
+  auto GetOps(                          //
       std::mt19937_64& rand_eng) const  //
       -> std::tuple<Key, size_t, Payload, size_t>;
 
-  [[nodiscard]] auto CreateInitData() const  //
-      -> std::tuple<size_t, bool, std::vector<std::tuple<const Key &, Payload, size_t>>>;
+  [[nodiscard]]
+  static auto CreateInitData()  //
+      -> std::tuple<size_t, bool, std::vector<std::tuple<Key, Payload, size_t>>>;
 
  private:
   /*##########################################################################*
@@ -100,7 +106,7 @@ class TimestampWorkload
 
   OPSelector op_selector_{};
 
-  int64_t reverse_{};
+  Key reverse_{};
 
   size_t scan_size_{};
 };
