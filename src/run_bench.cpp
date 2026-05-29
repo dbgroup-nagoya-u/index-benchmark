@@ -16,6 +16,8 @@
 
 // C++ standard libraries
 #include <cstddef>
+#include <iostream>
+#include <locale>
 #include <random>
 #include <string>
 
@@ -66,6 +68,11 @@ DEFINE_bool(  //
     true,
     "true: measure throughput, false: measure latency");
 
+DEFINE_bool(  //
+    mem_usage,
+    false,
+    "true: output memory usage instead of throughput/latency");
+
 namespace dbgroup
 {
 
@@ -109,6 +116,19 @@ AddOperationEngine(  //
 
     Index_t index{};
     index.Construct(op_engine);
+    if (FLAGS_mem_usage) {
+      constexpr size_t kDigits = 17;
+      const auto& [used, allocated] = index.MemoryUsage();
+      if (FLAGS_csv) {
+        std::cout << used << "," << allocated << "\n";
+      } else {
+        std::cout.imbue(std::locale(""));
+        std::cout << std::right  //
+                  << "used size: " << std::setw(kDigits) << used << "\n"
+                  << "allocated: " << std::setw(kDigits) << allocated << "\n";
+      }
+      return;
+    }
 
     Builder builder{index, target_name, op_engine};
     builder.SetThreadNum(FLAGS_num_thread);
@@ -122,8 +142,9 @@ AddOperationEngine(  //
     auto&& bench = builder.Build();
 
     bench->Run();
-    _run_any = true;
   });
+
+  _run_any = true;
 }
 
 void

@@ -20,7 +20,6 @@
 // C++ standard libraries
 #include <cstddef>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <thread>
@@ -259,22 +258,14 @@ class Index
   }
 
   auto
-  CheckMemoryUsage()  //
+  MemoryUsage()  //
       -> std::pair<size_t, size_t>
   {
-    size_t actual_size = 0;
-    size_t virtual_size = 0;
-
-    const auto& stat_data = index_->CollectStatisticalData();
-    for (size_t level = 0; level < stat_data.size(); ++level) {
-      const auto& [node_num, act, vir] = stat_data.at(level);
-      actual_size += act;
-      virtual_size += vir;
-
-      std::cout << level << "," << node_num << "," << act << "," << vir << std::endl;
+    if constexpr (index::HasMemoryUsage<Target>()) {
+      return index_->MemoryUsage();
+    } else {
+      throw std::runtime_error{"The memory usage operation is not implemented."};
     }
-
-    return {actual_size, virtual_size};
   }
 
  private:

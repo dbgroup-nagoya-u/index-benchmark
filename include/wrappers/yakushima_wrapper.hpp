@@ -185,6 +185,20 @@ class YakushimaWrapper
     return ret;
   }
 
+  auto
+  MemoryUsage()  //
+      -> std::pair<size_t, size_t>
+  {
+    size_t total_used{};
+    size_t total_alloc{};
+    const auto& usage = yakushima::mem_usage(kTableName);
+    for (const auto [_, used, allocated] : usage) {
+      total_used += used;
+      total_alloc += allocated;
+    }
+    return {total_used, total_alloc};
+  }
+
   /*##########################################################################*
    * Public class definitions
    *##########################################################################*/
