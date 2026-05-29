@@ -45,6 +45,12 @@ enum OPType {
   kTotalNum,
 };
 
+/// @brief Using 64-bit integers as keys.
+using UIntKey = uint64_t;
+
+/// @brief Using cstrings as keys.
+using StrKey = char*;
+
 /// @brief Using 64-bit integers as payloads.
 using Payload = uint64_t;
 

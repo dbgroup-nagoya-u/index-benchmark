@@ -43,7 +43,7 @@ class TimestampWorkload
    * Type aliases
    *##########################################################################*/
 
-  using Key = int64_t;
+  using Key = UIntKey;
   using Clock = std::chrono::high_resolution_clock;
 
  public:

@@ -120,7 +120,7 @@ KeySpace<Payload>::KeySpace(  //
  * Explicit instantiation definitions
  *############################################################################*/
 
-template class KeySpace<Payload>;
-template class KeySpace<VarLenData>;
+template class KeySpace<UIntKey>;
+template class KeySpace<StrKey>;
 
 }  // namespace dbgroup::index_bench

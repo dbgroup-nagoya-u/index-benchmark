@@ -140,7 +140,7 @@ ZipfWorkload<Key>::CreateInitData() const  //
  * Explicit instantiation definitions
  *############################################################################*/
 
-template class ZipfWorkload<Payload>;
-template class ZipfWorkload<VarLenData>;
+template class ZipfWorkload<UIntKey>;
+template class ZipfWorkload<StrKey>;
 
 }  // namespace dbgroup::index_bench

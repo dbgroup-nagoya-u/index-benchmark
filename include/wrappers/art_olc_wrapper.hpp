@@ -99,7 +99,7 @@ class ARTOLCWrapper
   // NOLINTBEGIN
 
   /// @brief Declare global key space for accessing the original keys.
-  static inline KeySpace<char*>* key_space{};
+  static inline KeySpace<StrKey>* key_space{};
 
   // NOLINTEND
  private:
@@ -112,7 +112,7 @@ class ARTOLCWrapper
       TID tid,
       ARTKey& key)
   {
-    if constexpr (std::is_same_v<KeyT, char*>) {
+    if constexpr (std::is_same_v<KeyT, StrKey>) {
       const auto& [src_key, key_len] = key_space->GetKey(tid);
       key.set(src_key, key_len);
     } else {

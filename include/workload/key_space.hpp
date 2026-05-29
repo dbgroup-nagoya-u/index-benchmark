@@ -70,8 +70,9 @@ class KeySpace
       const size_t key_num);
 
   void PrepareMapping(  //
-      const size_t key_num,
-      const std::optional<size_t> &rand_seed);
+  static_assert(  //
+      std::is_same_v<Key, UIntKey> || std::is_same_v<Key, StrKey>,
+      "We assume unsigned long or binary data as keys.");
 
   /*##########################################################################*
    * Internal member variables
