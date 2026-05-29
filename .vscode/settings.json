@@ -58,7 +58,7 @@
   ],
   // unit test settings
   "testMate.cpp.test.runtimeLimit": 60,
-  "testMate.cpp.test.executables": "build/vscode/test/*_test",
+  "testMate.cpp.test.executables": "build/vscode/test/**/*_test",
   // cmake settings
   "[cmake]": {
     "editor.autoIndent": "brackets",
