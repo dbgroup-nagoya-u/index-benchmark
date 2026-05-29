@@ -85,8 +85,8 @@ class TimestampWorkload
       -> OPType;
 
   [[nodiscard]] auto GetOps(            //
-      std::mt19937_64 &rand_eng) const  //
-      -> std::tuple<Key, size_t, size_t>;
+      std::mt19937_64& rand_eng) const  //
+      -> std::tuple<Key, size_t, Payload, size_t>;
 
   [[nodiscard]] auto CreateInitData() const  //
       -> std::tuple<size_t, bool, std::vector<std::tuple<const Key &, Payload, size_t>>>;

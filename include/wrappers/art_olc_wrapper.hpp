@@ -19,12 +19,9 @@
 
 // C++ standard libraries
 #include <cstddef>
-#include <cstdint>
 #include <cstring>
-#include <limits>
+#include <functional>
 #include <optional>
-#include <stdexcept>
-#include <tuple>
 
 // external libraries
 #include <Key.h>
@@ -34,11 +31,11 @@
 #include <dbgroup/index/utility.hpp>
 
 // local sources
-#include "common.hpp"  // IWYU pragma: keep
+#include "workload/key_space.hpp"
 
 namespace dbgroup::index_bench
 {
-template <class KeyT, class Payload>
+template <class KeyT, class Payload, class Comp = std::less<Key>>
 class ARTOLCWrapper
 {
   /*##########################################################################*
@@ -48,15 +45,8 @@ class ARTOLCWrapper
   using Index = ::ART_OLC::Tree;
   using ThreadInfo_t = ::ART::ThreadInfo;
   using ARTKey = ::Key;  // ART's key type
-  using ScanKey = std::optional<std::tuple<KeyT, size_t, bool>>;
 
  public:
-  /*##########################################################################*
-   * Public class declarations
-   *##########################################################################*/
-
-  class Iterator;
-
   /*##########################################################################*
    * Public constructors and assignment operators
    *##########################################################################*/
@@ -86,181 +76,33 @@ class ARTOLCWrapper
       -> std::optional<Payload>
   {
     auto&& ti = index_.getThreadInfo();
-    const auto tid = index_.lookup(ToARTKey(key, key_len), ti);
-    if (tid != 0) return Payload{tid};
-    return std::nullopt;
-  }
-
-  auto
-  Scan(  //
-      const ScanKey& begin_key = std::nullopt)
-  {
-    thread_local TID tuple_ids[kScanSize];
-
-    auto&& ti = index_.getThreadInfo();
-    KeyT key;
-    size_t key_len;
-    if (begin_key) {
-      std::tie(key, key_len, std::ignore) = *begin_key;
-    } else {
-      key = {};
-      key_len = 0;
+    std::optional<Payload> ret{};
+    if (index_.lookup(ToARTKey(key, key_len), ti) > 0) {
+      ret.emplace(1);
     }
-    auto&& bin_key = ToARTKey(key, key_len);
-
-    ARTKey cont_key{};
-    size_t rec_num = 0;
-    index_.lookupRange(bin_key, kEndKey, cont_key, tuple_ids, kScanSize, rec_num, ti);
-
-    return Iterator{&index_, tuple_ids, rec_num};
+    return ret;
   }
 
   void
   Write(  //
       const KeyT& key,
-      [[maybe_unused]] const Payload& value,
+      const Payload& value,
       const size_t key_len)
   {
     auto&& ti = index_.getThreadInfo();
-    index_.insert(ToARTKey(key, key_len), key, ti);
+    index_.insert(ToARTKey(key, key_len), value, ti);
   }
 
-  auto
-  Upsert(  //
-      const KeyT& key,
-      [[maybe_unused]] const Payload& value,
-      const size_t key_len)
-  {
-    auto&& ti = index_.getThreadInfo();
-    index_.insert(ToARTKey(key, key_len), key, ti);
-  }
+  /*############################################################################*
+   * Public static variables
+   *############################################################################*/
+  // NOLINTBEGIN
 
-  auto
-  Insert(  //
-      [[maybe_unused]] const KeyT& key,
-      [[maybe_unused]] const Payload& value,
-      [[maybe_unused]] const size_t key_len)
-  {
-    throw std::runtime_error{"ERROR: the insert operation is not implemented."};
-  }
+  /// @brief Declare global key space for accessing the original keys.
+  static inline KeySpace<char*>* key_space{};
 
-  auto
-  Update(  //
-      [[maybe_unused]] const KeyT& key,
-      [[maybe_unused]] const Payload& value,
-      [[maybe_unused]] const size_t key_len)
-  {
-    throw std::runtime_error{"ERROR: the update operation is not implemented."};
-  }
-
-  auto
-  Delete(  //
-      const KeyT& key,
-      const size_t key_len)
-  {
-    auto&& ti = index_.getThreadInfo();
-    index_.remove(ToARTKey(key, key_len), key, ti);
-  }
-
-  /*##########################################################################*
-   * Public class definitions
-   *##########################################################################*/
-
-  class Iterator
-  {
-   public:
-    /*########################################################################*
-     * Public constructors and assignment operators
-     *########################################################################*/
-
-    Iterator(  //
-        Index* index,
-        TID* tuple_ids,
-        size_t size)
-        : index_{index}
-        , tuple_ids_{tuple_ids}
-        , size_{size}
-    {
-    }
-
-    Iterator(const Iterator&) = delete;
-    Iterator(Iterator&&) = delete;
-
-    auto operator=(const Iterator&) -> Iterator& = delete;
-    auto operator=(Iterator&&) -> Iterator& = delete;
-
-    /*########################################################################*
-     * Public destructors
-     *########################################################################*/
-
-    ~Iterator() = default;
-
-    /*########################################################################*
-     * Public operators for iterators
-     *########################################################################*/
-
-    explicit
-    operator bool()
-    {
-      while (true) {
-        if (pos_ < size_) return true;        // records remain in this node
-        if (size_ < kScanSize) return false;  // this node is the end of range-scan
-
-        auto&& ti = index_->getThreadInfo();
-        const uint32_t next_tid = tuple_ids_[kScanSize - 1U] + 1U;
-        KeyT key{next_tid};
-        auto&& bin_key = ToARTKey(key, sizeof(KeyT));
-        ARTKey cont_key{};
-        size_ = 0;
-        index_->lookupRange(bin_key, kEndKey, cont_key, tuple_ids_, kScanSize, size_, ti);
-        pos_ = 0;
-      }
-    }
-
-    constexpr void
-    operator++() noexcept
-    {
-      ++pos_;
-    }
-
-    /*########################################################################*
-     * Public getters/setters
-     *########################################################################*/
-
-    [[nodiscard]] auto
-    GetPayload() const  //
-        -> Payload
-    {
-      return Payload{tuple_ids_[pos_]};
-    }
-
-   private:
-    /*########################################################################*
-     * Internal member variables
-     *########################################################################*/
-
-    /// @brief A pointer to a BwTree for sibling scanning.
-    Index* index_{};
-
-    /// @brief The scanned payloads.
-    TID* tuple_ids_{};
-
-    /// @brief The number of payloads.
-    size_t size_{};
-
-    /// @brief The position of a current record.
-    size_t pos_{};
-  };
-
+  // NOLINTEND
  private:
-  /*##########################################################################*
-   * Internal constants
-   *##########################################################################*/
-
-  static constexpr size_t kScanSize = 1000;
-
-  static const inline ARTKey kEndKey{std::numeric_limits<uint64_t>::max()};  // NOLINT
-
   /*##########################################################################*
    * Internal utility functions
    *##########################################################################*/
@@ -270,7 +112,12 @@ class ARTOLCWrapper
       TID tid,
       ARTKey& key)
   {
-    key.setInt(tid);
+    if constexpr (std::is_same_v<KeyT, char*>) {
+      const auto& [src_key, key_len] = key_space->GetKey(tid);
+      key.set(src_key, key_len);
+    } else {
+      key.setInt(tid);
+    }
   }
 
   static auto
@@ -280,8 +127,7 @@ class ARTOLCWrapper
       -> ARTKey
   {
     ARTKey ret{};
-    ret.data = const_cast<uint8_t*>(index::ConvertToBinaryData(key));
-    ret.len = key_len;
+    ret.set(index::ConvertToBinaryData<KeyT, char>(key), key_len);
     return ret;
   }
 
@@ -291,18 +137,6 @@ class ARTOLCWrapper
 
   Index index_{LoadKey};
 };
-
-/*############################################################################*
- * Specialization for wrappers
- *############################################################################*/
-
-template <>
-constexpr auto
-HasBulkload<ARTOLCWrapper>()  //
-    -> bool
-{
-  return false;
-}
 
 }  // namespace dbgroup::index_bench
 

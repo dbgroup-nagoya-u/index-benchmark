@@ -102,7 +102,7 @@ class Index
       -> size_t
   {
     constexpr auto kClosed = dbgroup::index::kClosed;
-    const auto& [key, key_len, scan_size] = ops;
+    const auto& [key, key_len, payload, scan_size] = ops;
     size_t count = 1;
     switch (type) {
       case kRead:
@@ -136,37 +136,37 @@ class Index
         break;
       case kWrite:
         if constexpr (index::HasWrite<Target, Key, Payload>()) {
-          index_->Write(key, Payload{}, key_len);
+          index_->Write(key, payload, key_len);
         } else {
           throw std::runtime_error{"The write operation is not implemented."};
         }
         break;
       case kUpsert:
         if constexpr (index::HasUpsert<Target, Key, Payload>()) {
-          index_->Upsert(key, Payload{}, key_len);
+          index_->Upsert(key, payload, key_len);
         } else {
           throw std::runtime_error{"The upsert operation is not implemented."};
         }
         break;
       case kInsert:
         if constexpr (index::HasInsert<Target, Key, Payload>()) {
-          index_->Insert(key, Payload{}, key_len);
+          index_->Insert(key, payload, key_len);
         } else {
           throw std::runtime_error{"The insert operation is not implemented."};
         }
         break;
       case kUpdate:
         if constexpr (index::HasUpdate<Target, Key, Payload>()) {
-          index_->Update(key, Payload{}, key_len);
+          index_->Update(key, payload, key_len);
         } else {
           throw std::runtime_error{"The update operation is not implemented."};
         }
         break;
       case kUpdateOrWrite:
         if constexpr (index::HasUpdate<Target, Key, Payload>()) {
-          index_->Update(key, Payload{}, key_len);
+          index_->Update(key, payload, key_len);
         } else if constexpr (index::HasWrite<Target, Key, Payload>()) {
-          index_->Write(key, Payload{}, key_len);
+          index_->Write(key, payload, key_len);
         } else {
           throw std::runtime_error{"There are no update relevant operations."};
         }
@@ -182,7 +182,7 @@ class Index
         if constexpr (index::HasInsert<Target, Key, Payload>()
                       && index::HasDelete<Target, Key, Payload>()) {
           index_->Delete(key, key_len);
-          index_->Insert(key, Payload{}, key_len);
+          index_->Insert(key, payload, key_len);
         } else {
           throw std::runtime_error{"The insert/delete operations are not implemented."};
         }
@@ -236,9 +236,9 @@ class Index
               if constexpr (index::HasWrite<Target, Key, Payload>()) {
                 index_->Write(key, payload, key_len);
               } else if constexpr (index::HasInsert<Target, Key, Payload>()) {
-                index_->Insert(key, Payload{}, key_len);
+                index_->Insert(key, payload, key_len);
               } else if constexpr (index::HasUpsert<Target, Key, Payload>()) {
-                index_->Upsert(key, Payload{}, key_len);
+                index_->Upsert(key, payload, key_len);
               } else {
                 throw std::runtime_error{"There are no write relevant operations."};
               }

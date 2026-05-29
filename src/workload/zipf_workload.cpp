@@ -111,24 +111,25 @@ ZipfWorkload<Key>::GetType(  //
 template <class Key>
 auto
 ZipfWorkload<Key>::GetOps(            //
-    std::mt19937_64 &rand_eng) const  //
-    -> std::tuple<const Key &, size_t, size_t>
+    std::mt19937_64& rand_eng) const  //
+    -> std::tuple<Key, size_t, Payload, size_t>
 {
-  const auto &phase = phases_[_id];
-  const auto &[key, key_len] = keys_.GetKey(phase.zipf(rand_eng));
-  return {key, key_len, phase.scan_size};
+  const auto& phase = phases_[_id];
+  const auto id = keys_->GetMappedPos(phase.zipf(rand_eng));
+  const auto& [key, key_len] = keys_->GetKey(id);
+  return {key, key_len, id, phase.scan_size};
 }
 
 template <class Key>
 auto
 ZipfWorkload<Key>::CreateInitData() const  //
-    -> std::tuple<size_t, bool, std::vector<std::tuple<const Key &, Payload, size_t>>>
+    -> std::tuple<size_t, bool, std::vector<std::tuple<Key, Payload, size_t>>>
 {
-  std::vector<std::tuple<const Key &, Payload, size_t>> entries{};
+  std::vector<std::tuple<Key, Payload, size_t>> entries{};
   entries.reserve(init_.key_num);
-  for (size_t i = 0; i < init_.key_num; ++i) {
-    const auto &[key, key_len] = keys_.GetSortedKey(i);
-    entries.emplace_back(key, Payload{}, key_len);
+  for (size_t id = 0; id < init_.key_num; ++id) {
+    const auto& [key, key_len] = keys_->GetKey(id);
+    entries.emplace_back(key, id, key_len);
   }
 
   const auto worker_num = init_.use_all_cores ? kMaxCoreNum : 1;

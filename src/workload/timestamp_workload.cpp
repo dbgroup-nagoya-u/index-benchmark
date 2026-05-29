@@ -80,12 +80,11 @@ TimestampWorkload::GetType(  //
 
 auto
 TimestampWorkload::GetOps(                             //
-    [[maybe_unused]] std::mt19937_64 &rand_eng) const  //
-    -> std::tuple<int64_t, size_t, size_t>
+    [[maybe_unused]] std::mt19937_64& rand_eng) const  //
+    -> std::tuple<Key, size_t, Payload, size_t>
 {
-  return {reverse_ ^ Clock::now().time_since_epoch().count(),  //
-          sizeof(int64_t),                                     //
-          scan_size_};
+  const auto ts = reverse_ ^ static_cast<Key>(Clock::now().time_since_epoch().count());
+  return {ts, sizeof(Key), ts, scan_size_};
 }
 
 auto
