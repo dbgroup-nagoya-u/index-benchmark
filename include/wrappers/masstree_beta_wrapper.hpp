@@ -20,6 +20,7 @@
 // C++ standard libraries
 #include <cstddef>
 #include <cstring>
+#include <functional>
 #include <optional>
 #include <tuple>
 #include <utility>
@@ -68,7 +69,7 @@ namespace dbgroup::index_bench
  * Class definition
  *############################################################################*/
 
-template <class Key, class Payload>
+template <class Key, class Payload, class Comp = std::less<Key>>
 class MasstreeBetaWrapper
 {
   /*##########################################################################*

@@ -19,6 +19,7 @@
 
 // C++ standard libraries
 #include <cstddef>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -49,7 +50,11 @@ class Index
    *##########################################################################*/
 
   using Key = OPEngine::Key;
-  using Target = Implementation<Key, Payload>;
+  using Comp = std::conditional_t<  //
+      std::is_same_v<Key, UIntKey>,
+      std::less<Key>,
+      index::CompareAsCString>;
+  using Target = Implementation<Key, Payload, Comp>;
 
  public:
   /*##########################################################################*
