@@ -16,7 +16,6 @@
 
 // C++ standard libraries
 #include <cstddef>
-#include <cstdint>
 #include <random>
 #include <string>
 
@@ -28,6 +27,7 @@
 #include "dbgroup/benchmark/validator.hpp"
 
 // local sources
+#include "common.hpp"
 #include "competitors.hpp"
 #include "index.hpp"
 #include "workload/operation_engine.hpp"
@@ -66,9 +66,23 @@ DEFINE_bool(  //
     true,
     "true: measure throughput, false: measure latency");
 
-namespace dbgroup::index_bench
+namespace dbgroup
 {
 
+namespace index
+{
+template <>
+constexpr auto
+IsVarLenData<dbgroup::index_bench::StrKey>() noexcept  //
+    -> bool
+{
+  return true;
+}
+
+}  // namespace index
+
+namespace index_bench
+{
 /*############################################################################*
  * Global variables
  *############################################################################*/
@@ -128,9 +142,15 @@ Run(  //
 
     const auto& type = dataset["type"].as<std::string>();
     if (type == "integer") {
-      using Key = uint64_t;
-      using Workload = ZipfWorkload<Key>;
-      Workload zipf{workload, worker_num, KeySpace<Key>{key_num, seed}};
+      using Workload = ZipfWorkload<UIntKey>;
+      auto&& key_space = std::make_unique<KeySpace<UIntKey>>(key_num, seed);
+      Workload zipf{workload, worker_num, std::move(key_space)};
+      OperationEngine<Workload> op_eng{std::move(zipf)};
+      AddOperationEngine(op_eng);
+    } else if (type == "string") {
+      using Workload = ZipfWorkload<StrKey>;
+      auto&& key_space = std::make_unique<KeySpace<StrKey>>(key_num, seed);
+      Workload zipf{workload, worker_num, std::move(key_space)};
       OperationEngine<Workload> op_eng{std::move(zipf)};
       AddOperationEngine(op_eng);
     }
@@ -141,7 +161,8 @@ Run(  //
   }
 }
 
-}  // namespace dbgroup::index_bench
+}  // namespace index_bench
+}  // namespace dbgroup
 
 /*############################################################################*
  * Main function
