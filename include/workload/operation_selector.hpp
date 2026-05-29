@@ -18,6 +18,7 @@
 #define INDEX_BENCHMARK_WORKLOAD_OPS_SELECTOR_HPP_
 
 // C++ standard libraries
+#include <cstddef>
 #include <random>
 #include <utility>
 #include <vector>
@@ -44,15 +45,15 @@ class OPSelector
   OPSelector() = default;
 
   explicit OPSelector(  //
-      const YAML::Node &ratios,
-      const size_t worker_num,
-      const bool per_thread);
+      const YAML::Node& ratios,
+      size_t worker_num,
+      bool per_thread);
 
-  OPSelector(const OPSelector &) = default;
-  OPSelector(OPSelector &&) noexcept = default;
+  OPSelector(const OPSelector&) = default;
+  OPSelector(OPSelector&&) noexcept = default;
 
-  auto operator=(const OPSelector &) -> OPSelector & = default;
-  auto operator=(OPSelector &&) noexcept -> OPSelector & = default;
+  auto operator=(const OPSelector&) -> OPSelector& = default;
+  auto operator=(OPSelector&&) noexcept -> OPSelector& = default;
 
   /*##########################################################################*
    * Public destructors
@@ -64,9 +65,10 @@ class OPSelector
    * Public getters
    *##########################################################################*/
 
-  [[nodiscard]] auto Select(  //
-      const size_t thread_id,
-      std::mt19937_64 &rand) const  //
+  [[nodiscard]]
+  auto Select(  //
+      size_t thread_id,
+      std::mt19937_64& rand) const  //
       -> OPType;
 
  private:
