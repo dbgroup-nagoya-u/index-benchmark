@@ -20,6 +20,7 @@
 // C++ standard libraries
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -50,6 +51,11 @@ class KeySpace
   KeySpace(  //
       size_t key_num,
       const std::optional<size_t>& rand_seed);
+
+  KeySpace(  //
+      size_t key_num,
+      const std::optional<size_t>& rand_seed,
+      const std::filesystem::path& dataset_path);
 
   KeySpace(KeySpace&&) noexcept = default;
   auto operator=(KeySpace&&) noexcept -> KeySpace& = default;
@@ -95,7 +101,8 @@ class KeySpace
     if constexpr (std::is_same_v<Key, UIntKey>) {
       return {key, sizeof(Key)};
     } else {
-      return {std::bit_cast<Key>(&key), key.len};
+      auto [data, len] = key.Get();
+      return {const_cast<char*>(data), len};
     }
   }
 

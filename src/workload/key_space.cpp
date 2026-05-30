@@ -22,6 +22,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <optional>
 #include <random>
 #include <vector>
@@ -82,6 +84,27 @@ KeySpace<StrKey>::KeySpace(  //
   }
 
   PrepareMapping(key_num, rand_seed);
+
+#ifdef INDEX_BENCH_BUILD_ART_OLC
+  ARTOLCWrapper<StrKey, Payload, index::CompareAsCString>::key_space = this;
+#endif
+}
+
+template <>
+KeySpace<StrKey>::KeySpace(  //
+    const size_t key_num,
+    const std::optional<size_t>& rand_seed,
+    const std::filesystem::path& dataset_path)
+{
+  std::ifstream ifs{dataset_path};
+  std::string line{};
+  keys_.reserve(key_num);
+  for (size_t i = 0; i < key_num && std::getline(ifs, line); ++i) {
+    const auto len = line.size() + 1;
+    keys_.emplace_back(line.c_str(), len);
+  }
+
+  PrepareMapping(keys_.size(), rand_seed);
 
 #ifdef INDEX_BENCH_BUILD_ART_OLC
   ARTOLCWrapper<StrKey, Payload, index::CompareAsCString>::key_space = this;

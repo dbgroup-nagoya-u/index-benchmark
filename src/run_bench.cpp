@@ -170,7 +170,15 @@ Run(  //
       AddOperationEngine(op_eng);
     } else if (type == "string") {
       using Workload = ZipfWorkload<StrKey>;
-      auto&& key_space = std::make_unique<KeySpace<StrKey>>(key_num, seed);
+      using Space = KeySpace<StrKey>;
+      const auto& src = dataset["src"];
+      std::unique_ptr<Space> key_space;
+      if (src["type"].as<std::string>() == "simulation") {
+        key_space = std::make_unique<KeySpace<StrKey>>(key_num, seed);
+      } else {
+        const auto& path = src["path"].as<std::string>();
+        key_space = std::make_unique<KeySpace<StrKey>>(key_num, seed, path);
+      }
       Workload zipf{workload, worker_num, std::move(key_space)};
       OperationEngine<Workload> op_eng{std::move(zipf)};
       AddOperationEngine(op_eng);

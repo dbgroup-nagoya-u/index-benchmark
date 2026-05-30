@@ -22,9 +22,10 @@
 #include <cstdint>
 #include <cstring>
 #include <string_view>
+#include <utility>
 
-// local sources
-#include "common.hpp"
+// external C++ libraries
+#include <dbgroup/constants.hpp>
 
 namespace dbgroup::index_bench
 {
@@ -32,7 +33,7 @@ namespace dbgroup::index_bench
  * @brief A class for representing variable-length data.
  *
  */
-struct VarLenData {
+struct alignas(kWordSize) VarLenData {
  public:
   /*##########################################################################*
    * Public constructors and assignment operators
@@ -41,34 +42,61 @@ struct VarLenData {
   constexpr VarLenData() noexcept = default;
 
   explicit VarLenData(  //
-      const std::string_view src) noexcept
-      : len{static_cast<uint16_t>(src.length())}
+      const std::string_view src)
+      : len_{static_cast<uint16_t>(src.length())}
   {
-    std::memcpy(data, src.data(), len);
+    auto* data = Alloc();
+    std::memcpy(data, src.data(), src.length());
   }
 
   VarLenData(  //
       const void* const src,
       const size_t len) noexcept
-      : len{static_cast<uint16_t>(len)}
+      : len_{static_cast<uint16_t>(len)}
   {
+    auto* data = Alloc();
     std::memcpy(data, src, len);
   }
 
-  constexpr VarLenData(const VarLenData&) noexcept = default;
-  constexpr VarLenData(VarLenData&&) noexcept = default;
+  VarLenData(  //
+      VarLenData&& obj) noexcept
+      : len_{obj.len_}
+      , has_ptr_{obj.has_ptr_}
+  {
+    std::memcpy(data_, &obj.data_, kInlinableLen);
+    obj.has_ptr_ = 0;
+  }
 
-  constexpr auto operator=(const VarLenData&) noexcept -> VarLenData& = default;
-  constexpr auto operator=(VarLenData&&) noexcept -> VarLenData& = default;
+  auto
+  operator=(                      //
+      VarLenData&& obj) noexcept  //
+      -> VarLenData&
+  {
+    len_ = obj.len_;
+    has_ptr_ = obj.has_ptr_;
+    std::memcpy(data_, &obj.data_, kInlinableLen);
+    obj.has_ptr_ = 0;
+
+    return *this;
+  }
+
+  // forbit copying
+  VarLenData(const VarLenData&) = delete;
+  auto operator=(const VarLenData&) -> VarLenData& = delete;
 
   /*##########################################################################*
    * Public destructors
    *##########################################################################*/
 
-  ~VarLenData() = default;
+  ~VarLenData()
+  {
+    if (has_ptr_) {
+      delete[] Get().first;
+    }
+  }
 
   /*##########################################################################*
-   * Public utilities
+   * Public operators
    *##########################################################################*/
 
   auto
@@ -76,8 +104,10 @@ struct VarLenData {
       const VarLenData& rhs) const noexcept  //
       -> bool
   {
-    const auto lt = (len < rhs.len);
-    const auto cmp = std::memcmp(data, rhs.data, lt ? len : rhs.len);
+    const auto [l_data, l_len] = Get();
+    const auto [r_data, r_len] = rhs.Get();
+    const auto lt = (l_len < r_len);
+    const auto cmp = std::memcmp(l_data, r_data, lt ? l_len : r_len);
     return cmp < 0 || (cmp == 0 && lt);
   }
 
@@ -86,8 +116,10 @@ struct VarLenData {
       const VarLenData& rhs) const noexcept  //
       -> bool
   {
-    const auto gt = (len > rhs.len);
-    const auto cmp = std::memcmp(data, rhs.data, gt ? rhs.len : len);
+    const auto [l_data, l_len] = Get();
+    const auto [r_data, r_len] = rhs.Get();
+    const auto gt = (l_len > r_len);
+    const auto cmp = std::memcmp(l_data, r_data, gt ? r_len : l_len);
     return cmp > 0 || (cmp == 0 && gt);
   }
 
@@ -96,7 +128,9 @@ struct VarLenData {
       const VarLenData& rhs) const noexcept  //
       -> bool
   {
-    return len == rhs.len && std::memcmp(data, rhs.data, len) == 0;
+    const auto [l_data, l_len] = Get();
+    const auto [r_data, r_len] = rhs.Get();
+    return l_len == r_len && std::memcmp(l_data, r_data, l_len) == 0;
   }
 
   auto
@@ -104,18 +138,79 @@ struct VarLenData {
       const VarLenData& rhs) const noexcept  //
       -> bool
   {
-    return len != rhs.len || std::memcmp(data, rhs.data, len) != 0;
+    const auto [l_data, l_len] = Get();
+    const auto [r_data, r_len] = rhs.Get();
+    return l_len != r_len || std::memcmp(l_data, r_data, l_len) != 0;
   }
 
   /*##########################################################################*
-   * Public member variables
+   * Public APIs
    *##########################################################################*/
 
-  /// @brief An actual data.
-  std::byte data[kMaxVarLenSize] = {};
+  constexpr auto
+  Get() noexcept  //
+      -> std::pair<char*, size_t>
+  {
+    char* ret;
+    if (has_ptr_) {
+      ret = *std::bit_cast<char**>(&(data_[kPtrPos]));
+    } else {
+      ret = std::bit_cast<char*>(&(data_[0]));
+    }
+    return {ret, static_cast<size_t>(len_)};
+  }
 
-  /// @brief The length of a stored data.
-  uint16_t len{};
+  [[nodiscard]]
+  constexpr auto
+  Get() const noexcept  //
+      -> std::pair<const char*, size_t>
+  {
+    char* ret;
+    if (has_ptr_) {
+      ret = *std::bit_cast<char**>(&(data_[kPtrPos]));
+    } else {
+      ret = std::bit_cast<char*>(&(data_[0]));
+    }
+    return {ret, static_cast<size_t>(len_)};
+  }
+
+ private:
+  /*##########################################################################*
+   * Internal constants
+   *##########################################################################*/
+
+  static constexpr auto kInlinableLen = 30;
+
+  static constexpr auto kPtrPos = 6;
+
+  /*##########################################################################*
+   * Internal utilities
+   *##########################################################################*/
+
+  auto
+  Alloc()  //
+      -> char*
+  {
+    char* data;
+    if (has_ptr_) {
+      auto* dst = std::bit_cast<char**>(&(data_[kPtrPos]));
+      *dst = new char[len_];
+      data = *dst;
+    } else {
+      data = std::bit_cast<char*>(&(data_[0]));
+    }
+    return data;
+  }
+
+  /*##########################################################################*
+   * Internal member variables
+   *##########################################################################*/
+
+  uint16_t len_ : 15 {};
+
+  uint16_t has_ptr_ : 1 {len_ > kInlinableLen};
+
+  char data_[kInlinableLen] = {};
 };
 
 }  // namespace dbgroup::index_bench
