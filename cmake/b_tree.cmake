@@ -32,7 +32,7 @@ include(FetchContent)
 FetchContent_Declare(
   ${COMPETITOR}
   GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/b-tree"
-  GIT_TAG "18a1e127affcd3764419be4e51e6956980d93687"
+  GIT_TAG "659018f4c07c922d66aeedf894dc19e282e717f6"
 )
 FetchContent_MakeAvailable(${COMPETITOR})
 
