@@ -44,7 +44,7 @@ DEFINE_bool(bw_tree, false, "Use dbgroup::bw_tree as a competitor");
  *----------------------------------------------------------------------------*/
 
 #ifdef INDEX_BENCH_BUILD_MASSTREE
-#include "wrappers/masstree_wrapper.hpp"
+#include <dbgroup/masstree/masstree.hpp>
 DEFINE_bool(masstree, false, "Use dbgroup::masstree as a competitor");
 #endif
 
@@ -100,7 +100,7 @@ SetCompetitor(  //
 
 #ifdef INDEX_BENCH_BUILD_MASSTREE
   if (FLAGS_masstree) {
-    bench.template operator()<MasstreeWrapper>("dbgroup::masstree");
+    bench.template operator()<dbgroup::index::masstree::Masstree>("dbgroup::masstree");
   }
 #endif
 
