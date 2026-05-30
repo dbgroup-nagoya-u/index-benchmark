@@ -188,6 +188,7 @@ endfunction()
 
 # add executables
 ADD_BENCHMARK("run_bench")
+ADD_BENCHMARK("get_dataset_stat")
 
 #------------------------------------------------------------------------------#
 # Build unit tests if required
