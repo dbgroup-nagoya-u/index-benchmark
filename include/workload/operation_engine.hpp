@@ -18,15 +18,14 @@
 #define INDEX_BENCHMARK_WORKLOAD_OPERATION_ENGINE_HPP
 
 // C++ standard libraries
-#include <chrono>
-#include <fstream>
+#include <cstddef>
 #include <random>
 #include <tuple>
-
-// external libraries
-#include "yaml-cpp/yaml.h"
+#include <utility>
+#include <vector>
 
 // local sources
+#include "common.hpp"
 
 namespace dbgroup::index_bench
 {
@@ -44,7 +43,7 @@ class OperationEngine
 
   using Key = Workload::Key_t;
   using OPType = dbgroup::index_bench::OPType;
-  using Operation = std::tuple<const Key &, size_t, size_t>;
+  using Operation = std::tuple<Key, size_t, Payload, size_t>;
 
   /**
    * @brief A class for iterating an operation queue.
@@ -58,22 +57,24 @@ class OperationEngine
      * Public constructors and assignment operators
      *########################################################################*/
 
-    /**
-     * @param rand_seed A random seed.
-     */
+    OPIter() = default;
+
     OPIter(  //
         const size_t thread_id,
         const size_t rand_seed,
-        const Workload &workload)
-        : thread_id_{thread_id}, rand_{rand_seed}, workload_{workload}
+        const Workload* workload)
+        : thread_id_{thread_id}
+        , rand_{rand_seed}
+        , workload_{workload}
     {
     }
 
-    OPIter(const OPIter &) = delete;
-    OPIter(OPIter &&) noexcept = default;
+    OPIter(OPIter&&) noexcept = default;
+    auto operator=(OPIter&&) noexcept -> OPIter& = default;
 
-    auto operator=(const OPIter &obj) -> OPIter & = delete;
-    auto operator=(OPIter &&) noexcept -> OPIter & = default;
+    // forbit copying
+    OPIter(const OPIter&) = delete;
+    auto operator=(const OPIter& obj) -> OPIter& = delete;
 
     /*########################################################################*
      * Public destructor
@@ -89,21 +90,23 @@ class OperationEngine
      * @retval true if this iterator has other operations.
      * @retval false otherwise.
      */
-    [[nodiscard]] explicit
+    [[nodiscard]]
+    explicit
     operator bool() const
     {
-      return static_cast<bool>(workload_);
+      return static_cast<bool>(*workload_);
     }
 
     /**
      * @retval 1st: The current operation type.
      * @retval 2nd: Operation arguments.
      */
-    [[nodiscard]] auto
+    [[nodiscard]]
+    auto
     operator*()  //
         -> std::pair<OPType, Operation>
     {
-      return {workload_.GetType(thread_id_, rand_), workload_.GetOps(rand_)};
+      return {workload_->GetType(thread_id_, rand_), workload_->GetOps(rand_)};
     }
 
     /**
@@ -113,7 +116,7 @@ class OperationEngine
      */
     constexpr auto
     operator++()  //
-        -> OPIter &
+        -> OPIter&
     {
       return *this;
     }
@@ -125,10 +128,9 @@ class OperationEngine
 
     size_t thread_id_{};
 
-    /// @brief A random value generator.
-    std::mt19937_64 rand_{};
+    std::mt19937_64 rand_{std::random_device{}()};
 
-    const Workload &workload_;
+    const Workload* workload_{};
   };
 
   /*##########################################################################*
@@ -137,18 +139,18 @@ class OperationEngine
 
   OperationEngine() = default;
 
-  OperationEngine(  //
+  explicit OperationEngine(  //
       Workload workload)
       : workload_{std::move(workload)}
   {
   }
 
-  OperationEngine(OperationEngine &&) noexcept = default;
-  auto operator=(OperationEngine &&) noexcept -> OperationEngine & = default;
+  OperationEngine(OperationEngine&&) noexcept = default;
+  auto operator=(OperationEngine&&) noexcept -> OperationEngine& = default;
 
   // disable copying
-  OperationEngine(const OperationEngine &) = delete;
-  auto operator=(const OperationEngine &) -> OperationEngine & = delete;
+  OperationEngine(const OperationEngine&) = delete;
+  auto operator=(const OperationEngine&) -> OperationEngine& = delete;
 
   /*##########################################################################*
    * Public destructors
@@ -166,12 +168,12 @@ class OperationEngine
       const size_t rand_seed) const  //
       -> OPIter
   {
-    return OPIter{thread_id, rand_seed, workload_};
+    return OPIter{thread_id, rand_seed, &workload_};
   }
 
   auto
   CreateInitData() const  //
-      -> std::tuple<size_t, bool, std::vector<std::tuple<const Key &, Payload, size_t>>>
+      -> std::tuple<size_t, bool, std::vector<std::tuple<Key, Payload, size_t>>>
   {
     return workload_.CreateInitData();
   }

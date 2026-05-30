@@ -27,14 +27,12 @@
 #include <vector>
 
 // external libraries
-#include "dbgroup/random/zipf.hpp"
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
 
 // local sources
 #include "common.hpp"
 #include "workload/key_space.hpp"
 #include "workload/operation_selector.hpp"
-#include "workload/var_len_data.hpp"
 
 namespace dbgroup::index_bench
 {
@@ -56,22 +54,22 @@ thread_local size_t _id{};
 
 template <class Key>
 ZipfWorkload<Key>::ZipfWorkload(  //
-    const YAML::Node &workload,
+    const YAML::Node& workload,
     const size_t worker_num,
-    KeySpace keys)
+    std::unique_ptr<KeySpace> keys)
     : keys_{std::move(keys)}
 {
-  const auto &operations = workload["operations"];
+  const auto& operations = workload["operations"];
   phases_.reserve(operations.size());
-  for (const auto &node : operations) {
+  for (const auto& node : operations) {
     phases_.emplace_back(                                                       //
         std::chrono::seconds{node["duration"].as<size_t>()},                    //
         OPSelector{node["ratios"], worker_num, node["per_thread"].as<bool>()},  //
         node["scan_size"].IsNull() ? 0 : node["scan_size"].as<size_t>(),        //
-        Zipf{0, keys_.Size() - 1, node["skew_parameter"].as<double>()});
+        Zipf{0, keys_->Size() - 1, node["skew_parameter"].as<double>()});
   }
 
-  const auto &init_param = workload["initialization"];
+  const auto& init_param = workload["initialization"];
   init_.key_num = static_cast<size_t>(init_param["num"].as<double>());
   init_.use_all_cores = init_param["use_all_cores"].as<bool>();
   init_.use_bulkload = init_param["use_bulkload"].as<bool>();
@@ -102,7 +100,7 @@ template <class Key>
 auto
 ZipfWorkload<Key>::GetType(  //
     const size_t thread_id,
-    std::mt19937_64 &rand_eng) const  //
+    std::mt19937_64& rand_eng) const  //
     -> OPType
 {
   return phases_[_id].op_selector.Select(thread_id, rand_eng);
@@ -111,24 +109,25 @@ ZipfWorkload<Key>::GetType(  //
 template <class Key>
 auto
 ZipfWorkload<Key>::GetOps(            //
-    std::mt19937_64 &rand_eng) const  //
-    -> std::tuple<const Key &, size_t, size_t>
+    std::mt19937_64& rand_eng) const  //
+    -> std::tuple<Key, size_t, Payload, size_t>
 {
-  const auto &phase = phases_[_id];
-  const auto &[key, key_len] = keys_.GetKey(phase.zipf(rand_eng));
-  return {key, key_len, phase.scan_size};
+  const auto& phase = phases_[_id];
+  const auto id = keys_->GetMappedPos(phase.zipf(rand_eng));
+  const auto& [key, key_len] = keys_->GetKey(id);
+  return {key, key_len, id, phase.scan_size};
 }
 
 template <class Key>
 auto
 ZipfWorkload<Key>::CreateInitData() const  //
-    -> std::tuple<size_t, bool, std::vector<std::tuple<const Key &, Payload, size_t>>>
+    -> std::tuple<size_t, bool, std::vector<std::tuple<Key, Payload, size_t>>>
 {
-  std::vector<std::tuple<const Key &, Payload, size_t>> entries{};
+  std::vector<std::tuple<Key, Payload, size_t>> entries{};
   entries.reserve(init_.key_num);
-  for (size_t i = 0; i < init_.key_num; ++i) {
-    const auto &[key, key_len] = keys_.GetSortedKey(i);
-    entries.emplace_back(key, Payload{}, key_len);
+  for (size_t id = 0; id < init_.key_num; ++id) {
+    const auto& [key, key_len] = keys_->GetKey(id);
+    entries.emplace_back(key, id, key_len);
   }
 
   const auto worker_num = init_.use_all_cores ? kMaxCoreNum : 1;
@@ -139,7 +138,7 @@ ZipfWorkload<Key>::CreateInitData() const  //
  * Explicit instantiation definitions
  *############################################################################*/
 
-template class ZipfWorkload<Payload>;
-template class ZipfWorkload<VarLenData>;
+template class ZipfWorkload<UIntKey>;
+template class ZipfWorkload<StrKey>;
 
 }  // namespace dbgroup::index_bench

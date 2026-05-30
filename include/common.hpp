@@ -39,10 +39,17 @@ enum OPType {
   kUpsert,
   kInsert,
   kUpdate,
+  kUpdateOrWrite,
   kDelete,
   kDeleteAndInsert,
   kTotalNum,
 };
+
+/// @brief Using 64-bit integers as keys.
+using UIntKey = uint64_t;
+
+/// @brief Using cstrings as keys.
+using StrKey = char*;
 
 /// @brief Using 64-bit integers as payloads.
 using Payload = uint64_t;
@@ -56,50 +63,6 @@ constexpr size_t kMaxVarLenSize = static_cast<size_t>(INDEX_BENCH_MAX_VARLEN_DAT
 
 /// @brief The expected maximum number of cores.
 constexpr size_t kMaxCoreNum = static_cast<size_t>(INDEX_BENCH_MAX_CORE_NUM);
-
-/*############################################################################*
- * Global utilities
- *############################################################################*/
-
-template <template <class K, class V, class... Others> class Index>
-constexpr auto
-HasSetUp()  //
-    -> bool
-{
-  return false;
-}
-
-template <template <class K, class V, class... Others> class Index>
-constexpr auto
-HasPreProcess()  //
-    -> bool
-{
-  return false;
-}
-
-template <template <class K, class V, class... Others> class Index>
-constexpr auto
-HasPostProcess()  //
-    -> bool
-{
-  return false;
-}
-
-template <template <class K, class V, class... Others> class Index>
-constexpr auto
-HasTearDown()  //
-    -> bool
-{
-  return false;
-}
-
-template <template <class K, class V, class... Others> class Index>
-constexpr auto
-HasBulkload()  //
-    -> bool
-{
-  return true;
-}
 
 }  // namespace dbgroup::index_bench
 

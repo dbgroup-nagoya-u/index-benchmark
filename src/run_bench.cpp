@@ -16,7 +16,8 @@
 
 // C++ standard libraries
 #include <cstddef>
-#include <cstdint>
+#include <iostream>
+#include <locale>
 #include <random>
 #include <string>
 
@@ -28,6 +29,7 @@
 #include "dbgroup/benchmark/validator.hpp"
 
 // local sources
+#include "common.hpp"
 #include "competitors.hpp"
 #include "index.hpp"
 #include "workload/operation_engine.hpp"
@@ -66,9 +68,28 @@ DEFINE_bool(  //
     true,
     "true: measure throughput, false: measure latency");
 
-namespace dbgroup::index_bench
+DEFINE_bool(  //
+    mem_usage,
+    false,
+    "true: output memory usage instead of throughput/latency");
+
+namespace dbgroup
 {
 
+namespace index
+{
+template <>
+constexpr auto
+IsVarLenData<dbgroup::index_bench::StrKey>() noexcept  //
+    -> bool
+{
+  return true;
+}
+
+}  // namespace index
+
+namespace index_bench
+{
 /*############################################################################*
  * Global variables
  *############################################################################*/
@@ -95,6 +116,19 @@ AddOperationEngine(  //
 
     Index_t index{};
     index.Construct(op_engine);
+    if (FLAGS_mem_usage) {
+      constexpr size_t kDigits = 17;
+      const auto& [used, allocated] = index.MemoryUsage();
+      if (FLAGS_csv) {
+        std::cout << used << "," << allocated << "\n";
+      } else {
+        std::cout.imbue(std::locale(""));
+        std::cout << std::right  //
+                  << "used size: " << std::setw(kDigits) << used << "\n"
+                  << "allocated: " << std::setw(kDigits) << allocated << "\n";
+      }
+      return;
+    }
 
     Builder builder{index, target_name, op_engine};
     builder.SetThreadNum(FLAGS_num_thread);
@@ -108,8 +142,9 @@ AddOperationEngine(  //
     auto&& bench = builder.Build();
 
     bench->Run();
-    _run_any = true;
   });
+
+  _run_any = true;
 }
 
 void
@@ -128,9 +163,23 @@ Run(  //
 
     const auto& type = dataset["type"].as<std::string>();
     if (type == "integer") {
-      using Key = uint64_t;
-      using Workload = ZipfWorkload<Key>;
-      Workload zipf{workload, worker_num, KeySpace<Key>{key_num, seed}};
+      using Workload = ZipfWorkload<UIntKey>;
+      auto&& key_space = std::make_unique<KeySpace<UIntKey>>(key_num, seed);
+      Workload zipf{workload, worker_num, std::move(key_space)};
+      OperationEngine<Workload> op_eng{std::move(zipf)};
+      AddOperationEngine(op_eng);
+    } else if (type == "string") {
+      using Workload = ZipfWorkload<StrKey>;
+      using Space = KeySpace<StrKey>;
+      const auto& src = dataset["src"];
+      std::unique_ptr<Space> key_space;
+      if (src["type"].as<std::string>() == "simulation") {
+        key_space = std::make_unique<KeySpace<StrKey>>(key_num, seed);
+      } else {
+        const auto& path = src["path"].as<std::string>();
+        key_space = std::make_unique<KeySpace<StrKey>>(key_num, seed, path);
+      }
+      Workload zipf{workload, worker_num, std::move(key_space)};
       OperationEngine<Workload> op_eng{std::move(zipf)};
       AddOperationEngine(op_eng);
     }
@@ -141,7 +190,8 @@ Run(  //
   }
 }
 
-}  // namespace dbgroup::index_bench
+}  // namespace index_bench
+}  // namespace dbgroup
 
 /*############################################################################*
  * Main function

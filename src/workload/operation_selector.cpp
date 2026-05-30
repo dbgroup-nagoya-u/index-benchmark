@@ -31,46 +31,51 @@ namespace dbgroup::index_bench
 {
 
 OPSelector::OPSelector(  //
-    const YAML::Node &ratios,
+    const YAML::Node& ratios,
     const size_t worker_num,
     const bool per_thread)
-    : worker_num_{static_cast<double>(worker_num)}, per_thread_{per_thread}
+    : worker_num_{static_cast<double>(worker_num)}
+    , per_thread_{per_thread}
 {
   double ratio = 0;
   cum_dist_.reserve(ratios.size());
-  if (const auto &op = ratios["read"]; op) {
+  if (const auto& op = ratios["read"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kRead, ratio);
   }
-  if (const auto &op = ratios["scan"]; op) {
+  if (const auto& op = ratios["scan"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kScan, ratio);
   }
-  if (const auto &op = ratios["scan_latest"]; op) {
+  if (const auto& op = ratios["scan_latest"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kScanLatest, ratio);
   }
-  if (const auto &op = ratios["write"]; op) {
+  if (const auto& op = ratios["write"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kWrite, ratio);
   }
-  if (const auto &op = ratios["upsert"]; op) {
+  if (const auto& op = ratios["upsert"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kUpsert, ratio);
   }
-  if (const auto &op = ratios["insert"]; op) {
+  if (const auto& op = ratios["insert"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kInsert, ratio);
   }
-  if (const auto &op = ratios["update"]; op) {
+  if (const auto& op = ratios["update"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kUpdate, ratio);
   }
-  if (const auto &op = ratios["delete"]; op) {
+  if (const auto& op = ratios["update_or_write"]; op) {
+    ratio += op.as<double>();
+    cum_dist_.emplace_back(kUpdateOrWrite, ratio);
+  }
+  if (const auto& op = ratios["delete"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kDelete, ratio);
   }
-  if (const auto &op = ratios["delete_and_insert"]; op) {
+  if (const auto& op = ratios["delete_and_insert"]; op) {
     ratio += op.as<double>();
     cum_dist_.emplace_back(kDeleteAndInsert, ratio);
   }
@@ -79,16 +84,17 @@ OPSelector::OPSelector(  //
 auto
 OPSelector::Select(  //
     const size_t thread_id,
-    std::mt19937_64 &rand) const  //
+    std::mt19937_64& rand) const  //
     -> OPType
 {
   thread_local std::uniform_real_distribution<double> ratio_dist{0.0, 1.0};
-  const auto v = per_thread_ ? thread_id / worker_num_ : ratio_dist(rand);
 
+  const auto v = per_thread_ ? static_cast<double>(thread_id) / worker_num_  //
+                             : ratio_dist(rand);
   const auto n = cum_dist_.size() - 1;
   auto type = cum_dist_.back().first;
   for (size_t i = 0; i < n; ++i) {
-    const auto &pair = cum_dist_[i];
+    const auto& pair = cum_dist_[i];
     if (v < pair.second) {
       type = pair.first;
       break;

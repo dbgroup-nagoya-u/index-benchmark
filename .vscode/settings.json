@@ -46,6 +46,7 @@
     "**/.git/subtree-cache/**": true,
     "**/node_modules/*/**": true,
     "**/.hg/store/**": true,
+    "${workspaceFolder}/dataset/**": true,
   },
   // C/C++ settings
   "C_Cpp.intelliSenseEngine": "disabled",
@@ -58,7 +59,7 @@
   ],
   // unit test settings
   "testMate.cpp.test.runtimeLimit": 60,
-  "testMate.cpp.test.executables": "build/vscode/test/*_test",
+  "testMate.cpp.test.executables": "build/vscode/test/**/*_test",
   // cmake settings
   "[cmake]": {
     "editor.autoIndent": "brackets",
@@ -112,6 +113,7 @@
     "DMWCAS",
     "endforeach",
     "endfunction",
+    "enwiki",
     "Epoche",
     "FINEDEX",
     "fsized",
@@ -122,6 +124,7 @@
     "gtest",
     "helpon",
     "hydralist",
+    "inplace",
     "istr",
     "JEMALLOC",
     "JPNP",

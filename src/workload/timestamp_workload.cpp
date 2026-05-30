@@ -18,38 +18,45 @@
 #include "workload/timestamp_workload.hpp"
 
 // C++ standard libraries
-#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <random>
 #include <tuple>
-#include <utility>
 #include <vector>
 
 // external libraries
-#include "dbgroup/random/zipf.hpp"
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
 
 // local sources
 #include "common.hpp"
-#include "workload/key_space.hpp"
 #include "workload/operation_selector.hpp"
 
 namespace dbgroup::index_bench
 {
+namespace
+{
+/*############################################################################*
+ * Local constants
+ *############################################################################*/
+
+/// @brief The most significant bit.
+constexpr UIntKey kMSB = 1UL << 63UL;
+
+}  // namespace
+
 /*############################################################################*
  * Constructors
  *############################################################################*/
 
 TimestampWorkload::TimestampWorkload(  //
-    const YAML::Node &workload,
+    const YAML::Node& workload,
     const size_t worker_num)
-    : reverse_{workload["reversed"].as<bool>() ? -1 : 0}
+    : reverse_{workload["reversed"].as<bool>() ? kMSB : 0}
 {
-  const auto &node = workload["operations"];
+  const auto& node = workload["operations"];
   exec_num_ = static_cast<size_t>(node["num"].as<double>());
   op_selector_ = OPSelector{node["ratios"], worker_num, node["per_thread"].as<bool>()};
-  if (const auto &scan_size = node["scan_size"]; !scan_size.IsNull()) {
+  if (const auto& scan_size = node["scan_size"]; !scan_size.IsNull()) {
     scan_size_ = scan_size.as<size_t>();
   }
 }
@@ -58,8 +65,7 @@ TimestampWorkload::TimestampWorkload(  //
  * Public operators
  *############################################################################*/
 
-TimestampWorkload::
-operator bool() const
+TimestampWorkload::operator bool() const
 {
   thread_local size_t cnt = 0;
   return cnt++ < exec_num_;
@@ -72,7 +78,7 @@ operator bool() const
 auto
 TimestampWorkload::GetType(  //
     const size_t thread_id,
-    std::mt19937_64 &rand_eng) const  //
+    std::mt19937_64& rand_eng) const  //
     -> OPType
 {
   return op_selector_.Select(thread_id, rand_eng);
@@ -80,19 +86,18 @@ TimestampWorkload::GetType(  //
 
 auto
 TimestampWorkload::GetOps(                             //
-    [[maybe_unused]] std::mt19937_64 &rand_eng) const  //
-    -> std::tuple<int64_t, size_t, size_t>
+    [[maybe_unused]] std::mt19937_64& rand_eng) const  //
+    -> std::tuple<Key, size_t, Payload, size_t>
 {
-  return {reverse_ ^ Clock::now().time_since_epoch().count(),  //
-          sizeof(int64_t),                                     //
-          scan_size_};
+  const auto ts = reverse_ ^ static_cast<Key>(Clock::now().time_since_epoch().count());
+  return {ts, sizeof(Key), ts, scan_size_};
 }
 
 auto
-TimestampWorkload::CreateInitData() const  //
-    -> std::tuple<size_t, bool, std::vector<std::tuple<const Key &, Payload, size_t>>>
+TimestampWorkload::CreateInitData()  //
+    -> std::tuple<size_t, bool, std::vector<std::tuple<Key, Payload, size_t>>>
 {
-  std::vector<std::tuple<const Key &, Payload, size_t>> entries{};
+  std::vector<std::tuple<Key, Payload, size_t>> entries{};
   return {1, false, entries};
 }
 

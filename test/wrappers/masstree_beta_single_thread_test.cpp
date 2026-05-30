@@ -29,7 +29,9 @@ namespace dbgroup::index::test
 template <class K, class V, class C, class... Others>
 using Index = index_bench::MasstreeBetaWrapper<K, V>;
 
-using TestTargets = ::testing::Types<IndexInfo<Index, UInt8, UInt8> >;
+using TestTargets = ::testing::Types<  //
+    IndexInfo<Index, UInt8, UInt8>,    //
+    IndexInfo<Index, Var, UInt8> >;
 TYPED_TEST_SUITE(IndexFixture, TestTargets);
 
 /*############################################################################*

@@ -79,7 +79,7 @@ find_package(gflags REQUIRED)
 FetchContent_Declare(
   cpp-utility
   GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-utility"
-  GIT_TAG "e00883c3d14da4a0f6e68691c45f7e9a558e4bec"
+  GIT_TAG "8da07347db75c1498a849a8817534590ceb67738"
 )
 FetchContent_MakeAvailable(cpp-utility)
 
@@ -119,7 +119,6 @@ endif()
 
 # define as library
 add_library(${PROJECT_NAME} STATIC
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/var_len_data.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/key_space.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/operation_selector.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/zipf_workload.cpp"
@@ -189,6 +188,7 @@ endfunction()
 
 # add executables
 ADD_BENCHMARK("run_bench")
+ADD_BENCHMARK("get_dataset_stat")
 
 #------------------------------------------------------------------------------#
 # Build unit tests if required

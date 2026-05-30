@@ -19,15 +19,28 @@
 
 // C++ standard libraries
 #include <cstddef>
+#include <cstdint>
+#include <filesystem>
 #include <optional>
+#include <type_traits>
 #include <utility>
 #include <vector>
+
+// local sources
+#include "common.hpp"
+#include "workload/var_len_data.hpp"
 
 namespace dbgroup::index_bench
 {
 template <class Key>
 class KeySpace
 {
+  /*##########################################################################*
+   * Type aliases
+   *##########################################################################*/
+
+  using Data = std::conditional_t<std::is_same_v<Key, UIntKey>, UIntKey, VarLenData>;
+
  public:
   /*##########################################################################*
    * Public constructors and assignment operators
@@ -36,52 +49,89 @@ class KeySpace
   KeySpace() = default;
 
   KeySpace(  //
-      const size_t key_num,
-      const std::optional<size_t> &rand_seed);
+      size_t key_num,
+      const std::optional<size_t>& rand_seed);
 
-  KeySpace(KeySpace &&) noexcept = default;
-  auto operator=(KeySpace &&) noexcept -> KeySpace & = default;
+  KeySpace(  //
+      size_t key_num,
+      const std::optional<size_t>& rand_seed,
+      const std::filesystem::path& dataset_path);
+
+  KeySpace(KeySpace&&) noexcept = default;
+  auto operator=(KeySpace&&) noexcept -> KeySpace& = default;
 
   // disable copying
-  KeySpace(const KeySpace &) = delete;
-  auto operator=(const KeySpace &) -> KeySpace & = delete;
+  KeySpace(const KeySpace&) = delete;
+  auto operator=(const KeySpace&) -> KeySpace& = delete;
 
   /*##########################################################################*
-   * Public APIs
+   * Public destructors
    *##########################################################################*/
 
-  [[nodiscard]] auto Size() const  //
-      -> size_t;
+  ~KeySpace() = default;
 
-  [[nodiscard]] auto GetKey(   //
-      const size_t pos) const  //
-      -> std::pair<const Key &, size_t>;
+  /*##########################################################################*
+   * Public getters
+   *##########################################################################*/
 
-  [[nodiscard]] auto GetSortedKey(  //
-      const size_t pos) const       //
-      -> std::pair<const Key &, size_t>;
+  [[nodiscard]]
+  constexpr auto
+  Size() const noexcept  //
+      -> size_t
+  {
+    return keys_.size();
+  }
+
+  [[nodiscard]]
+  constexpr auto
+  GetMappedPos(                   //
+      size_t pos) const noexcept  //
+      -> size_t
+  {
+    return mapping_[pos];
+  }
+
+  [[nodiscard]]
+  constexpr auto
+  GetKey(                         //
+      size_t pos) const noexcept  //
+      -> std::pair<Key, size_t>
+  {
+    const auto& key = keys_[pos];
+    if constexpr (std::is_same_v<Key, UIntKey>) {
+      return {key, sizeof(Key)};
+    } else {
+      auto [data, len] = key.Get();
+      return {const_cast<char*>(data), len};
+    }
+  }
 
  private:
   /*##########################################################################*
    * Internal APIs
    *##########################################################################*/
 
-  void CreateIntegerKeys(  //
-      const size_t key_num);
-
   void PrepareMapping(  //
-      const size_t key_num,
-      const std::optional<size_t> &rand_seed);
+      size_t key_num,
+      const std::optional<size_t>& rand_seed);
+
+  /*##########################################################################*
+   * Static assertions
+   *##########################################################################*/
+
+  static_assert(  //
+      std::is_same_v<Key, UIntKey> || std::is_same_v<Key, StrKey>,
+      "We assume unsigned long or binary data as keys.");
 
   /*##########################################################################*
    * Internal member variables
    *##########################################################################*/
 
   /// @brief Sorted keys.
-  std::vector<Key> keys_{};
+  std::vector<Data> keys_{};
 
   /// @brief Mapping IDs for referencing actual keys.
-  std::vector<size_t> mapping_{};
+  std::vector<uint32_t> mapping_{};
 };
 
 }  // namespace dbgroup::index_bench

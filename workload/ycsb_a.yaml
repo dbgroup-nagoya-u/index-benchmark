@@ -1,7 +1,7 @@
 workload: zipf
 
 operations:
-  - ratios: { read: 0.5, write: 0.5 }
+  - ratios: { read: 0.5, update_or_write: 0.5 }
     scan_size: null
     per_thread: false
     skew_parameter: 1.0

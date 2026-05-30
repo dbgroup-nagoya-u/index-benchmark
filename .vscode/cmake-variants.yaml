@@ -47,6 +47,16 @@ competitor:
         INDEX_BENCH_BUILD_MASSTREE_BETA: ON
         INDEX_BENCH_BUILD_YAKUSHIMA: ON
         INDEX_BENCH_BUILD_ART_OLC: ON
+    varlen:
+      short: VarLen
+      long: Build index implementations that can manage variable length data
+      settings:
+        INDEX_BENCH_BUILD_B_TREE: ON
+        INDEX_BENCH_BUILD_SKIP_LIST: OFF
+        INDEX_BENCH_BUILD_B_TREE_OPTIQL: OFF
+        INDEX_BENCH_BUILD_MASSTREE_BETA: ON
+        INDEX_BENCH_BUILD_YAKUSHIMA: ON
+        INDEX_BENCH_BUILD_ART_OLC: ON
 
 unitTest:
   default: wo_test
@@ -68,4 +78,4 @@ parameter:
       long: Default settings
       settings:
         INDEX_BENCH_PAGE_SIZE: 1024
-        INDEX_BENCH_BUILD_LONG_KEYS: OFF
+        INDEX_BENCH_MAX_VARLEN_DATA_SIZE: 32

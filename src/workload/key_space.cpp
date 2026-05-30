@@ -19,41 +19,110 @@
 
 // C++ standard libraries
 #include <algorithm>
+#include <array>
 #include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <optional>
 #include <random>
-#include <utility>
 #include <vector>
 
 // local sources
 #include "common.hpp"
-#include "workload/var_len_data.hpp"
+#ifdef INDEX_BENCH_BUILD_ART_OLC
+#include "wrappers/art_olc_wrapper.hpp"
+#endif
 
 namespace dbgroup::index_bench
 {
 /*############################################################################*
- * Internal APIs
+ * Constructors
  *############################################################################*/
 
 template <>
-void
-KeySpace<Payload>::CreateIntegerKeys(  //
-    const size_t key_num)
+KeySpace<UIntKey>::KeySpace(  //
+    const size_t key_num,
+    const std::optional<size_t>& rand_seed)
 {
   keys_.reserve(key_num);
-  for (size_t i = 0; i < key_num; ++i) {
+  for (uint32_t i = 0; i < key_num; ++i) {
     keys_.emplace_back(i);
   }
+
+  PrepareMapping(key_num, rand_seed);
 }
+
+template <>
+KeySpace<StrKey>::KeySpace(  //
+    const size_t key_num,
+    const std::optional<size_t>& rand_seed)
+{
+  constexpr uint32_t kRepNum = (kMaxVarLenSize - 1) / 10;
+  constexpr uint32_t kRepWNull = kRepNum + 1;
+
+  std::array<char, kMaxVarLenSize> src{};
+  keys_.reserve(key_num);
+  for (uint32_t len = 0; true;) {
+    auto& ch = src[len++];
+    if (ch == 0) {
+      ch = '0';
+    } else if (++ch > '9') {
+      len -= kRepWNull;
+      continue;
+    }
+    for (uint32_t i = 1; i < kRepNum; ++i) {
+      src[len++] = ch;
+    }
+    src[len] = 0;
+    keys_.emplace_back(&src, len + 1);
+
+    if (keys_.size() >= key_num) break;
+    if (len >= kMaxVarLenSize - kRepWNull) {
+      len -= kRepNum;
+    }
+  }
+
+  PrepareMapping(key_num, rand_seed);
+
+#ifdef INDEX_BENCH_BUILD_ART_OLC
+  ARTOLCWrapper<StrKey, Payload, index::CompareAsCString>::key_space = this;
+#endif
+}
+
+template <>
+KeySpace<StrKey>::KeySpace(  //
+    const size_t key_num,
+    const std::optional<size_t>& rand_seed,
+    const std::filesystem::path& dataset_path)
+{
+  std::ifstream ifs{dataset_path};
+  std::string line{};
+  keys_.reserve(key_num);
+  for (size_t i = 0; i < key_num && std::getline(ifs, line); ++i) {
+    const auto len = line.size() + 1;
+    keys_.emplace_back(line.c_str(), len);
+  }
+
+  PrepareMapping(keys_.size(), rand_seed);
+
+#ifdef INDEX_BENCH_BUILD_ART_OLC
+  ARTOLCWrapper<StrKey, Payload, index::CompareAsCString>::key_space = this;
+#endif
+}
+
+/*############################################################################*
+ * Internal APIs
+ *############################################################################*/
 
 template <class Key>
 void
 KeySpace<Key>::PrepareMapping(  //
     const size_t key_num,
-    const std::optional<size_t> &rand_seed)
+    const std::optional<size_t>& rand_seed)
 {
   mapping_.reserve(key_num);
-  for (size_t i = 0; i < key_num; ++i) {
+  for (uint32_t i = 0; i < key_num; ++i) {
     mapping_.emplace_back(i);
   }
 
@@ -64,63 +133,10 @@ KeySpace<Key>::PrepareMapping(  //
 }
 
 /*############################################################################*
- * Public APIs
- *############################################################################*/
-
-template <class Key>
-auto
-KeySpace<Key>::Size() const  //
-    -> size_t
-{
-  return keys_.size();
-}
-
-template <class Key>
-auto
-KeySpace<Key>::GetKey(       //
-    const size_t pos) const  //
-    -> std::pair<const Key &, size_t>
-{
-  const auto &key = keys_[mapping_[pos]];
-  if constexpr (std::is_same_v<Key, VarLenData>) {
-    return {key, key.len};
-  } else {
-    return {key, sizeof(Key)};
-  }
-}
-
-template <class Key>
-auto
-KeySpace<Key>::GetSortedKey(  //
-    const size_t pos) const   //
-    -> std::pair<const Key &, size_t>
-{
-  const auto &key = keys_[pos];
-  if constexpr (std::is_same_v<Key, VarLenData>) {
-    return {key, key.len};
-  } else {
-    return {key, sizeof(Key)};
-  }
-}
-
-/*############################################################################*
- * Constructors
- *############################################################################*/
-
-template <>
-KeySpace<Payload>::KeySpace(  //
-    const size_t key_num,
-    const std::optional<size_t> &rand_seed)
-{
-  CreateIntegerKeys(key_num);
-  PrepareMapping(key_num, rand_seed);
-}
-
-/*############################################################################*
  * Explicit instantiation definitions
  *############################################################################*/
 
-template class KeySpace<Payload>;
-template class KeySpace<VarLenData>;
+template class KeySpace<UIntKey>;
+template class KeySpace<StrKey>;
 
 }  // namespace dbgroup::index_bench
