@@ -201,6 +201,81 @@ class MasstreeBetaWrapper
     return ret;
   }
 
+  auto
+  MemoryUsage() const  //
+      -> std::pair<size_t, size_t>
+  {
+    using params = Masstree::default_query_table_params;
+    using base_node = Masstree::node_base<params>;
+    using interior_node = Masstree::internode<params>;
+    using border_node = Masstree::leaf<params>;
+
+    size_t total_used{};
+    size_t total_alloc{};
+
+    auto* root = table_.table().root();
+    std::vector<std::vector<std::pair<base_node*, int>>> layers{};
+    layers.reserve(kMaxDepth);
+    layers.emplace_back().emplace_back(root, 0);
+    while (!layers.empty()) {
+      auto& stack = layers.back();
+      stack.reserve(kInitialHeight);
+      while (!stack.empty()) {
+        auto& [node, pos] = stack.back();
+        auto* interior = std::bit_cast<interior_node*>(node);
+        auto* border = std::bit_cast<border_node*>(node);
+        if (!node->isleaf() && pos <= interior->size()) {
+          auto* child = interior->child_[pos++];
+          stack.emplace_back(child, 0);
+          continue;
+        }
+        if (node->isleaf()) {
+          const auto permutation = border->permutation();
+          while (pos < border->size()) {
+            const auto rec_pos = permutation[pos++];
+            if (border->is_layer(rec_pos)) {
+              root = border->lv_[rec_pos].layer();
+              layers.emplace_back().emplace_back(root, 0);
+              goto out;
+            }
+          }
+        }
+
+        if (node->isleaf()) {
+          constexpr size_t kBaseSize = 50;
+          const auto n = border->size();
+          const auto permutation = border->permutation();
+          total_used += kBaseSize + n * (1 + kPaySize);
+          for (int32_t pos = 0; pos < n; ++pos) {
+            const auto rec_pos = permutation[pos];
+            if (border->is_layer(rec_pos)) {
+              total_used += kPartKeySize;
+            } else {
+              total_used += border->get_key(rec_pos).length();
+            }
+          }
+
+          const auto& iksuf = border->iksuf_[0];
+          total_alloc += sizeof(border_node) + iksuf.capacity();
+          if (border->ksuf_) {
+            total_alloc += border->ksuf_->capacity();
+          }
+        } else {
+          constexpr size_t kBaseSize = 29;
+          const auto n = interior->size();
+          total_used += kBaseSize + n * kPartKeySize + (n + 1) * kPaySize;
+          total_alloc += sizeof(interior_node);
+        }
+
+        stack.pop_back();
+      }
+      layers.pop_back();
+    out:;
+    }
+
+    return {total_used, total_alloc};
+  }
+
   /*##########################################################################*
    * Public class definitions
    *##########################################################################*/
@@ -357,6 +432,14 @@ class MasstreeBetaWrapper
   /*##########################################################################*
    * Internal constants
    *##########################################################################*/
+
+  static constexpr uint32_t kInitialHeight = 8;
+
+  static constexpr uint32_t kMaxDepth = kMaxVarLenSize / sizeof(uint64_t);
+
+  static constexpr size_t kPartKeySize = 8;
+
+  static constexpr size_t kPaySize = 8;
 
   static constexpr size_t kScanSize = 1000;
 
