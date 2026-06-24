@@ -123,9 +123,9 @@ AddOperationEngine(  //
         std::cout << used << "," << allocated << "\n";
       } else {
         std::cout.imbue(std::locale(""));
-        std::cout << std::right  //
-                  << "used size: " << std::setw(kDigits) << used << "\n"
-                  << "allocated: " << std::setw(kDigits) << allocated << "\n";
+        std::cout << std::right << target_name << ":\n"
+                  << "  used size: " << std::setw(kDigits) << used << "\n"
+                  << "  allocated: " << std::setw(kDigits) << allocated << "\n";
       }
       return;
     }
