@@ -123,6 +123,7 @@ add_library(${PROJECT_NAME} STATIC
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/operation_selector.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/zipf_workload.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/timestamp_workload.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/construct_destruct_workload.cpp"
 )
 add_library(dbgroup::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PUBLIC
