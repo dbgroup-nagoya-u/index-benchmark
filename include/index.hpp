@@ -166,11 +166,22 @@ class Index
           throw std::runtime_error{"The update operation is not implemented."};
         }
         break;
-      case kUpdateOrWrite:
-        if constexpr (index::HasUpdate<Target, Key, Payload>()) {
-          index_->Update(key, payload, key_len);
-        } else if constexpr (index::HasWrite<Target, Key, Payload>()) {
+      case kInsertRelevant:
+        if constexpr (index::HasWrite<Target, Key, Payload>()) {
           index_->Write(key, payload, key_len);
+        } else if constexpr (index::HasInsert<Target, Key, Payload>()) {
+          index_->Insert(key, payload, key_len);
+        } else if constexpr (index::HasUpsert<Target, Key, Payload>()) {
+          index_->Upsert(key, payload, key_len);
+        } else {
+          throw std::runtime_error{"There are no insert relevant operations."};
+        }
+        break;
+      case kUpdateRelevant:
+        if constexpr (index::HasWrite<Target, Key, Payload>()) {
+          index_->Write(key, payload, key_len);
+        } else if constexpr (index::HasUpdate<Target, Key, Payload>()) {
+          index_->Update(key, payload, key_len);
         } else {
           throw std::runtime_error{"There are no update relevant operations."};
         }
@@ -237,15 +248,8 @@ class Index
             SetUpForWorker();
             for (size_t i = 0; i < num; ++i) {
               const auto& [key, payload, key_len] = entries[pos + i];
-              if constexpr (index::HasWrite<Target, Key, Payload>()) {
-                index_->Write(key, payload, key_len);
-              } else if constexpr (index::HasInsert<Target, Key, Payload>()) {
-                index_->Insert(key, payload, key_len);
-              } else if constexpr (index::HasUpsert<Target, Key, Payload>()) {
-                index_->Upsert(key, payload, key_len);
-              } else {
-                throw std::runtime_error{"There are no write relevant operations."};
-              }
+              const Operation op{key, key_len, payload, 0};
+              Execute(kInsertRelevant, op);
             }
             TearDownForWorker();
           },
