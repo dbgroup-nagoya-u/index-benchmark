@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP_
-#define INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP_
+#ifndef INDEX_BENCHMARK_WORKLOAD_ZIPF_WORKLOAD_HPP_
+#define INDEX_BENCHMARK_WORKLOAD_ZIPF_WORKLOAD_HPP_
 
 // C++ standard libraries
 #include <chrono>
@@ -64,6 +64,7 @@ class ZipfWorkload
   ZipfWorkload(  //
       const YAML::Node& workload,
       size_t worker_num,
+      size_t seed,
       std::unique_ptr<KeySpace> keys);
 
   ZipfWorkload(ZipfWorkload&&) noexcept = default;
@@ -117,12 +118,12 @@ class ZipfWorkload
 
     size_t scan_size{};
 
+    size_t begin_pos{};
+
     Zipf zipf{};
   };
 
   struct InitParameter {
-    size_t key_num{};
-
     bool use_all_cores{};
 
     bool use_bulkload{};
@@ -137,8 +138,10 @@ class ZipfWorkload
   InitParameter init_{};
 
   std::unique_ptr<KeySpace> keys_{};
+
+  size_t rec_num_{};
 };
 
 }  // namespace dbgroup::index_bench
 
-#endif  // INDEX_BENCHMARK_WORKLOAD_WORKLOAD_HPP_
+#endif  // INDEX_BENCHMARK_WORKLOAD_ZIPF_WORKLOAD_HPP_

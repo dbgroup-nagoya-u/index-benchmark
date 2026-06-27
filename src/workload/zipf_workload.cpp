@@ -56,21 +56,27 @@ template <class Key>
 ZipfWorkload<Key>::ZipfWorkload(  //
     const YAML::Node& workload,
     const size_t worker_num,
+    const size_t seed,
     std::unique_ptr<KeySpace> keys)
     : keys_{std::move(keys)}
+    , rec_num_{keys_->Size()}
 {
   const auto& operations = workload["operations"];
+  const auto& vary_hot_spot = workload["vary_hot_spot"];
+  const auto vary_hot = vary_hot_spot && vary_hot_spot.as<bool>();
+  std::uniform_int_distribution<size_t> dist{0, rec_num_ - 1};
+  std::mt19937_64 rand{seed};
   phases_.reserve(operations.size());
   for (const auto& node : operations) {
-    phases_.emplace_back(                                                       //
-        std::chrono::seconds{node["duration"].as<size_t>()},                    //
-        OPSelector{node["ratios"], worker_num, node["per_thread"].as<bool>()},  //
-        node["scan_size"].IsNull() ? 0 : node["scan_size"].as<size_t>(),        //
+    phases_.emplace_back(  //
+        std::chrono::seconds{node["duration"].as<size_t>()},
+        OPSelector{node["ratios"], worker_num, node["per_thread"].as<bool>()},
+        node["scan_size"].IsNull() ? 0 : node["scan_size"].as<size_t>(),  //
+        vary_hot ? dist(rand) : 0,                                        //
         Zipf{0, keys_->Size() - 1, node["skew_parameter"].as<double>()});
   }
 
   const auto& init_param = workload["initialization"];
-  init_.key_num = static_cast<size_t>(init_param["num"].as<double>());
   init_.use_all_cores = init_param["use_all_cores"].as<bool>();
   init_.use_bulkload = init_param["use_bulkload"].as<bool>();
 }
@@ -113,7 +119,11 @@ ZipfWorkload<Key>::GetOps(            //
     -> std::tuple<Key, size_t, Payload, size_t>
 {
   const auto& phase = phases_[_id];
-  const auto id = keys_->GetMappedPos(phase.zipf(rand_eng));
+  auto pos = phase.begin_pos + phase.zipf(rand_eng);
+  if (pos >= rec_num_) {
+    pos -= rec_num_;
+  }
+  const auto id = keys_->GetMappedPos(pos);
   const auto& [key, key_len] = keys_->GetKey(id);
   return {key, key_len, id, phase.scan_size};
 }
@@ -123,9 +133,10 @@ auto
 ZipfWorkload<Key>::CreateInitData() const  //
     -> std::tuple<size_t, bool, std::vector<std::tuple<Key, Payload, size_t>>>
 {
+  const auto rec_num = keys_->Size();
   std::vector<std::tuple<Key, Payload, size_t>> entries{};
-  entries.reserve(init_.key_num);
-  for (size_t id = 0; id < init_.key_num; ++id) {
+  entries.reserve(rec_num);
+  for (size_t id = 0; id < rec_num; ++id) {
     const auto& [key, key_len] = keys_->GetKey(id);
     entries.emplace_back(key, id, key_len);
   }
