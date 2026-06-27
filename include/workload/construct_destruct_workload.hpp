@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Database Group, Nagoya University
+ * Copyright 2026 Database Group, Nagoya University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef INDEX_BENCHMARK_WORKLOAD_ZIPF_WORKLOAD_HPP_
-#define INDEX_BENCHMARK_WORKLOAD_ZIPF_WORKLOAD_HPP_
+#ifndef INDEX_BENCHMARK_WORKLOAD_CONSTRUCT_DESTRUCT_WORKLOAD_HPP_
+#define INDEX_BENCHMARK_WORKLOAD_CONSTRUCT_DESTRUCT_WORKLOAD_HPP_
 
 // C++ standard libraries
-#include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <random>
 #include <tuple>
@@ -34,18 +34,16 @@
 // local sources
 #include "common.hpp"
 #include "workload/key_space.hpp"
-#include "workload/operation_selector.hpp"
 
 namespace dbgroup::index_bench
 {
 template <class Key>
-class ZipfWorkload
+class ConstructDestructWorkload
 {
   /*##########################################################################*
    * Type aliases
    *##########################################################################*/
 
-  using Zipf = dbgroup::random::ApproxZipfDistribution<size_t>;
   using KeySpace = dbgroup::index_bench::KeySpace<Key>;
 
  public:
@@ -59,26 +57,26 @@ class ZipfWorkload
    * Public constructors and assignment operators
    *##########################################################################*/
 
-  ZipfWorkload() = default;
+  ConstructDestructWorkload() = default;
 
-  ZipfWorkload(  //
+  ConstructDestructWorkload(  //
       const YAML::Node& workload,
+      bool is_construct,
       size_t worker_num,
-      size_t seed,
       std::unique_ptr<KeySpace> keys);
 
-  ZipfWorkload(ZipfWorkload&&) noexcept = default;
-  auto operator=(ZipfWorkload&&) noexcept -> ZipfWorkload& = default;
+  ConstructDestructWorkload(ConstructDestructWorkload&&) noexcept = default;
+  auto operator=(ConstructDestructWorkload&&) noexcept -> ConstructDestructWorkload& = default;
 
   // disable copying
-  ZipfWorkload(const ZipfWorkload&) = delete;
-  auto operator=(const ZipfWorkload&) -> ZipfWorkload& = delete;
+  ConstructDestructWorkload(const ConstructDestructWorkload&) = delete;
+  auto operator=(const ConstructDestructWorkload&) -> ConstructDestructWorkload& = delete;
 
   /*##########################################################################*
    * Public destructor
    *##########################################################################*/
 
-  ~ZipfWorkload() = default;
+  ~ConstructDestructWorkload() = default;
 
   /*##########################################################################*
    * Public operators
@@ -111,18 +109,6 @@ class ZipfWorkload
    * Internal types
    *##########################################################################*/
 
-  struct Phase {
-    std::chrono::seconds duration{};
-
-    OPSelector op_selector{};
-
-    size_t scan_size{};
-
-    size_t begin_pos{};
-
-    Zipf zipf{};
-  };
-
   struct InitParameter {
     bool use_all_cores{};
 
@@ -130,18 +116,34 @@ class ZipfWorkload
   };
 
   /*##########################################################################*
+   * Internal utilities
+   *##########################################################################*/
+
+  [[nodiscard]]
+  auto GetBeginPosition() const noexcept  //
+      -> size_t;
+
+  /*##########################################################################*
    * Internal member variables
    *##########################################################################*/
 
-  std::vector<Phase> phases_{};
+  size_t rec_num_{};
+
+  bool partitioned_{};
+
+  bool reversed_{};
+
+  int32_t diff_{};
+
+  OPType op_type_{};
+
+  std::vector<size_t> exec_nums_{};
 
   InitParameter init_{};
 
   std::unique_ptr<KeySpace> keys_{};
-
-  size_t rec_num_{};
 };
 
 }  // namespace dbgroup::index_bench
 
-#endif  // INDEX_BENCHMARK_WORKLOAD_ZIPF_WORKLOAD_HPP_
+#endif  // INDEX_BENCHMARK_WORKLOAD_CONSTRUCT_DESTRUCT_WORKLOAD_HPP_

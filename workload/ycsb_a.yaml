@@ -1,14 +1,17 @@
 workload: zipf
 
 operations:
-  - ratios: { read: 0.5, update_or_write: 0.5 }
+  - ratios: { read: 0.5, update_relevant: 0.5 }
     scan_size: null
     per_thread: false
     skew_parameter: 1.0
     duration: 10
 
-
 vary_hot_spot: false
+
+initialization:
+  use_all_cores: true
+  use_bulkload: true
 
 dataset:
   type: integer
@@ -17,8 +20,3 @@ dataset:
     path: null
   num: 1e8
   has_locality: true
-
-initialization:
-  num: 1e8
-  use_all_cores: true
-  use_bulkload: true

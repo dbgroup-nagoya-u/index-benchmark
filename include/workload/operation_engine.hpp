@@ -20,6 +20,7 @@
 // C++ standard libraries
 #include <cstddef>
 #include <random>
+#include <stdexcept>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -161,6 +162,39 @@ class OperationEngine
   /*##########################################################################*
    * Public getters
    *##########################################################################*/
+
+  static constexpr auto
+  EnumToString(        //
+      const OPType e)  //
+      -> std::string_view
+  {
+    switch (e) {
+      case kRead:
+        return "Read";
+      case kScan:
+        return "Scan";
+      case kScanLatest:
+        return "ScanLatest";
+      case kWrite:
+        return "Write";
+      case kUpsert:
+        return "Upsert";
+      case kInsert:
+        return "Insert";
+      case kUpdate:
+        return "Update";
+      case kInsertRelevant:
+        return "Insert";
+      case kUpdateRelevant:
+        return "Update";
+      case kDelete:
+        return "Delete";
+      case kDeleteAndInsert:
+        return "Del&Ins";
+      default:
+        throw std::runtime_error{"Found the unkown operation type."};
+    }
+  }
 
   auto
   GetOPIter(  //

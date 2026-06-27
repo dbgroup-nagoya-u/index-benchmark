@@ -32,6 +32,7 @@
 #include "common.hpp"
 #include "competitors.hpp"
 #include "index.hpp"
+#include "workload/construct_destruct_workload.hpp"
 #include "workload/operation_engine.hpp"
 #include "workload/timestamp_workload.hpp"
 #include "workload/zipf_workload.hpp"
@@ -62,11 +63,6 @@ DEFINE_bool(  //
     csv,
     false,
     "Output benchmark results as CSV format");
-
-DEFINE_bool(  //
-    throughput,
-    true,
-    "true: measure throughput, false: measure latency");
 
 DEFINE_bool(  //
     mem_usage,
@@ -116,19 +112,6 @@ AddOperationEngine(  //
 
     Index_t index{};
     index.Construct(op_engine);
-    if (FLAGS_mem_usage) {
-      constexpr size_t kDigits = 17;
-      const auto& [used, allocated] = index.MemoryUsage();
-      if (FLAGS_csv) {
-        std::cout << used << "," << allocated << "\n";
-      } else {
-        std::cout.imbue(std::locale(""));
-        std::cout << std::right << target_name << ":\n"
-                  << "  used size: " << std::setw(kDigits) << used << "\n"
-                  << "  allocated: " << std::setw(kDigits) << allocated << "\n";
-      }
-      return;
-    }
 
     Builder builder{index, target_name, op_engine};
     builder.SetThreadNum(FLAGS_num_thread);
@@ -137,11 +120,27 @@ AddOperationEngine(  //
     builder.SetTimeOut(FLAGS_timeout);
     builder.SetRandomSeed(_seed);
     if (FLAGS_csv) {
-      builder.OutputAsCSV(FLAGS_throughput);
+      builder.OutputAsCSV();
     }
     auto&& bench = builder.Build();
 
     bench->Run();
+
+    if (FLAGS_mem_usage) {
+      constexpr size_t kDigits = 17;
+      const auto& [used, allocated] = index.MemoryUsage();
+      if (FLAGS_csv) {
+        std::cout << "Memory,Used,Total," << used << "\n"
+                  << "Memory,Allocated,Total," << allocated << "\n";
+      } else {
+        std::ostringstream oss;
+        oss.imbue(std::locale(""));
+        oss << std::right << "Memory Usage [byte]:\n"
+            << "  Used size: " << std::setw(kDigits) << used << "\n"
+            << "  Allocated: " << std::setw(kDigits) << allocated << "\n\n";
+        std::cout << oss.str();
+      }
+    }
   });
 
   _run_any = true;
@@ -152,40 +151,61 @@ Run(  //
     const YAML::Node& workload)
 {
   const auto worker_num = FLAGS_num_thread;
+  const auto& workload_type = workload["workload"].as<std::string>();
 
-  if (workload["workload"].as<std::string>() == "zipf") {
-    const auto& dataset = workload["dataset"];
+  const auto& dataset = workload["dataset"];
+  std::unique_ptr<KeySpace<UIntKey>> int_keys{};
+  std::unique_ptr<KeySpace<StrKey>> str_keys{};
+  if (dataset) {
     const auto key_num = static_cast<size_t>(dataset["num"].as<double>());
     std::optional<size_t> seed{};
     if (!dataset["has_locality"].as<bool>()) {
       seed = _seed;
     }
+    const auto& type = dataset["type"].as<std::string>();
+    if (type == "integer") {
+      int_keys = std::make_unique<KeySpace<UIntKey>>(key_num, seed);
+    } else if (type == "string") {
+      const auto& src = dataset["src"];
+      if (src["type"].as<std::string>() == "simulation") {
+        str_keys = std::make_unique<KeySpace<StrKey>>(key_num, seed);
+      } else {
+        const auto& path = src["path"].as<std::string>();
+        str_keys = std::make_unique<KeySpace<StrKey>>(key_num, seed, path);
+      }
+    }
+  }
 
+  if (workload_type == "zipf") {
     const auto& type = dataset["type"].as<std::string>();
     if (type == "integer") {
       using Workload = ZipfWorkload<UIntKey>;
-      auto&& key_space = std::make_unique<KeySpace<UIntKey>>(key_num, seed);
-      Workload zipf{workload, worker_num, std::move(key_space)};
+      Workload zipf{workload, worker_num, _seed, std::move(int_keys)};
       OperationEngine<Workload> op_eng{std::move(zipf)};
       AddOperationEngine(op_eng);
     } else if (type == "string") {
       using Workload = ZipfWorkload<StrKey>;
-      using Space = KeySpace<StrKey>;
-      const auto& src = dataset["src"];
-      std::unique_ptr<Space> key_space;
-      if (src["type"].as<std::string>() == "simulation") {
-        key_space = std::make_unique<KeySpace<StrKey>>(key_num, seed);
-      } else {
-        const auto& path = src["path"].as<std::string>();
-        key_space = std::make_unique<KeySpace<StrKey>>(key_num, seed, path);
-      }
-      Workload zipf{workload, worker_num, std::move(key_space)};
+      Workload zipf{workload, worker_num, _seed, std::move(str_keys)};
       OperationEngine<Workload> op_eng{std::move(zipf)};
       AddOperationEngine(op_eng);
     }
-  } else if (workload["workload"].as<std::string>() == "timestamp") {
-    TimestampWorkload zipf{workload, worker_num};
-    OperationEngine<TimestampWorkload> op_eng{std::move(zipf)};
+  } else if (workload_type == "construct" || workload_type == "destruct") {
+    const auto& type = dataset["type"].as<std::string>();
+    const auto is_construct = workload_type == "construct";
+    if (type == "integer") {
+      using Workload = ConstructDestructWorkload<UIntKey>;
+      Workload const_dest{workload, is_construct, worker_num, std::move(int_keys)};
+      OperationEngine<Workload> op_eng{std::move(const_dest)};
+      AddOperationEngine(op_eng);
+    } else if (type == "string") {
+      using Workload = ConstructDestructWorkload<StrKey>;
+      Workload const_dest{workload, is_construct, worker_num, std::move(str_keys)};
+      OperationEngine<Workload> op_eng{std::move(const_dest)};
+      AddOperationEngine(op_eng);
+    }
+  } else if (workload_type == "timestamp") {
+    TimestampWorkload timestamp{workload, worker_num};
+    OperationEngine<TimestampWorkload> op_eng{std::move(timestamp)};
     AddOperationEngine(op_eng);
   }
 }

@@ -25,8 +25,6 @@ DELIM=${2}
 COLUMN=${3}
 cd ${DATASET_DIR}
 
-echo ${DELIM}
-
 # remove useless data
 if head -n 1 ${FILE} | grep -qP "${DELIM}"; then
   awk -i inplace -v col="${COLUMN}" -F"${DELIM}" '{print $col}' ${FILE}
@@ -36,5 +34,5 @@ fi
 # sort all the rows in ascending order
 if ! LC_ALL=C sort -c ${FILE} &> /dev/null; then
   LC_ALL=C sort -u ${FILE} > ${FILE}.tmp
-  mv ${1}.tmp ${FILE}
+  mv ${FILE}.tmp ${FILE}
 fi

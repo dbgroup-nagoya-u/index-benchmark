@@ -79,7 +79,7 @@ find_package(gflags REQUIRED)
 FetchContent_Declare(
   cpp-utility
   GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-utility"
-  GIT_TAG "ce6ea366f3be9b699d2136cef9269c48d9c47841"
+  GIT_TAG "1b790bf1a89cf29b5d759e4dd84ce814e727b06d" # v0.17.1
 )
 FetchContent_MakeAvailable(cpp-utility)
 
@@ -87,7 +87,7 @@ FetchContent_MakeAvailable(cpp-utility)
 FetchContent_Declare(
   cpp-benchmark
   GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-benchmark"
-  GIT_TAG "ab0e87838d620e1e086baaf512230b0428ef9f13"
+  GIT_TAG "4ec5919b116675ec2d80ad52236f14eb7dd183e4" # v2.3.0
 )
 FetchContent_MakeAvailable(cpp-benchmark)
 
@@ -123,6 +123,7 @@ add_library(${PROJECT_NAME} STATIC
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/operation_selector.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/zipf_workload.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/timestamp_workload.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/workload/construct_destruct_workload.cpp"
 )
 add_library(dbgroup::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PUBLIC
