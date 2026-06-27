@@ -75,5 +75,5 @@ parameter:
       short: ""
       long: Default settings
       settings:
-        INDEX_BENCH_PAGE_SIZE: 1024
-        INDEX_BENCH_MAX_VARLEN_DATA_SIZE: 32
+        INDEX_BENCH_PAGE_SIZE: 4096
+        INDEX_BENCH_MAX_VARLEN_DATA_SIZE: 256
