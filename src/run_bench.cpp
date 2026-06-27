@@ -65,11 +65,6 @@ DEFINE_bool(  //
     "Output benchmark results as CSV format");
 
 DEFINE_bool(  //
-    throughput,
-    true,
-    "true: measure throughput, false: measure latency");
-
-DEFINE_bool(  //
     mem_usage,
     false,
     "true: output memory usage instead of throughput/latency");
@@ -117,19 +112,6 @@ AddOperationEngine(  //
 
     Index_t index{};
     index.Construct(op_engine);
-    if (FLAGS_mem_usage) {
-      constexpr size_t kDigits = 17;
-      const auto& [used, allocated] = index.MemoryUsage();
-      if (FLAGS_csv) {
-        std::cout << used << "," << allocated << "\n";
-      } else {
-        std::cout.imbue(std::locale(""));
-        std::cout << std::right << target_name << ":\n"
-                  << "  used size: " << std::setw(kDigits) << used << "\n"
-                  << "  allocated: " << std::setw(kDigits) << allocated << "\n";
-      }
-      return;
-    }
 
     Builder builder{index, target_name, op_engine};
     builder.SetThreadNum(FLAGS_num_thread);
@@ -138,11 +120,27 @@ AddOperationEngine(  //
     builder.SetTimeOut(FLAGS_timeout);
     builder.SetRandomSeed(_seed);
     if (FLAGS_csv) {
-      builder.OutputAsCSV(FLAGS_throughput);
+      builder.OutputAsCSV();
     }
     auto&& bench = builder.Build();
 
     bench->Run();
+
+    if (FLAGS_mem_usage) {
+      constexpr size_t kDigits = 17;
+      const auto& [used, allocated] = index.MemoryUsage();
+      if (FLAGS_csv) {
+        std::cout << "Memory,Used,Total," << used << "\n"
+                  << "Memory,Allocated,Total," << allocated << "\n";
+      } else {
+        std::ostringstream oss;
+        oss.imbue(std::locale(""));
+        oss << std::right << "Memory Usage [byte]:\n"
+            << "  Used size: " << std::setw(kDigits) << used << "\n"
+            << "  Allocated: " << std::setw(kDigits) << allocated << "\n\n";
+        std::cout << oss.str();
+      }
+    }
   });
 
   _run_any = true;
