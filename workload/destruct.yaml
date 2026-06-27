@@ -1,7 +1,11 @@
-workload: construct
+workload: destruct
 
 partitioned: false
 reversed: false
+
+initialization:
+  use_all_cores: false
+  use_bulkload: false
 
 dataset:
   type: integer
