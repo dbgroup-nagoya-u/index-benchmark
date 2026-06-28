@@ -192,7 +192,7 @@ class YakushimaWrapper
     size_t total_used{};
     size_t total_alloc{};
     const auto& usage = yakushima::mem_usage(kTableName);
-    for (const auto [_, used, allocated] : usage) {
+    for (const auto& [_, used, allocated] : usage) {
       total_used += used;
       total_alloc += allocated;
     }
