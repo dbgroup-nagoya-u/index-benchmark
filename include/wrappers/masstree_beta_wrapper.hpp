@@ -26,6 +26,9 @@
 #include <utility>
 #include <vector>
 
+//
+#include <cassert>
+
 // external C++ libraries
 #include <dbgroup/index/utility.hpp>
 #include <dbgroup/thread/id_manager.hpp>
@@ -205,13 +208,30 @@ class MasstreeBetaWrapper
   MemoryUsage() const  //
       -> std::pair<size_t, size_t>
   {
+    size_t total_used{};
+    size_t total_alloc{};
+    const auto& usage = MemoryUsageDetailed();
+    for (const auto& usage_at : usage) {
+      for (const auto& [used, allocated, _] : usage_at) {
+        total_used += used;
+        total_alloc += allocated;
+      }
+    }
+    return {total_used, total_alloc};
+  }
+
+  [[nodiscard]]
+  auto
+  MemoryUsageDetailed() const  //
+      -> std::vector<std::vector<std::tuple<size_t, size_t, size_t>>>
+  {
+    std::vector<std::vector<std::tuple<size_t, size_t, size_t>>> usage{};
+    usage.reserve(kMaxDepth);
+
     using params = Masstree::default_query_table_params;
     using base_node = Masstree::node_base<params>;
     using interior_node = Masstree::internode<params>;
     using border_node = Masstree::leaf<params>;
-
-    size_t total_used{};
-    size_t total_alloc{};
 
     auto* root = table_.table().root();
     std::vector<std::vector<std::pair<base_node*, int>>> layers{};
@@ -241,31 +261,44 @@ class MasstreeBetaWrapper
           }
         }
 
+        const auto layer = layers.size() - 1;
+        const auto level = node->isleaf() ? 0 : interior->height_;
+        while (usage.size() <= layer) [[unlikely]] {
+          usage.emplace_back();
+          usage.back().reserve(kInitialHeight);
+        }
+        auto&& usage_at = usage[layer];
+        while (usage_at.size() <= level) [[unlikely]] {
+          usage_at.emplace_back();
+        }
+        auto& [used, allocated, node_cnt] = usage_at[level];
+
         if (node->isleaf()) {
           constexpr size_t kBaseSize = 50;
           const auto n = border->size();
           const auto permutation = border->permutation();
-          total_used += kBaseSize + n * (1 + kPaySize);
+          used += kBaseSize + n * (1 + kPaySize);
           for (int32_t pos = 0; pos < n; ++pos) {
             const auto rec_pos = permutation[pos];
             if (border->is_layer(rec_pos)) {
-              total_used += kPartKeySize;
+              used += kPartKeySize;
             } else {
-              total_used += border->get_key(rec_pos).length();
+              used += border->get_key(rec_pos).length();
             }
           }
 
           const auto& iksuf = border->iksuf_[0];
-          total_alloc += sizeof(border_node) + iksuf.capacity();
+          allocated += sizeof(border_node) + iksuf.capacity();
           if (border->ksuf_) {
-            total_alloc += border->ksuf_->capacity();
+            allocated += border->ksuf_->capacity();
           }
         } else {
-          constexpr size_t kBaseSize = 29;
+          constexpr size_t kBaseSize = 21;
           const auto n = interior->size();
-          total_used += kBaseSize + n * kPartKeySize + (n + 1) * kPaySize;
-          total_alloc += sizeof(interior_node);
+          used += kBaseSize + n * kPartKeySize + (n + 1) * kPaySize;
+          allocated += sizeof(interior_node);
         }
+        ++node_cnt;
 
         stack.pop_back();
       }
@@ -273,7 +306,7 @@ class MasstreeBetaWrapper
     out:;
     }
 
-    return {total_used, total_alloc};
+    return usage;
   }
 
   /*##########################################################################*
