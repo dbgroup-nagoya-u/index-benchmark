@@ -1,5 +1,5 @@
 #!/bin/bash
-set -u
+set -eu
 
 ################################################################################
 # Documents
@@ -7,32 +7,23 @@ set -u
 
 BENCH_BIN=""
 CONFIG_ENV=""
-CRITERIA="throughput"
-IS_THROUGHPUT="t"
 NUMA_NODES=""
-TIMEOUT_SEC="3m"
 WORKSPACE_DIR=$(cd $(dirname ${BASH_SOURCE:-${0}})/.. && pwd)
-OUTPUT_FILE=""
 
 usage() {
   cat 1>&2 << EOS
 Usage:
   ${BASH_SOURCE:-${0}} <bench_bin> <config>
 Description:
-  Run benchmark to measure performance in index construction/destruction. All the
-  benchmark results are output in CSV format.
+  Run benchmark to measure throughput/latency with workloads based on the
+  specified parameters. All the benchmark results are output in CSV format.
 Arguments:
   <bench_bin>: A path to a binary file for benchmarking.
   <config>: A path to a configuration file for benchmarking.
 Options:
-  -t: Use throughput as a performance criteria (default: true).
-  -l: Use latency as a performance criteria (default: false). Note that this option will
-      overwrites the "-t" option.
   -o: Set a file path to write the benchmarking results.
   -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
-  -r: Set a timeout value to prevent some indexes from going into infinite loops and
-      retry benchmarking (default: 3m). See "man timeout" for details.
-  -h: Show this messsage and exit.
+  -h: Show this message and exit.
 EOS
   exit 1
 }
@@ -41,18 +32,12 @@ EOS
 # Parse options
 ################################################################################
 
-while getopts tlo:n:r:h OPT
+while getopts o:n:h OPT
 do
   case ${OPT} in
-    t) CRITERIA="throughput"; IS_THROUGHPUT="t"
-      ;;
-    l) CRITERIA="latency"; IS_THROUGHPUT="f"
-      ;;
     o) OUTPUT_FILE="${OPTARG}"
       ;;
     n) NUMA_NODES=${OPTARG}
-      ;;
-    r) TIMEOUT_SEC=${OPTARG}
       ;;
     h) usage
       ;;
@@ -89,82 +74,54 @@ fi
 # Run benchmark
 ################################################################################
 
-# set an output file and temporary files
-if [ -z "${OUTPUT_FILE}" ]; then
-  OUTPUT_FILE="${WORKSPACE_DIR}/out/over_params_${CRITERIA}.csv"
-fi
-TMP_OUTPUT="/tmp/index_benchmark-tmp_output-$(id -un).csv"
-TMP_WORKLOAD="/tmp/index_benchmark-tmp_workload-$(id -un).json"
-
-# create an output directory if not exist
-mkdir -p "${WORKSPACE_DIR}/out"
-
 # run a benchmark program with the variety of parameters
 source "${CONFIG_ENV}"
-for INDEX_SIZE in ${INDEX_SIZE_CANDIDATES}; do
-  for IMPL in ${IMPL_CANDIDATES}; do
-    for KEY_SIZE in ${KEY_CANDIDATES}; do
-      for THREAD_NUM in ${THREAD_CANDIDATES}; do
-        for W_RATIO in ${WRITE_RATIO_CANDIDATES}; do
-          for SKEW in ${SKEW_CANDIDATES}; do
-            for SCAN_LENGTH in ${SCAN_LENGTH_CANDIDATES}; do
-              # remove an old output file
-              rm -f ${TMP_OUTPUT}
+for IDX_SIZE in ${INDEX_SIZE_CANDIDATES}; do
+  for W_RATIO in ${WRITE_RATIO_CANDIDATES}; do
+    for SKEW in ${SKEW_CANDIDATES}; do
+      for SCAN_SIZE in ${SCAN_SIZE_CANDIDATES}; do
+        # prepare temporary paths
+        TMP_RND="$(tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 8)"
+        TMP_STR="$(date '+%Y%m%d_%H%M%S')-${TMP_RND}"
+        TMP_OUT="/tmp/index_bench-${TMP_STR}.csv"
+        TMP_WLD="/tmp/index_bench-${TMP_STR}.yaml"
+        rm -f ${TMP_OUT} ${TMP_WLD}
 
-              # prepare parameters for workload
-              R_RATIO=$(echo "1 - ${W_RATIO}" | bc | sed "s/^\./0./g")
-              R_OPS=$(if [ ${SCAN_LENGTH} -eq 1 ]; then echo "read"; else echo "scan"; fi)
+        # create a temporary workload YAML
+        R_RATIO=$(echo "1 - ${W_RATIO}" | bc | sed "s/^\./0./g")
+        cat << EOF > ${TMP_WLD}
+workload: zipf
 
-              # create a temporary workload JSON
-              cat << EOF > ${TMP_WORKLOAD}
-{
-  "initialization": {
-    "# of keys": ${INDEX_SIZE},
-    "use all cores": true,
-    "use bulkload if possible": true
-  },
-  "workloads": [
-    {
-      "operation ratios": {
-        "${R_OPS}": ${R_RATIO},
-        "${WRITE_OPS}": ${W_RATIO}
-      },
-      "# of keys": ${INDEX_SIZE},
-      "partitioning policy": "none",
-      "access pattern": "random",
-      "skew parameter": ${SKEW},
-      "scan length": ${SCAN_LENGTH}
-    }
-  ]
-}
+operations:
+  - ratios: { ${READ_OP}: ${R_RATIO}, ${WRITE_OP}: ${W_RATIO} }
+    scan_size: ${SCAN_SIZE}
+    per_thread: false
+    skew_parameter: ${SKEW}
+    duration: ${DURATION}
+
+vary_hot_spot: false
+
+initialization:
+  use_all_cores: true
+  use_bulkload: false
+
+dataset:
+  type: integer
+  src:
+    type: simulation
+    path: null
+  num: ${IDX_SIZE}
+  has_locality: true
 EOF
 
-              # run a benchmark program
-              for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
-                while : ; do
-                  timeout ${TIMEOUT_SEC} \
-                    ${BENCH_BIN} \
-                    "--${IMPL}=t" \
-                    "--csv" \
-                    "--throughput=${IS_THROUGHPUT}" \
-                    "--workload" "${TMP_WORKLOAD}" \
-                    "--key-size" ${KEY_SIZE} \
-                    "--num-exec" ${OPERATION_COUNT} \
-                    "--num-thread" ${THREAD_NUM} \
-                    "--timeout" ${BENCH_TIME_OUT} \
-                    >> ${TMP_OUTPUT}
-                  if [ ${?} -eq 0 ]; then
-                    break
-                  fi
-                done
-              done
-
-              # format and append the benchmarking results
-              sed "s/^/${INDEX_SIZE},${W_RATIO},${SKEW},${SCAN_LENGTH},${IMPL},${KEY_SIZE},${THREAD_NUM},/g" "${TMP_OUTPUT}" \
-                >> ${OUTPUT_FILE}
-            done
-          done
-        done
+        # format and append the benchmarking results
+        ${WORKSPACE_DIR}/bin/measure.sh \
+          "${BENCH_BIN}" \
+          "${CONFIG_ENV}" \
+          "${TMP_WLD}" \
+          >> "${TMP_OUT}"
+        sed "s/^/${IDX_SIZE},${W_RATIO},${SKEW},${SCAN_SIZE},/g" "${TMP_OUT}"
+        rm -f ${TMP_OUT} ${TMP_WLD}
       done
     done
   done
